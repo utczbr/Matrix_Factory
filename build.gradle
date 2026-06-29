@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+}
+
+application {
+    mainClass = 'factory.MainSimulator'
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://raw.githubusercontent.com/jacamo-lang/mvn-repo/master" }
+    gradlePluginPortal()
+    maven { url "https://repo.gradle.org/gradle/libs-releases" }
+}
+
+dependencies {
+    // JaCaMo: Jason BDI + CArtAgO + MoISE
+    implementation 'org.jacamo:jacamo:1.2'
+
+    // gRPC + Protobuf (Netty transport)
+    implementation 'io.grpc:grpc-netty-shaded:1.63.0'
+    implementation 'io.grpc:grpc-protobuf:1.63.0'
+    implementation 'io.grpc:grpc-stub:1.63.0'
+    compileOnly     'org.apache.tomcat:annotations-api:6.0.53'  // @Generated
+
+    // Protobuf runtime
+    implementation 'com.google.protobuf:protobuf-java:3.25.3'
+
+    // WebSocket server (Tyrus standalone — no servlet container needed)
+    implementation 'org.glassfish.tyrus.bundles:tyrus-standalone-client:2.1.5'
+    implementation 'jakarta.websocket:jakarta.websocket-api:2.1.0'
+
+    // SQLite JDBC (DatabaseArtifact historian)
+    implementation 'org.xerial:sqlite-jdbc:3.45.3.0'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.12'
+    runtimeOnly     'ch.qos.logback:logback-classic:1.5.6'
+
+    // Test
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+protobuf {
+    protoc { artifact = 'com.google.protobuf:protoc:3.25.3' }
+    plugins {
+        grpc { artifact = 'io.grpc:protoc-gen-grpc-java:1.63.0' }
+    }
+    generateProtoTasks {
+        all()*.plugins { grpc {} }
+    }
+}
+
+// Removed jacamo block since we don't use the plugin
+
+sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/java'
+sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/grpc'
+sourceSets.main.proto.srcDirs = ['physical_engine/protos']

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="http://moise.sourceforge.net/xml/os.xsl" type="text/xsl" ?>
+<organisational-specification
+    id="factory_adacor_org"
+    os-version="0.8"
+    xmlns='http://moise.sourceforge.net/os'
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:schemaLocation='http://moise.sourceforge.net/os http://moise.sourceforge.net/xml/os.xsd' >
+
+    <structural-specification>
+        <!-- ADACOR imposes a hierarchy: supervisor commands resources directly -->
+        <role-definitions>
+            <role id="resource_holon"/>
+            <role id="order_holon"/>
+            <role id="supervisor"/>
+            <role id="transport_holon"/>
+        </role-definitions>
+
+        <group-specification id="shop_floor">
+            <roles>
+                <role id="resource_holon" min="1" max="100"/>
+                <role id="order_holon" min="0" max="1000"/>
+                <role id="supervisor" min="1" max="1"/>
+                <role id="transport_holon" min="0" max="100"/>
+            </roles>
+            <!-- Strict authority link: Supervisor -> Resource Holons -->
+            <links>
+                <link from="supervisor" to="resource_holon" type="authority" scope="intra-group" bi-dir="false"/>
+                <link from="supervisor" to="order_holon" type="authority" scope="intra-group" bi-dir="false"/>
+            </links>
+        </group-specification>
+    </structural-specification>
+
+    <functional-specification>
+        <!-- In ADACOR, the scheme defines centralized dispatching -->
+        <scheme id="centralized_dispatch">
+            <goal id="manage_production">
+                <plan operator="sequence">
+                    <goal id="assign_tasks"/>
+                    <goal id="execute_assigned_task"/>
+                </plan>
+            </goal>
+            <mission id="m_supervisor" min="1" max="1">
+                <goal id="assign_tasks"/>
+            </mission>
+            <mission id="m_resource" min="1" max="100">
+                <goal id="execute_assigned_task"/>
+            </mission>
+        </scheme>
+    </functional-specification>
+
+    <normative-specification>
+        <norm id="n1" type="obligation" condition="unfulfilled" role="supervisor" mission="m_supervisor"/>
+        <norm id="n2" type="obligation" condition="unfulfilled" role="resource_holon" mission="m_resource"/>
+    </normative-specification>
+</organisational-specification>

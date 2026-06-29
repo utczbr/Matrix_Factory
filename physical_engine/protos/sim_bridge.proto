@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package factory;
+
+option java_multiple_files = false;
+option java_outer_classname = "SimBridgeProto";
+
+// SimBridge — gRPC co-simulation interface between the JaCaMo cognitive
+// layer and the Python physical engine.
+//
+// Architecture:
+//   - AdvanceTime: Unary synchronization barrier with embedded state vector.
+//   - RunBatchTest: Station 5 polarization curve sweep via Newton-Raphson.
+//   - HealthCheck: JIT warmup status polling (500ms fixed interval).
+//
+// Reference: doc4 §2, doc6 §3.1
+
+service SimBridge {
+  // Time Synchronization Barrier (Unary RPC)
+  rpc AdvanceTime (TimeStep) returns (StepReady);
+
+  // Batch testing interface for polarization curve sweeping
+  rpc RunBatchTest (BatchTestRequest) returns (BatchTestResponse);
+
+  // Warmup validation
+  rpc HealthCheck (Empty) returns (HealthStatus);
+}
+
+// Time synchronization barrier messages
+message TimeStep {
+  double current_time = 1;
+  double dt = 2;
+  int32 schema_epoch = 3;  // Enforces MoISE normative consensus
+}
+
+message StepReady {
+  double target_time = 1;
+  bool success = 2;
+  // Embedded state vector prevents out-of-sync tearing between clock
+  // and physical state (see ThermoStateIndex for field mapping)
+  repeated double state_vector = 3 [packed = true];
+}
+
+message BatchTestRequest {
+  string stack_id = 1;
+  int32 num_cells = 2;
+  double operating_temp_k = 3;
+  double inlet_pressure_h2_bar = 4;
+  double inlet_pressure_o2_bar = 5;
+  // Optional client-side specification for advanced diagnostics.
+  // If empty, the server computes a 12-point fixed curve autonomously.
+  repeated double current_densities = 6 [packed = true];
+}
+
+message BatchTestResponse {
+  bool passed = 1;
+  repeated double measured_voltages = 2 [packed = true];
+
+  // Compound Failure Flags (Bitmask)
+  // bit 0 = OHMIC_DEGRADATION
+  // bit 1 = MASS_TRANSPORT_STARVATION
+  // bit 2 = THERMAL_SHUTDOWN
+  // bit 3 = LOW_ACTIVATION
+  // bit 4 = SOLVER_DID_NOT_CONVERGE
+  uint32 failure_flags = 3;
+}
+
+message Empty {}
+
+message HealthStatus {
+  bool ready = 1;
+}
+
+enum AMRStatusEnum {
+  AMR_IDLE      = 0;
+  AMR_MOVING    = 1;
+  AMR_LOADING   = 2;
+  AMR_UNLOADING = 3;
+  AMR_BLOCKED   = 4;
+}
+
+enum StationStateEnum {
+  STATION_IDLE             = 0;
+  STATION_PROVISIONAL_LOCK = 1;
+  STATION_BUSY_PROCESSING  = 2;
+  STATION_DEFECT_DETECTED  = 3;
+  STATION_OFFLINE          = 4;
+}
+
+message AMRState {
+  string      amr_id            = 1;
+  float       grid_x            = 2;
+  float       grid_y            = 3;
+  float       next_grid_x       = 4;
+  float       next_grid_y       = 5;
+  float       movement_progress = 6;
+  AMRStatusEnum status          = 7;
+  string      carrying_order_id = 8;
+}
+
+message StationState {
+  string         station_id          = 1;
+  StationStateEnum state             = 2;
+  string         active_order_id     = 3;
+  float          processing_progress = 4;
+}
+
+message TelemetryFrame {
+  uint64 sequence_number             = 1;
+  double sim_time_s                  = 2;
+  int32  schema_epoch                = 3;
+  string active_org_schema           = 4;
+
+  repeated AMRState     amr_states     = 5;
+  repeated StationState station_states = 6;
+
+  repeated double thermo_state_vector  = 7 [packed = true];
+
+  double station5_stack_voltage_v       = 8;
+  double station5_current_density_a_cm2 = 9;
+  double station5_stack_temp_k          = 10;
+  double station5_stack_core_temp_k     = 11;
+  double station5_stack_skin_temp_k     = 12;
+  uint32 station5_failure_flags         = 13;
+
+  double h2_tank_pressure_bar           = 14;
+  double h2_tank_fill_fraction          = 15;
+  double chiller_temp_k                 = 16;
+  double compressor_power_kw            = 17;
+
+  uint32 dropped_telemetry_frame_count  = 18;
+  uint32 dropped_ner_count              = 19;
+  uint32 run_id                         = 20;
+}
