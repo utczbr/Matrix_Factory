@@ -466,6 +466,12 @@ void releaseStation(String orderId) {
     log("Station " + stationId + " released for order " + orderId
         + " — currentSummary reset to IDLE");
 }
+
+@OPERATION
+void setStationOffline() {
+    currentSummary = StationSummary.OFFLINE;
+    log("Station " + stationId + " set to OFFLINE (Phase 1 Suspend)");
+}
 ```
 
 > [!IMPORTANT]
@@ -778,6 +784,8 @@ Four additions to the Phase 2 plan:
 // respond to CFPs — they never initiate them. That intention belongs to order_holon.asl.
 +suspend_intentions[source(supervisor)]
   <- .drop_intention(execute_physical_operation(_));
+     -+station_state(offline);
+     setStationOffline(); // Push offline state to the dashboard
      .send(supervisor, tell, suspend_ack(me));
      .print("Station ", me, " suspended by ADACOR Phase1").
 
@@ -798,6 +806,10 @@ Four additions to the Phase 2 plan:
 
 +!reinitialize_schema
   <- .drop_all_intentions;
+     ?station_state(State);
+     if (State == provisional_lock(OrderId) | State == busy_processing(OrderId)) {
+         releaseStation(OrderId); // Syncs the artifact so dashboard sees IDLE
+     }
      -+station_state(idle);
      !start.
 ```

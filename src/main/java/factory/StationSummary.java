@@ -9,4 +9,6 @@ public record StationSummary(
 ) {
     public static final StationSummary IDLE = 
         new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
+    public static final StationSummary OFFLINE = 
+        new StationSummary(StationStateEnum.STATION_OFFLINE, "", 0.0f);
 }

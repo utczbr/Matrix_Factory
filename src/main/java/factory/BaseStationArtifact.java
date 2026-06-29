@@ -77,6 +77,12 @@ public class BaseStationArtifact extends Artifact {
     }
 
     @OPERATION
+    public void setStationOffline() {
+        currentSummary = StationSummary.OFFLINE;
+        log("Station " + stationId + " set to OFFLINE (Phase 1 Suspend)");
+    }
+
+    @OPERATION
     public void releaseStation(String orderId) {
         currentSummary = StationSummary.IDLE;
         try {

@@ -124,11 +124,12 @@
 // Resource Holons drop only operations they can actually hold.
 // .drop_intention(call_for_proposals) is NOT included: Resource Holons
 // respond to CFPs — they never initiate them. That intention belongs to order_holon.asl.
-+suspend_intention[source(supervisor)]
-  : my_name(Me)
++suspend_intentions[source(supervisor)]
   <- .drop_intention(execute_physical_operation(_));
-     .send(supervisor, tell, suspend_ack(Me));
-     .print("Station ", Me, " suspended by ADACOR Phase1").
+     -+station_state(offline);
+     setStationOffline(); // Push offline state to the dashboard
+     .send(supervisor, tell, suspend_ack(me));
+     .print("Station ", me, " suspended by ADACOR Phase1").
 
 +resume_intention[source(supervisor)]
   <- !start.
@@ -147,5 +148,9 @@
 
 +!reinitialize_schema
   <- .drop_all_intentions;
+     ?station_state(State);
+     if (State == provisional_lock(OrderId) | State == busy_processing(OrderId)) {
+         releaseStation(OrderId); // Syncs the artifact so dashboard sees IDLE
+     }
      -+station_state(idle);
      !start.
