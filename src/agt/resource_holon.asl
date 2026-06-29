@@ -19,28 +19,32 @@
 // Plan: Respond to CFP with transactional reservation
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
    : my_name(Me) & .member(Me, Stations) & station_state(idle)
-   <- ?current_processing_cost(Cost);
+   <- -+station_state(provisional_lock(OrderId)); // Update Jason belief synchronously first to prevent race condition
+      ?current_processing_cost(Cost);
       claimStation(OrderId, _);
-      -+station_state(provisional_lock(OrderId)); // Use stable OrderId
       .send(Sender, tell, propose(Me, Cost));
-      startTimer(OrderId, 5000, self).  // Discrete-event NER Timer
+      startTimer(OrderId, 5000, Me).  // Discrete-event NER Timer
 
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
    <- ?my_name(Me);
       ?station_state(State);
-      .print("FAILED to match CFP context! Me: ", Me, ", Stations: ", Stations, ", State: ", State);
+      .print("CFP refused (station busy/locked). Me: ", Me, ", State: ", State);
       .send(Sender, tell, refuse(Me)).
 
 -!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
    <- ?my_name(Me);
-      .print("CFP failed (station not idle or lock failed), sending refuse for ", OrderId);
+      if (station_state(provisional_lock(OrderId))) {
+          releaseStation(OrderId);
+          -+station_state(idle);
+      };
+      .print("CFP execution failed (artifact error?), sending refuse for ", OrderId);
       .send(Sender, tell, refuse(Me)).
 
 // Phase 3 Amended accept_proposal plan
 +accept_proposal(OrderId)[source(Sender)]
   : station_state(provisional_lock(OrderId)) & my_name(Me)
-  <- cancelTimer(OrderId);
-     -+station_state(busy_processing(OrderId));
+  <- -+station_state(busy_processing(OrderId)); // Update Jason synchronously before external action
+     cancelTimer(OrderId);
      // Phase 3: register with all three fields so the supervisor's lock filter
      // can correctly identify which Order Holon holds a commitment at this station.
      // Sender is the Order Holon's agent name atom (e.g., order_2) — correct type.
@@ -56,8 +60,8 @@
 // Phase 3 Amended reject_proposal plan
 +reject_proposal(OrderId)[source(Sender)]
   : station_state(provisional_lock(OrderId)) & my_name(Me)
-  <- cancelTimer(OrderId);
-     -+station_state(idle);
+  <- -+station_state(idle); // Update Jason synchronously before external action
+     cancelTimer(OrderId);
      releaseStation(OrderId); // Sync artifact volatile field
      .print("Proposal rejected for order ", OrderId, " (CNP lost), reverting to idle").
 
@@ -72,6 +76,7 @@
      releaseLock(OrderId);        // Remove from registry on normal completion
      if (ResultCode == "defect") {
          releaseStation(OrderId); // Sync artifact volatile field
+         -+station_state(idle);   // Ensure Jason returns to idle on defect
          !report_defect(OrderId);
      } else {
          -+station_state(idle);    // processOrder already set artifact to IDLE on success
@@ -85,8 +90,8 @@
 // releaseStation() is required to sync the Java artifact's volatile currentSummary
 // field with the Jason belief revert. Without it, the dashboard reads
 // STATION_PROVISIONAL_LOCK indefinitely after the timer fires.
-+timer_expired(OrderId)
-  : station_state(provisional_lock(OrderId))
++timer_expired(OrderId, AgentId)
+  : my_name(Me) & AgentId == Me & station_state(provisional_lock(OrderId))
   <- -+station_state(idle);
      releaseStation(OrderId);   // Sync artifact volatile field
      // releaseLock is a no-op here: lock is only registered on accept_proposal,
@@ -95,8 +100,7 @@
      releaseLock(OrderId);
      .print("Provisional lock expired for order ", OrderId).
 
-+timer_expired(OrderId)
-  : not station_state(provisional_lock(OrderId))
++timer_expired(OrderId, AgentId)
   <- true.
 
 // ── Phase 0 Compensating Abort ────────────────────────────────────────────

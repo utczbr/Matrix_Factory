@@ -44,7 +44,7 @@
   : propose(Winner, Cost)[source(Winner)]
   <- .print("Selected ", Winner, " for ", OrderId, " with cost ", Cost);
      .send(Winner, tell, accept_proposal(OrderId));
-     for ( propose(Loser, _)[source(Loser)] ) {
+     for ( propose(Loser, _) ) {
          if (Loser \== Winner) {
              .send(Loser, tell, reject_proposal(OrderId));
          }
