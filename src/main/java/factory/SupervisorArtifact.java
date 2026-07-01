@@ -27,6 +27,19 @@ public class SupervisorArtifact extends Artifact {
 
     void init() {
         MainSimulator.INSTANCE.supervisorArtifact = this;
+        
+        if (MainSimulator.INSTANCE.cnpSlowAccept) {
+            defineObsProperty("test_hook_cnp_slow_accept", true);
+        }
+        if (MainSimulator.INSTANCE.ttl > 0) {
+            defineObsProperty("test_hook_ttl", MainSimulator.INSTANCE.ttl);
+        }
+        if (MainSimulator.INSTANCE.blockAckFrom != null) {
+            defineObsProperty("test_hook_block_ack_from", MainSimulator.INSTANCE.blockAckFrom);
+        }
+        if (MainSimulator.INSTANCE.injectEpochMismatchOn != null) {
+            defineObsProperty("test_hook_inject_epoch_mismatch", MainSimulator.INSTANCE.injectEpochMismatchOn);
+        }
     }
 
     // ── Lock Registry Operations ─────────────────────────────────────────

@@ -34,6 +34,13 @@ public class BaseStationArtifact extends Artifact {
         }
         currentSummary = new StationSummary(StationStateEnum.STATION_PROVISIONAL_LOCK, orderId, 0.0f);
         result.set("claimed");
+        
+        String agentName = getOpUserName();
+        if (MainSimulator.INSTANCE.forceAbortStation != null && agentName.equals(MainSimulator.INSTANCE.forceAbortStation) &&
+            MainSimulator.INSTANCE.forceAbortOrder != null && orderId.contains(MainSimulator.INSTANCE.forceAbortOrder)) {
+            signal("abort_current_operation", orderId);
+            log("Test Hook: injected abort_current_operation for " + orderId + " at " + agentName);
+        }
     }
 
     @OPERATION

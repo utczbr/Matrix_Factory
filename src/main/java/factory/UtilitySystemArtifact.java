@@ -18,10 +18,17 @@ public class UtilitySystemArtifact extends Artifact {
         this.currentSimTimeS = simTimeS;
         java.util.List<Double> sv = ready.getStateVectorList();
         if (sv.size() >= ProtoIndex.VECTOR_LENGTH) {
-            updateObsProperty("h2_pressure_bar", sv.get(ProtoIndex.H2_TANK_PRESSURE_BAR));
-            updateObsProperty("h2_fill_fraction", sv.get(ProtoIndex.H2_TANK_FILL_FRACTION));
-            updateObsProperty("chiller_temp_k", sv.get(ProtoIndex.CHILLER_TEMP_K));
-            updateObsProperty("compressor_power_kw", sv.get(ProtoIndex.COMPRESSOR_POWER_KW));
+            beginExtSession();
+            try {
+                if (hasObsProperty("h2_pressure_bar")) {
+                    updateObsProperty("h2_pressure_bar", sv.get(ProtoIndex.H2_TANK_PRESSURE_BAR));
+                    updateObsProperty("h2_fill_fraction", sv.get(ProtoIndex.H2_TANK_FILL_FRACTION));
+                    updateObsProperty("chiller_temp_k", sv.get(ProtoIndex.CHILLER_TEMP_K));
+                    updateObsProperty("compressor_power_kw", sv.get(ProtoIndex.COMPRESSOR_POWER_KW));
+                }
+            } finally {
+                endExtSession();
+            }
         }
     }
 

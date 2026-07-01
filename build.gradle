@@ -10,6 +10,11 @@ java {
 
 application {
     mainClass = 'factory.MainSimulator'
+    applicationDefaultJvmArgs = [
+        '--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+        '-Dio.netty.tryReflectionSetAccessible=true'
+    ]
 }
 
 repositories {
@@ -22,6 +27,7 @@ repositories {
 dependencies {
     // JaCaMo: Jason BDI + CArtAgO + MoISE
     implementation 'org.jacamo:jacamo:1.2'
+    implementation 'org.slf4j:slf4j-api:2.0.12'
 
     // gRPC + Protobuf (Netty transport)
     implementation 'io.grpc:grpc-netty-shaded:1.63.0'

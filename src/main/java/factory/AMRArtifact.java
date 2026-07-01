@@ -33,13 +33,18 @@ public class AMRArtifact extends Artifact {
         }
     }
     
-    public double getGridUtilization() {
+    @OPERATION
+    public void getGridUtilization(OpFeedbackParam<Double> util) {
+        if (MainSimulator.INSTANCE.gridStress) {
+            util.set(0.95);
+            return;
+        }
         long occupied = 0;
         for (String[][] row : reservedBy)
             for (String[] cell : row)
                 for (String amrId : cell)
                     if (amrId != null) occupied++;
-        return (double) occupied / (gridCols * gridRows * HORIZON_TICKS);
+        util.set((double) occupied / (gridCols * gridRows * HORIZON_TICKS));
     }
     
     public void clearExpiredReservations() {

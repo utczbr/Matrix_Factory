@@ -18,7 +18,9 @@ public class EnergyPriceArtifact extends Artifact {
 
     void init(String csvPath) {
         try {
-            InputStream is = getClass().getResourceAsStream("/price_series.csv");
+            String filename = MainSimulator.INSTANCE.priceSeriesFile != null ? MainSimulator.INSTANCE.priceSeriesFile : csvPath;
+            if (filename.startsWith("/")) filename = filename.substring(1);
+            InputStream is = getClass().getResourceAsStream("/" + filename);
             if (is != null) {
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
                     String line;
@@ -49,22 +51,42 @@ public class EnergyPriceArtifact extends Artifact {
         var entry = priceAtSimTime.floorEntry(simTime);
         if (entry != null) {
             double newPrice = entry.getValue();
+            if (MainSimulator.INSTANCE.forceSpikeAt != null && simTime >= MainSimulator.INSTANCE.forceSpikeAt) {
+                newPrice = Math.max(newPrice, spikeThresholdEurMwh + 15.0);
+            }
             synchronized(priceLock) {
                 if (Math.abs(newPrice - currentPrice) > 1e-6) {
-                    currentPrice = newPrice;
-                    updateObsProperty("energy_price", currentPrice);
-                    signal("energy_price_changed", currentPrice);
+                    beginExtSession();
+                    try {
+                        currentPrice = newPrice;
+                        if (hasObsProperty("energy_price")) {
+                            updateObsProperty("energy_price", currentPrice);
+                        }
+                        signal("energy_price_changed", currentPrice);
+                    } finally {
+                        endExtSession();
+                    }
                 }
                 
                 if (!spikeActive && currentPrice >= spikeThresholdEurMwh) {
                     spikeActive = true;
-                    defineObsProperty("energy_price_spike", currentPrice);
-                    signal("energy_price_spike", currentPrice);
+                    beginExtSession();
+                    try {
+                        defineObsProperty("energy_price_spike", currentPrice);
+                        signal("energy_price_spike", currentPrice);
+                    } finally {
+                        endExtSession();
+                    }
                     log("Price spike: " + currentPrice + " EUR/MWh at simT=" + simTime);
                 } else if (spikeActive && currentPrice < spikeThresholdEurMwh * 0.90) {
                     spikeActive = false;
-                    removeObsProperty("energy_price_spike");
-                    signal("energy_price_normal", currentPrice);
+                    beginExtSession();
+                    try {
+                        removeObsProperty("energy_price_spike");
+                        signal("energy_price_normal", currentPrice);
+                    } finally {
+                        endExtSession();
+                    }
                     log("Price normal: " + currentPrice + " EUR/MWh at simT=" + simTime);
                 }
             }

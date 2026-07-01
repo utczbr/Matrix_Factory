@@ -30,10 +30,26 @@ public class MainSimulator {
     private int maxTicks = -1;
     private boolean logEpochs = false;
     
+    public String forceAbortStation = null;
+    public String forceAbortOrder = null;
+    
+    // Test Hooks
+    public int maxOrders = 5;
+    public boolean cnpSlowAccept = false;
+    public long ttl = -1;
+    public String priceSeriesFile = null;
+    public Double forceSpikeAt = null;
+    public boolean gridStress = false;
+    public String lockHoldOrders = null;
+    public String blockAckFrom = null;
+    public String injectEpochMismatchOn = null;
+    public String logBrfAgent = null;
+    public boolean traceMessages = false;
+    
     // NER Quorum
     private final ConcurrentHashMap<String, NEREntry> nerRegistry = new ConcurrentHashMap<>();
     private CountDownLatch nerLatch;
-    private final long TICK_QUORUM_TIMEOUT_MS = 1000; 
+    private final long TICK_QUORUM_TIMEOUT_MS = 10; 
     private final double MIN_DT = 0.01;
     private final double MAX_DT = 1.0;
     
@@ -62,6 +78,32 @@ public class MainSimulator {
                 INSTANCE.maxTicks = Integer.parseInt(arg.substring("--max-ticks=".length()));
             } else if (arg.equals("--log-epochs")) {
                 INSTANCE.logEpochs = true;
+            } else if (arg.startsWith("--force-abort-on=")) {
+                INSTANCE.forceAbortStation = arg.substring("--force-abort-on=".length());
+            } else if (arg.startsWith("--order=")) {
+                INSTANCE.forceAbortOrder = arg.substring("--order=".length());
+            } else if (arg.startsWith("--max-orders=")) {
+                INSTANCE.maxOrders = Integer.parseInt(arg.substring("--max-orders=".length()));
+            } else if (arg.equals("--cnp-slow-accept")) {
+                INSTANCE.cnpSlowAccept = true;
+            } else if (arg.startsWith("--ttl=")) {
+                INSTANCE.ttl = Long.parseLong(arg.substring("--ttl=".length()));
+            } else if (arg.startsWith("--price-series=")) {
+                INSTANCE.priceSeriesFile = arg.substring("--price-series=".length());
+            } else if (arg.startsWith("--force-spike-at=")) {
+                INSTANCE.forceSpikeAt = Double.parseDouble(arg.substring("--force-spike-at=".length()));
+            } else if (arg.equals("--grid-stress")) {
+                INSTANCE.gridStress = true;
+            } else if (arg.startsWith("--lock-hold-orders=")) {
+                INSTANCE.lockHoldOrders = arg.substring("--lock-hold-orders=".length());
+            } else if (arg.startsWith("--block-ack-from=")) {
+                INSTANCE.blockAckFrom = arg.substring("--block-ack-from=".length());
+            } else if (arg.startsWith("--inject-epoch-mismatch-on=")) {
+                INSTANCE.injectEpochMismatchOn = arg.substring("--inject-epoch-mismatch-on=".length());
+            } else if (arg.startsWith("--log-brf=")) {
+                INSTANCE.logBrfAgent = arg.substring("--log-brf=".length());
+            } else if (arg.equals("--trace-message") || arg.equals("--trace-messages")) {
+                INSTANCE.traceMessages = true;
             }
         }
         try {
@@ -85,6 +127,23 @@ public class MainSimulator {
     }
     
     public void start() throws InterruptedException {
+        // Configure Jason JUL logging dynamically based on flags
+        if (logBrfAgent != null || traceMessages) {
+            java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
+            for (java.util.logging.Handler handler : rootLogger.getHandlers()) {
+                if (handler.getLevel().intValue() > java.util.logging.Level.FINE.intValue()) {
+                    handler.setLevel(java.util.logging.Level.FINE);
+                }
+            }
+            if (logBrfAgent != null) {
+                java.util.logging.Logger.getLogger("jason.asSemantics.TransitionSystem").setLevel(java.util.logging.Level.FINE);
+            }
+            if (traceMessages) {
+                java.util.logging.Logger.getLogger("jason.communication").setLevel(java.util.logging.Level.FINE);
+                java.util.logging.Logger.getLogger("jason.asSemantics.Message").setLevel(java.util.logging.Level.FINE);
+            }
+        }
+
         // 2. GrpcClientBridge.pollUntilReady()
         grpcBridge = new GrpcClientBridge(50051);
         grpcBridge.pollUntilReady();

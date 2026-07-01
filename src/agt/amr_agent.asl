@@ -14,13 +14,21 @@
 +!transport(OrderId, From, To)[source(Sender)]
   : my_name(Me)
   <- .print("AMR ", Me, " transporting ", OrderId, " from ", From, " to ", To);
+     !notify_grid_saturation(OrderId);
      // Simulate grid routing
      .wait(3000);
      .send(Sender, tell, transport_done(OrderId)).
 
++!notify_grid_saturation(OrderId)
+  <- getGridUtilization(Util);
+     if (Util > 0.85) {
+         .print("Grid saturation detected (", Util, ") - signaling transport_blocked for ", OrderId);
+         .send(supervisor, tell, transport_blocked(OrderId));
+     }.
+
 // ── ADACOR Phase 1 Suspend / Resume ──────────────────────────────────────
 
-+suspend_intention[source(supervisor)]
++suspend_intentions[source(supervisor)]
   : my_name(Me)
   <- .drop_intention(transport(_, _, _));
      .send(supervisor, tell, suspend_ack(Me));

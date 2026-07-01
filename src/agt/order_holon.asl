@@ -43,6 +43,10 @@
 +!select_proposal(Step, Stations, OrderId)
   : propose(Winner, Cost)[source(Winner)]
   <- .print("Selected ", Winner, " for ", OrderId, " with cost ", Cost);
+     if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]) {
+         .print("Test Hook: CNP slow accept — waiting to simulate delay");
+         .wait(3000);
+     };
      .send(Winner, tell, accept_proposal(OrderId));
      for ( propose(Loser, _) ) {
          if (Loser \== Winner) {

@@ -59,7 +59,7 @@
 // Phase 0 TTL expired — compensating abort for all active locks.
 // The supervisor iterates the registry directly and sends to each pair.
 // No Java broadcast helper is used: .send() in Jason is the correct mechanism.
-+timer_expired("phase0_transition")
++timer_expired("phase0_transition", _)
   <- .print("Phase0 TTL expired — executing compensating abort");
      getActiveLocks(Locks);
      !abort_all_locks(Locks);
@@ -108,7 +108,7 @@
          !await_phase1_acks(NewPending)
      }.
 
-+timer_expired("phase1_transition")
++timer_expired("phase1_transition", _)
   <- .print("Phase1 TTL expired — issuing force_commit decree");
      !do_commit.
 

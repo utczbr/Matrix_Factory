@@ -28,8 +28,28 @@ public class TestBenchArtifact extends Artifact {
     }
 
     @OPERATION
-    public void executeTest(String stackId, int numCells, double tempK, double pH2Bar, double pO2Bar, OpFeedbackParam<String> result) {
+    public void claimStation(String orderId, OpFeedbackParam<String> result) {
+        if (currentSummary.state() != StationStateEnum.STATION_IDLE) {
+            failed("Station is not idle");
+            return;
+        }
+        currentSummary = new StationSummary(StationStateEnum.STATION_PROVISIONAL_LOCK, orderId, 0.0f);
+        result.set("claimed");
+    }
+
+    @OPERATION
+    public void processOrder(String stackId, OpFeedbackParam<String> result) {
+        if (currentSummary.state() != StationStateEnum.STATION_PROVISIONAL_LOCK || 
+            !currentSummary.activeOrderId().equals(stackId)) {
+            failed("Station not locked for this order");
+            return;
+        }
         currentSummary = new StationSummary(StationStateEnum.STATION_BUSY_PROCESSING, stackId, 0.0f);
+
+        int numCells = 100;
+        double tempK = 350.0;
+        double pH2Bar = 2.0;
+        double pO2Bar = 2.0;
 
         BatchTestRequest req = BatchTestRequest.newBuilder()
             .setStackId(stackId).setNumCells(numCells)
@@ -116,6 +136,22 @@ public class TestBenchArtifact extends Artifact {
         });
         activeCalls.clear();
         completedCalls.clear();
+    }
+
+    @OPERATION
+    public void setStationOffline() {
+        currentSummary = StationSummary.OFFLINE;
+        log("Station " + stationId + " set to OFFLINE (Phase 1 Suspend)");
+    }
+
+    @OPERATION
+    public void releaseStation(String orderId) {
+        currentSummary = StationSummary.IDLE;
+        try {
+            ArtifactId timerArtifactId = lookupArtifact("timer_artifact");
+            execLinkedOp(timerArtifactId, "cancelTimer", orderId);
+        } catch (Exception e) {}
+        log("Station " + stationId + " released for order " + orderId + " — currentSummary reset to IDLE");
     }
 
 

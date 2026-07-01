@@ -23,7 +23,11 @@
       ?current_processing_cost(Cost);
       claimStation(OrderId, _);
       .send(Sender, tell, propose(Me, Cost));
-      startTimer(OrderId, 5000, Me).  // Discrete-event NER Timer
+      if (test_hook_ttl(TTL)[artifact_name("supervisor_artifact")]) {
+          startTimer(OrderId, TTL, Me);
+      } else {
+          startTimer(OrderId, 5000, Me);  // Discrete-event NER Timer
+      }.
 
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
    <- ?my_name(Me);
@@ -90,8 +94,8 @@
 // releaseStation() is required to sync the Java artifact's volatile currentSummary
 // field with the Jason belief revert. Without it, the dashboard reads
 // STATION_PROVISIONAL_LOCK indefinitely after the timer fires.
-+timer_expired(OrderId, AgentId)
-  : my_name(Me) & AgentId == Me & station_state(provisional_lock(OrderId))
++timer_expired(OrderId, _)
+  : station_state(provisional_lock(OrderId))
   <- -+station_state(idle);
      releaseStation(OrderId);   // Sync artifact volatile field
      // releaseLock is a no-op here: lock is only registered on accept_proposal,
@@ -100,7 +104,7 @@
      releaseLock(OrderId);
      .print("Provisional lock expired for order ", OrderId).
 
-+timer_expired(OrderId, AgentId)
++timer_expired(OrderId, _)
   <- true.
 
 // ── Phase 0 Compensating Abort ────────────────────────────────────────────
@@ -127,9 +131,15 @@
 +suspend_intentions[source(supervisor)]
   <- .drop_intention(execute_physical_operation(_));
      -+station_state(offline);
-     setStationOffline(); // Push offline state to the dashboard
-     .send(supervisor, tell, suspend_ack(me));
-     .print("Station ", me, " suspended by ADACOR Phase1").
+     setStationOffline; // Push offline state to the dashboard
+     ?my_name(Me);
+     if ((test_hook_block_ack_from(BlockMe)[artifact_name("supervisor_artifact")] & Me == BlockMe) |
+         (test_hook_inject_epoch_mismatch(BlockMe)[artifact_name("supervisor_artifact")] & Me == BlockMe)) {
+         .print("Test Hook: Blocking ACK from ", Me);
+     } else {
+         .send(supervisor, tell, suspend_ack(Me));
+     };
+     .print("Station ", Me, " suspended by ADACOR Phase1").
 
 +resume_intention[source(supervisor)]
   <- !start.

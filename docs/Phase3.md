@@ -785,7 +785,7 @@ Four additions to the Phase 2 plan:
 +suspend_intentions[source(supervisor)]
   <- .drop_intention(execute_physical_operation(_));
      -+station_state(offline);
-     setStationOffline(); // Push offline state to the dashboard
+     setStationOffline; // Push offline state to the dashboard
      .send(supervisor, tell, suspend_ack(me));
      .print("Station ", me, " suspended by ADACOR Phase1").
 
