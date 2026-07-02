@@ -86,19 +86,30 @@ function connect(runId) {
             return;
         }
 
-        // Update interpolation state
-        lastFrameTime = currentFrameTime;
-        currentFrameTime = performance.now();
-        lastAMRPositions = JSON.parse(JSON.stringify(currentAMRPositions));
+        try {
+            // Update interpolation state
+            lastFrameTime = currentFrameTime;
+            currentFrameTime = performance.now();
+            lastAMRPositions = JSON.parse(JSON.stringify(currentAMRPositions));
 
-        if (frame.amrPositions) {
-            for (let amr of frame.amrPositions) {
-                currentAMRPositions[amr.id] = { x: amr.x, y: amr.y };
+            if (frame.amrStates) {
+                for (let amr of frame.amrStates) {
+                    // Protobuf fields: amr_id, grid_x, grid_y
+                    const amrId = amr.amrId || amr.amr_id;
+                    const x = amr.gridX !== undefined ? amr.gridX : amr.grid_x;
+                    const y = amr.gridY !== undefined ? amr.gridY : amr.grid_y;
+                    currentAMRPositions[amrId] = { x: x * 40, y: y * 40 }; // Assuming grid cells need scaling
+                }
             }
-        }
 
-        renderStations(frame.stationStates);
-        updateDroppedFrameHud(frame.droppedTelemetryFrameCount, frame.simTimeS);
+            renderStations(frame.stationStates || frame.station_states);
+            updateDroppedFrameHud(frame.droppedTelemetryFrameCount, frame.simTimeS);
+        } catch (err) {
+            ctx.fillStyle = "red";
+            ctx.font = "20px Arial";
+            ctx.fillText("Error: " + err.message, 50, 50);
+            console.error("Frame processing error", err);
+        }
     };
 
     ws.onclose = (event) => {
@@ -127,9 +138,10 @@ function renderStations(states) {
     for (let station of layout.stations) {
         ctx.fillStyle = "#555"; // Default
         // Find state
-        let s = states.find(x => x.id === station.id);
+        let s = states.find(x => (x.stationId || x.station_id) === station.id);
         if (s) {
-            ctx.fillStyle = s.isBusy ? "#e74c3c" : "#2ecc71";
+            // state === 2 is STATION_BUSY_PROCESSING
+            ctx.fillStyle = s.state === 2 ? "#e74c3c" : "#2ecc71";
         }
         ctx.fillRect(station.x, station.y, station.width, station.height);
         ctx.fillStyle = "#fff";
