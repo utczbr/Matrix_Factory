@@ -138,10 +138,11 @@ function renderStations(states) {
     for (let station of layout.stations) {
         ctx.fillStyle = "#555"; // Default
         // Find state
-        let s = states.find(x => (x.stationId || x.station_id) === station.id);
+        let mappedId = station.id.replace("station_", "S");
+        let s = states.find(x => (x.stationId || x.station_id) === mappedId);
         if (s) {
-            // state === 2 is STATION_BUSY_PROCESSING
-            ctx.fillStyle = s.state === 2 ? "#e74c3c" : "#2ecc71";
+            // state === 2 or "STATION_BUSY_PROCESSING" depending on protobuf.js config
+            ctx.fillStyle = (s.state === 2 || s.state === "STATION_BUSY_PROCESSING") ? "#e74c3c" : "#2ecc71";
         }
         ctx.fillRect(station.x, station.y, station.width, station.height);
         ctx.fillStyle = "#fff";

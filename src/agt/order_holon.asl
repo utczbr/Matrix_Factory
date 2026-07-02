@@ -14,8 +14,12 @@
 
 +!request_next_batch
   : my_name(Me)
-  <- .wait(2000);
-     .random(R);
+  <- .print("Requesting next batch... Me=", Me);
+     startTimer("batch_wait", 2000, Me).
+
++timer_expired("batch_wait", Me)
+  : my_name(Me)
+  <- .random(R);
      .concat("ORD-", Me, "-", R, OrderId);
      +my_order_id(OrderId);
      .print("Spawning order: ", OrderId);
@@ -34,10 +38,15 @@
      .send(supervisor, tell, transport_blocked(OrderId)).
 
 +!call_for_proposals(Step, Stations, OrderId)
+  : my_name(Me)
   <- .print("Initiating CNP for ", OrderId);
      .send(Stations, achieve, call_for_proposal(Step, Stations, OrderId));
-     // Wait for proposals then select one
-     .wait(3000);
+     +cnp_state(OrderId, Step, Stations);
+     startTimer(OrderId, 3000, Me).
+
++timer_expired(OrderId, Me)
+  : cnp_state(OrderId, Step, Stations)
+  <- -cnp_state(OrderId, Step, Stations);
      !select_proposal(Step, Stations, OrderId).
 
 +!select_proposal(Step, Stations, OrderId)
@@ -45,9 +54,17 @@
   <- .print("Selected ", Winner, " for ", OrderId, " with cost ", Cost);
      if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]) {
          .print("Test Hook: CNP slow accept — waiting to simulate delay");
-         .wait(3000);
-     };
-     .send(Winner, tell, accept_proposal(OrderId));
+         startTimer(OrderId, 3000, Me);
+     } else {
+         !finish_select_proposal(OrderId, Winner);
+     }.
+
++timer_expired(OrderId, Me)
+  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]
+  <- !finish_select_proposal(OrderId, Winner).
+
++!finish_select_proposal(OrderId, Winner)
+  <- .send(Winner, tell, accept_proposal(OrderId));
      for ( propose(Loser, _) ) {
          if (Loser \== Winner) {
              .send(Loser, tell, reject_proposal(OrderId));

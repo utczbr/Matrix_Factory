@@ -16,7 +16,12 @@
   <- .print("AMR ", Me, " transporting ", OrderId, " from ", From, " to ", To);
      !notify_grid_saturation(OrderId);
      // Simulate grid routing
-     .wait(3000);
+     +transporting(OrderId, Sender);
+     startTimer(OrderId, 3000, Me).
+
++timer_expired(OrderId, Me)
+  : transporting(OrderId, Sender)
+  <- -transporting(OrderId, Sender);
      .send(Sender, tell, transport_done(OrderId)).
 
 +!notify_grid_saturation(OrderId)

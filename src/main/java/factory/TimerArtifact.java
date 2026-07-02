@@ -18,12 +18,14 @@ public class TimerArtifact extends Artifact {
     }
 
     @OPERATION
-    public void startTimer(String orderId, double ttlMs, String agentId) {
+    public void startTimer(String orderId, int ttlMs, String agentId) {
         double currentSimTime = RunManager.getSimulator(runId).getCurrentTime();
         double fireAt = currentSimTime + ttlMs / 1000.0;
+        System.out.println("[TimerArtifact] startTimer called. orderId=" + orderId + ", ttl=" + ttlMs + ", agentId=" + agentId + ", fireAt=" + fireAt);
         synchronized (timerQueue) {
             timerQueue.offer(new TimerEntry(orderId, fireAt, agentId));
         }
+        RunManager.getSimulator(runId).submitNER(agentId, fireAt);
     }
 
     @OPERATION
@@ -38,6 +40,7 @@ public class TimerArtifact extends Artifact {
             while (!timerQueue.isEmpty() && timerQueue.peek().fireAtSimTime() <= simTime) {
                 TimerEntry entry = timerQueue.poll();
                 try {
+                    System.out.println("[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=" + entry.orderId() + ", agentId=" + entry.targetAgentId());
                     execInternalOp("signalTimerExpired", entry.orderId(), entry.targetAgentId());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -48,6 +51,7 @@ public class TimerArtifact extends Artifact {
 
     @INTERNAL_OPERATION
     void signalTimerExpired(String orderId, String agentId) {
+        System.out.println("[TimerArtifact] signalTimerExpired executed for orderId=" + orderId + ", agentId=" + agentId);
         signal("timer_expired", orderId, agentId);
     }
 }
