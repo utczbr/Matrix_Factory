@@ -88,6 +88,7 @@ public class BaseStationArtifact extends Artifact {
             } catch (InterruptedException e) {
             }
         }
+        RunManager.getSimulator(runId).removeNER(agentId);
 
         currentSummary = new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
         result.set(defect ? "defect" : "ok");

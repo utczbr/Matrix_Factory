@@ -174,6 +174,10 @@ public class MainSimulator {
         }
     }
 
+    public void removeNER(String agentId) {
+        nerRegistry.remove(agentId);
+    }
+
     public double getCurrentTime() {
         return currentTime;
     }

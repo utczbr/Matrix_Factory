@@ -18,7 +18,8 @@ public class TimerArtifact extends Artifact {
     }
 
     @OPERATION
-    public void startTimer(String orderId, int ttlMs, String agentId) {
+    public void startTimer(String orderId, int ttlMs, Object agentIdObj) {
+        String agentId = agentIdObj.toString();
         double currentSimTime = RunManager.getSimulator(runId).getCurrentTime();
         double fireAt = currentSimTime + ttlMs / 1000.0;
         System.out.println("[TimerArtifact] startTimer called. orderId=" + orderId + ", ttl=" + ttlMs + ", agentId=" + agentId + ", fireAt=" + fireAt);
@@ -42,6 +43,7 @@ public class TimerArtifact extends Artifact {
                 try {
                     System.out.println("[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=" + entry.orderId() + ", agentId=" + entry.targetAgentId());
                     execInternalOp("signalTimerExpired", entry.orderId(), entry.targetAgentId());
+                    RunManager.getSimulator(runId).removeNER(entry.targetAgentId());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -52,6 +54,6 @@ public class TimerArtifact extends Artifact {
     @INTERNAL_OPERATION
     void signalTimerExpired(String orderId, String agentId) {
         System.out.println("[TimerArtifact] signalTimerExpired executed for orderId=" + orderId + ", agentId=" + agentId);
-        signal("timer_expired", orderId, agentId);
+        signal("timer_expired", orderId, new jason.asSyntax.Atom(agentId));
     }
 }
