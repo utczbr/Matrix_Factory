@@ -93,6 +93,9 @@ LOW_ACTIVATION: int = 0x08            # bit 3
 # SOLVER_DID_NOT_CONVERGE = 0x10       # bit 4 (imported from pemfc_model)
 
 
+def derive_seed(stack_id: str, run_id: int) -> int:
+    return int.from_bytes(stack_id.encode("utf-8")[:8], "little") ^ run_id
+
 class SimBridgeServicer:
     """gRPC ``SimBridge`` service implementation.
 
@@ -103,6 +106,8 @@ class SimBridgeServicer:
         num_cells: Number of cells in the PEMFC stack.
         R_internal: Area-specific resistance [Ω·cm²].
         T_initial: Initial stack temperature [K].
+        run_id: Phase 4 instance ID.
+        stack_id: Phase 4 configuration identifier.
     """
 
     def __init__(
@@ -110,6 +115,8 @@ class SimBridgeServicer:
         num_cells: int = 200,
         R_internal: float = 0.1,
         T_initial: float = 353.15,
+        run_id: int = 0,
+        stack_id: str = "S5",
     ) -> None:
         # Stack parameters
         self._num_cells = num_cells
@@ -131,6 +138,11 @@ class SimBridgeServicer:
         # Concurrency
         self._physics_step_lock = threading.Lock()
         self._ready = False
+        
+        self._run_id = run_id
+        seed = derive_seed(stack_id, run_id)
+        self._rng = np.random.default_rng(seed)
+        logger.info(f"[run={run_id}] seeded RNG with seed={seed} (stack_id={stack_id!r})")
 
         # JIT warmup
         self._warmup_jit()
@@ -301,6 +313,7 @@ def serve(
     num_cells: int = 200,
     R_internal: float = 0.1,
     T_initial: float = 353.15,
+    run_id: int = 0,
 ) -> None:
     """Start the gRPC SimBridge server.
 
@@ -330,10 +343,11 @@ def serve(
         num_cells=num_cells,
         R_internal=R_internal,
         T_initial=T_initial,
+        run_id=run_id,
     )
     sim_bridge_pb2_grpc.add_SimBridgeServicer_to_server(servicer, server)
 
-    bind_addr = f"0.0.0.0:{port}"
+    bind_addr = f"127.0.0.1:{port}"
     server.add_insecure_port(bind_addr)
     server.start()
     logger.info(f"SimBridge server listening on {bind_addr}")
@@ -354,8 +368,14 @@ def serve(
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=50051)
+    parser.add_argument("--run-id", type=int, default=0)
+    args = parser.parse_args()
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-    serve()
+    serve(port=args.port, run_id=args.run_id)

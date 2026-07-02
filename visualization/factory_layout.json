@@ -1,0 +1,14 @@
+{
+  "layout_version": "phase3_5_provisional",
+  "stations": [
+    { "id": "station_1", "x": 100, "y": 100, "width": 50, "height": 50 },
+    { "id": "station_2", "x": 300, "y": 100, "width": 50, "height": 50 },
+    { "id": "station_3", "x": 500, "y": 100, "width": 50, "height": 50 },
+    { "id": "station_4", "x": 100, "y": 300, "width": 50, "height": 50 },
+    { "id": "station_5", "x": 300, "y": 300, "width": 50, "height": 50 }
+  ],
+  "amr_grid": {
+    "width": 800,
+    "height": 600
+  }
+}

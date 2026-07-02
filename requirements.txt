@@ -1,0 +1,8 @@
+CoolProp==8.0.0
+grpcio==1.81.1
+grpcio-tools==1.81.1
+llvmlite==0.47.0
+numba==0.65.1
+numpy==2.4.6
+protobuf==6.33.6
+typing_extensions==4.15.0

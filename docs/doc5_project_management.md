@@ -34,7 +34,7 @@
 | Risk Description | Severity | Mitigation Strategy | Status |
 | :--- | :--- | :--- | :--- |
 | **Silent JIT Data Races** | Critical | Numba `@njit(nogil=True)` functions that mutate instance state arrays in-place silently bypass Python GIL locking. The overarching Python-level `with _physics_step_lock:` MUST wrap the Numba dispatch explicitly. | **Mitigated (Phase 1)** |
-| **BDI Inference Overload** | High | Unbounded history querying in JaCaMo drastically slows cycle time. Historical telemetry is piped through the `DatabaseArtifact` with active `database_backpressure` and hysteresis mechanisms to throttle agents dynamically. | **Mitigated (Phase 2)** |
+| **BDI Inference Overload** | High | Unbounded history querying in JaCaMo drastically slows cycle time. Historical telemetry is piped through the `DatabaseArtifact` with active `database_backpressure` and hysteresis mechanisms to throttle agents dynamically. | **Correction pending Phase 3.5 verification** |
 | **Incomplete Preemption** | High | Missing `cancelPendingRpc()` implementations strand Jason agents waiting on dead `CompletableFuture`s. The `TestBenchArtifact` must explicitly trap `RuntimeException` during cancellation to generate semantic failure signals. | **Mitigated (Phase 2)** |
 
 ## Appendix: Verification Log

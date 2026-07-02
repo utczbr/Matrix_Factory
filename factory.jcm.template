@@ -1,0 +1,145 @@
+mas factory_twin {
+
+    agent supervisor : supervisor_agent.asl {
+        focus: factory_ws.supervisor_artifact,
+               factory_ws.energy_price,
+               factory_ws.amr_artifact,
+               factory_ws.utility_system,
+               factory_ws.timer_artifact
+    }
+
+    // Five concurrent Order Holons for PROSA concurrency testing.
+    // Each agent carries order_holon_id so the supervisor can address it by name.
+    agent order_1 : order_holon.asl {
+        focus: factory_ws.base_station_1, factory_ws.base_station_2,
+               factory_ws.base_station_3, factory_ws.base_station_4,
+               factory_ws.test_bench,     factory_ws.amr_artifact,
+               factory_ws.timer_artifact, factory_ws.supervisor_artifact,
+               factory_ws.utility_system
+        beliefs: run_id({{RUN_ID}})
+                 order_holon_id("order_1")
+    }
+    agent order_2 : order_holon.asl {
+        focus: factory_ws.base_station_1, factory_ws.base_station_2,
+               factory_ws.base_station_3, factory_ws.base_station_4,
+               factory_ws.test_bench,     factory_ws.amr_artifact,
+               factory_ws.timer_artifact, factory_ws.supervisor_artifact,
+               factory_ws.utility_system
+        beliefs: run_id({{RUN_ID}})
+                 order_holon_id("order_2")
+    }
+    agent order_3 : order_holon.asl { 
+        focus: factory_ws.base_station_1, factory_ws.base_station_2,
+               factory_ws.base_station_3, factory_ws.base_station_4,
+               factory_ws.test_bench,     factory_ws.amr_artifact,
+               factory_ws.timer_artifact, factory_ws.supervisor_artifact,
+               factory_ws.utility_system
+        beliefs: run_id({{RUN_ID}})
+                 order_holon_id("order_3") 
+    }
+    agent order_4 : order_holon.asl { 
+        focus: factory_ws.base_station_1, factory_ws.base_station_2,
+               factory_ws.base_station_3, factory_ws.base_station_4,
+               factory_ws.test_bench,     factory_ws.amr_artifact,
+               factory_ws.timer_artifact, factory_ws.supervisor_artifact,
+               factory_ws.utility_system
+        beliefs: run_id({{RUN_ID}})
+                 order_holon_id("order_4") 
+    }
+    agent order_5 : order_holon.asl { 
+        focus: factory_ws.base_station_1, factory_ws.base_station_2,
+               factory_ws.base_station_3, factory_ws.base_station_4,
+               factory_ws.test_bench,     factory_ws.amr_artifact,
+               factory_ws.timer_artifact, factory_ws.supervisor_artifact,
+               factory_ws.utility_system
+        beliefs: run_id({{RUN_ID}})
+                 order_holon_id("order_5") 
+    }
+
+    // Resource Holons — additionally focus supervisor_artifact for registerLock/releaseLock
+    agent station_1 : resource_holon.asl {
+        focus: factory_ws.base_station_1, factory_ws.timer_artifact,
+               factory_ws.supervisor_artifact, factory_ws.utility_system
+        beliefs: station_id(1)
+    }
+    agent station_2 : resource_holon.asl {
+        focus: factory_ws.base_station_2, factory_ws.timer_artifact,
+               factory_ws.supervisor_artifact, factory_ws.utility_system
+        beliefs: station_id(2)
+    }
+    agent station_3 : resource_holon.asl { 
+        focus: factory_ws.base_station_3, factory_ws.timer_artifact,
+               factory_ws.supervisor_artifact, factory_ws.utility_system
+        beliefs: station_id(3) 
+    }
+    agent station_4 : resource_holon.asl { 
+        focus: factory_ws.base_station_4, factory_ws.timer_artifact,
+               factory_ws.supervisor_artifact, factory_ws.utility_system
+        beliefs: station_id(4) 
+    }
+    agent station_5 : resource_holon.asl {
+        focus: factory_ws.test_bench,     factory_ws.timer_artifact,
+               factory_ws.supervisor_artifact, factory_ws.utility_system
+        beliefs: station_id(5)
+    }
+
+    agent amr_1 : amr_agent.asl {
+        focus: factory_ws.amr_artifact, factory_ws.supervisor_artifact
+        beliefs: amr_id("AMR-1")
+    }
+    agent amr_2 : amr_agent.asl {
+        focus: factory_ws.amr_artifact, factory_ws.supervisor_artifact
+        beliefs: amr_id("AMR-2")
+    }
+
+    workspace factory_ws {
+        artifact base_station_1  : factory.BaseStationArtifact("S1", 1, 45.0,  5.0,  0.005, 0)
+        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 120.0, 15.0, 0.012, 0)
+        artifact base_station_3  : factory.BaseStationArtifact("S3", 3, 30.0,  2.0,  0.002, 0)
+        artifact base_station_4  : factory.BaseStationArtifact("S4", 4, 240.0, 30.0, 0.008, 0)
+        artifact test_bench      : factory.TestBenchArtifact("S5", 0)
+        artifact amr_artifact    : factory.AMRArtifact(20, 12, 2)
+        artifact utility_system  : factory.UtilitySystemArtifact()
+        artifact timer_artifact  : factory.TimerArtifact()
+        artifact energy_price    : factory.EnergyPriceArtifact("price_series.csv")
+        artifact database        : factory.DatabaseArtifact("factory_history.db")
+        artifact telemetry       : factory.TelemetryArtifact(8080)
+        artifact supervisor_artifact : factory.SupervisorArtifact()   // Phase 3 addition
+    }
+
+    organisation factory_prosa_org : prosa_org.xml {
+        group holonic_factory : shop_floor {
+            players: supervisor  supervisor,
+                     order_1     order_holon,
+                     order_2     order_holon,
+                     order_3     order_holon,
+                     order_4     order_holon,
+                     order_5     order_holon,
+                     station_1   resource_holon,
+                     station_2   resource_holon,
+                     station_3   resource_holon,
+                     station_4   resource_holon,
+                     station_5   resource_holon,
+                     amr_1       transport_holon,
+                     amr_2       transport_holon
+        }
+    }
+
+    organisation factory_adacor_org : adacor_org.xml {
+        group adaptive_factory : shop_floor {
+            players: supervisor  supervisor,
+                     order_1     order_holon,
+                     order_2     order_holon,
+                     order_3     order_holon,
+                     order_4     order_holon,
+                     order_5     order_holon,
+                     station_1   resource_holon,
+                     station_2   resource_holon,
+                     station_3   resource_holon,
+                     station_4   resource_holon,
+                     station_5   resource_holon,
+                     amr_1       transport_holon,
+                     amr_2       transport_holon
+        }
+    }
+}

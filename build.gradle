@@ -39,7 +39,7 @@ dependencies {
     implementation 'com.google.protobuf:protobuf-java:3.25.3'
 
     // WebSocket server (Tyrus standalone — no servlet container needed)
-    implementation 'org.glassfish.tyrus.bundles:tyrus-standalone-client:2.1.5'
+    implementation 'org.glassfish.tyrus:tyrus-container-grizzly-server:2.1.2'
     implementation 'jakarta.websocket:jakarta.websocket-api:2.1.0'
 
     // SQLite JDBC (DatabaseArtifact historian)

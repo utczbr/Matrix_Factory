@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class MainSimulator {
     private static final Logger logger = LoggerFactory.getLogger(MainSimulator.class);
     
-    public static final MainSimulator INSTANCE = new MainSimulator();
+    public static MainSimulator INSTANCE;
     
     // TMC State
     private double currentTime = 0.0;
@@ -25,7 +25,7 @@ public class MainSimulator {
     private volatile String activeOrgSchema = "centralized";
     public volatile OrgSchemaTransition activeTransition = null;
     
-    public final int runId = 0;
+    public final int runId;
     
     private int maxTicks = -1;
     private boolean logEpochs = false;
@@ -68,11 +68,25 @@ public class MainSimulator {
     
     public final AtomicReference<TelemetryFrameSnapshot> telemetryRef = new AtomicReference<>();
     
-    private GrpcClientBridge grpcBridge;
+    private final GrpcClientBridge grpcBridge;
     
-    private MainSimulator() {}
+    public MainSimulator(int runId, int port) {
+        this.runId = runId;
+        this.grpcBridge = new GrpcClientBridge(port);
+    }
     
     public static void main(String[] args) {
+        java.util.List<String> posArgs = new java.util.ArrayList<>();
+        for (String arg : args) {
+            if (!arg.startsWith("--")) {
+                posArgs.add(arg);
+            }
+        }
+        int runId = posArgs.size() > 0 ? Integer.parseInt(posArgs.get(0)) : 0;
+        int port  = posArgs.size() > 1 ? Integer.parseInt(posArgs.get(1)) : 50051;
+        
+        INSTANCE = new MainSimulator(runId, port);
+        
         for (String arg : args) {
             if (arg.startsWith("--max-ticks=")) {
                 INSTANCE.maxTicks = Integer.parseInt(arg.substring("--max-ticks=".length()));
@@ -145,7 +159,6 @@ public class MainSimulator {
         }
 
         // 2. GrpcClientBridge.pollUntilReady()
-        grpcBridge = new GrpcClientBridge(50051);
         grpcBridge.pollUntilReady();
         
         // Wait for artifacts to register themselves
