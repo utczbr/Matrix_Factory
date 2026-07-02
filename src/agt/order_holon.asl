@@ -22,16 +22,22 @@
   <- .random(R);
      .concat("ORD-", Me, "-", R, OrderId);
      +my_order_id(OrderId);
+     +order_random(OrderId, R);
      .print("Spawning order: ", OrderId);
-     !request_transport(OrderId, start, station_1).
+     !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
 
 +!request_transport(OrderId, From, To)
-  <- .print("Requesting transport for ", OrderId, " to ", To);
-     .send(amr_1, achieve, transport(OrderId, From, To)).
+  <- .send(supervisor, askOne, active_transport_holons(Amrs), active_transport_holons(Amrs));
+     .length(Amrs, N);
+     .my_name(Me);
+     ?order_random(OrderId, R);
+     I = math.round(R * 10000) mod N;
+     .nth(I, Amrs, Amr);
+     .print("Requesting transport for ", OrderId, " to ", To, " via ", Amr);
+     .send(Amr, achieve, transport(OrderId, From, To)).
 
 +transport_done(OrderId)[source(Amr)]
-  <- .print("Transport done for ", OrderId);
-     !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
+  <- .print("Transport done for ", OrderId).
 
 +transport_blocked(OrderId)[source(Amr)]
   <- .print("Transport blocked for ", OrderId, " - signaling supervisor");
@@ -45,13 +51,14 @@
      startTimer(OrderId, 3000, Me).
 
 +timer_expired(OrderId, Me)
-  : cnp_state(OrderId, Step, Stations)
+  : cnp_state(OrderId, Step, Stations) & my_name(Me)
   <- -cnp_state(OrderId, Step, Stations);
      !select_proposal(Step, Stations, OrderId).
 
 +!select_proposal(Step, Stations, OrderId)
-  : propose(Winner, Cost)[source(Winner)]
-  <- .print("Selected ", Winner, " for ", OrderId, " with cost ", Cost);
+  : .findall(cost(C,W), propose(W,C)[source(W)], L) & L \== []
+  <- .min(L, cost(BestCost,Winner));
+     .print("Selected ", Winner, " for ", OrderId, " with cost ", BestCost);
      if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]) {
          .print("Test Hook: CNP slow accept — waiting to simulate delay");
          startTimer(OrderId, 3000, Me);
@@ -60,7 +67,7 @@
      }.
 
 +timer_expired(OrderId, Me)
-  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]
+  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")] & my_name(Me)
   <- !finish_select_proposal(OrderId, Winner).
 
 +!finish_select_proposal(OrderId, Winner)
@@ -72,6 +79,7 @@
      }
      .abolish(propose(_, _));
      .abolish(refuse(_));
+     !request_transport(OrderId, start, Winner);
      !await_station_start(OrderId, Winner).
 
 +!select_proposal(Step, Stations, OrderId)

@@ -18,7 +18,7 @@
 
 // Plan: Respond to CFP with transactional reservation
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
-   : my_name(Me) & .member(Me, Stations) & station_state(idle)
+   : my_name(Me) & .member(Me, Stations) & station_state(idle) & my_recipe_step(Step)
    <- -+station_state(provisional_lock(OrderId)); // Update Jason belief synchronously first to prevent race condition
       ?current_processing_cost(Cost);
       claimStation(OrderId, _);
@@ -48,7 +48,7 @@
 +accept_proposal(OrderId)[source(Sender)]
   : station_state(provisional_lock(OrderId)) & my_name(Me)
   <- -+station_state(busy_processing(OrderId)); // Update Jason synchronously before external action
-     cancelTimer(OrderId);
+     cancelTimer(OrderId, Me);
      // Phase 3: register with all three fields so the supervisor's lock filter
      // can correctly identify which Order Holon holds a commitment at this station.
      // Sender is the Order Holon's agent name atom (e.g., order_2) — correct type.
@@ -65,7 +65,7 @@
 +reject_proposal(OrderId)[source(Sender)]
   : station_state(provisional_lock(OrderId)) & my_name(Me)
   <- -+station_state(idle); // Update Jason synchronously before external action
-     cancelTimer(OrderId);
+     cancelTimer(OrderId, Me);
      releaseStation(OrderId); // Sync artifact volatile field
      .print("Proposal rejected for order ", OrderId, " (CNP lost), reverting to idle").
 
@@ -94,8 +94,8 @@
 // releaseStation() is required to sync the Java artifact's volatile currentSummary
 // field with the Jason belief revert. Without it, the dashboard reads
 // STATION_PROVISIONAL_LOCK indefinitely after the timer fires.
-+timer_expired(OrderId, _)
-  : station_state(provisional_lock(OrderId))
++timer_expired(OrderId, Me)
+  : station_state(provisional_lock(OrderId)) & my_name(Me)
   <- -+station_state(idle);
      releaseStation(OrderId);   // Sync artifact volatile field
      // releaseLock is a no-op here: lock is only registered on accept_proposal,

@@ -21,11 +21,19 @@ public class TestBenchArtifact extends Artifact {
     public volatile StationSummary currentSummary = StationSummary.IDLE;
     public String stationId;
     private int runId;
+    private int recipeStep;
+    private double baseCost;
 
     @OPERATION
-    void init(String stationId, int runId) {
+    void init(String stationId, int runId, int recipeStep, double baseCost) {
         this.stationId = stationId;
         this.runId = runId;
+        this.recipeStep = recipeStep;
+        this.baseCost = baseCost;
+        
+        defineObsProperty("my_recipe_step", recipeStep);
+        defineObsProperty("current_processing_cost", baseCost);
+
         RunManager.getSimulator(runId).stationArtifacts.add(this);
     }
 
@@ -158,7 +166,7 @@ public class TestBenchArtifact extends Artifact {
         currentSummary = StationSummary.IDLE;
         try {
             ArtifactId timerArtifactId = lookupArtifact("timer_artifact");
-            execLinkedOp(timerArtifactId, "cancelTimer", orderId);
+            execLinkedOp(timerArtifactId, "cancelTimer", orderId, getOpUserName());
         } catch (Exception e) {
         }
         log("Station " + stationId + " released for order " + orderId + " — currentSummary reset to IDLE");

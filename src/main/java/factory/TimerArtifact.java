@@ -30,9 +30,10 @@ public class TimerArtifact extends Artifact {
     }
 
     @OPERATION
-    public void cancelTimer(String orderId) {
+    public void cancelTimer(String orderId, Object agentIdObj) {
+        String agentId = agentIdObj.toString();
         synchronized (timerQueue) {
-            timerQueue.removeIf(entry -> entry.orderId().equals(orderId));
+            timerQueue.removeIf(entry -> entry.orderId().equals(orderId) && entry.targetAgentId().equals(agentId));
         }
     }
 

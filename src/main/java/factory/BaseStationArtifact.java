@@ -13,16 +13,23 @@ public class BaseStationArtifact extends Artifact {
     private double defectRate;
     private SplittableRandom rng;
     private int runId;
+    private int recipeStep;
+    private double baseCost;
 
     @OPERATION
-    void init(String stationId, int stationIndex, double tMean_s, double tStd_s, double defectRate, int runId) {
+    void init(String stationId, int stationIndex, double tMean_s, double tStd_s, double defectRate, int runId, int recipeStep, double baseCost) {
         this.stationId = stationId;
         this.tMean_s = tMean_s;
         this.tStd_s = tStd_s;
         this.defectRate = defectRate;
         this.runId = runId;
+        this.recipeStep = recipeStep;
+        this.baseCost = baseCost;
         long seed = stationId.hashCode() ^ runId;
         this.rng = new SplittableRandom(seed);
+        
+        defineObsProperty("my_recipe_step", recipeStep);
+        defineObsProperty("current_processing_cost", baseCost);
 
         RunManager.getSimulator(runId).stationArtifacts.add(this);
     }
@@ -105,7 +112,7 @@ public class BaseStationArtifact extends Artifact {
         currentSummary = StationSummary.IDLE;
         try {
             ArtifactId timerArtifactId = lookupArtifact("timer_artifact");
-            execLinkedOp(timerArtifactId, "cancelTimer", orderId);
+            execLinkedOp(timerArtifactId, "cancelTimer", orderId, getOpUserName());
         } catch (Exception e) {
         }
         log("Station " + stationId + " released for order " + orderId + " — currentSummary reset to IDLE");

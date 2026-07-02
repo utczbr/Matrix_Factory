@@ -20,7 +20,7 @@
      startTimer(OrderId, 3000, Me).
 
 +timer_expired(OrderId, Me)
-  : transporting(OrderId, Sender)
+  : transporting(OrderId, Sender) & my_name(Me)
   <- -transporting(OrderId, Sender);
      .send(Sender, tell, transport_done(OrderId)).
 
