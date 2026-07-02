@@ -18,7 +18,10 @@
 
 // ── Energy Price Disturbance — ADACOR Trigger ────────────────────────────
 
-+energy_price_spike(Price)[artifact_name("energy_price")]
++energy_price(P)
+  <- .print("Energy price is now: ", P).
+
++energy_price_spike(Price)
   : active_schema(prosa) & not pending_transition(_, _)
   <- .print("Energy spike: ", Price, " EUR/MWh — initiating ADACOR transition");
      getSimTime(SimT);                                   // Synchronous @OPERATION query
@@ -26,14 +29,23 @@
      +pending_transition(adacor, ReservedEpoch);
      !run_phase0.
 
-+energy_price_spike(_)[artifact_name("energy_price")]
-  : active_schema(adacor) | pending_transition(_, _)
-  <- true.   // Already in ADACOR or transition in progress — no-op
++energy_price_spike(P)
+  <- .print("FALLBACK CATCH: Energy spike event received: ", P);
+     ?active_schema(S);
+     .print("Current active schema is: ", S).
 
-+energy_price_normal(Price)[artifact_name("energy_price")]
++energy_price_normal(Price)
   : active_schema(adacor) & not pending_transition(_, _)
   <- .print("Energy normal: ", Price, " EUR/MWh — reverting to PROSA");
-     getSimTime(SimT);
+     !revert_to_prosa(Price).
+
++energy_price_normal(Price)
+  : pending_transition(adacor, _)
+  <- .print("Energy normal received while transitioning to ADACOR. Reverting after commit.");
+     +pending_revert(Price).
+
++!revert_to_prosa(Price)
+  <- getSimTime(SimT);
      initiateTransition("prosa", SimT, ReservedEpoch);
      +pending_transition(prosa, ReservedEpoch);
      !run_phase0.
@@ -46,22 +58,26 @@
      !await_phase0_drain.
 
 +!await_phase0_drain
-  <- getActiveLocks(Locks);
+  <- getActiveLocks(LocksStr);
+     .term2string(Locks, LocksStr);
      if (Locks == []) {
          cancelTimer("phase0_transition");
          .print("Phase0: all negotiations drained — advancing to Phase1");
          !run_phase1;
      } else {
-         .wait(500);
-         !await_phase0_drain;
+         startTimer("phase0_poll", 500, self);
      }.
+
++timer_expired("phase0_poll", _)
+  <- !await_phase0_drain.
 
 // Phase 0 TTL expired — compensating abort for all active locks.
 // The supervisor iterates the registry directly and sends to each pair.
 // No Java broadcast helper is used: .send() in Jason is the correct mechanism.
 +timer_expired("phase0_transition", _)
   <- .print("Phase0 TTL expired — executing compensating abort");
-     getActiveLocks(Locks);
+     getActiveLocks(LocksStr);
+     .term2string(Locks, LocksStr);
      !abort_all_locks(Locks);
      !run_phase1.
 
@@ -100,16 +116,13 @@
 
 +!await_phase1_acks(Pending)
   : Pending \== []
-  <- .wait(suspend_ack(Who)[source(_)], 500, TimedOut);
-     if (TimedOut) {
-         !await_phase1_acks(Pending)
-     } else {
-         .delete(Who, Pending, NewPending);
-         !await_phase1_acks(NewPending)
-     }.
+  <- .wait(suspend_ack(Who)[source(_)]);
+     .delete(Who, Pending, NewPending);
+     !await_phase1_acks(NewPending).
 
 +timer_expired("phase1_transition", _)
   <- .print("Phase1 TTL expired — issuing force_commit decree");
+     .drop_intention(await_phase1_acks(_));
      !do_commit.
 
 // ── Commit ───────────────────────────────────────────────────────────────
@@ -120,7 +133,12 @@
      commitTransition(SimT);
      -+active_schema(TargetSchema);
      -pending_transition(TargetSchema, Epoch);
-     .print("Schema committed: ", TargetSchema, " epoch=", Epoch).
+     .print("Schema committed: ", TargetSchema, " epoch=", Epoch);
+     if (pending_revert(P)) {
+         -pending_revert(P);
+         .print("Executing pending revert to prosa!");
+         !revert_to_prosa(P);
+     }.
 
 // ── AMR Grid Saturation: Deadlock Resolution (PROSA mode) ────────────────
 
@@ -143,7 +161,8 @@
 // registry explicitly stores the order holon agent name, not the UUID.
 +!suspend_low_priority_holons
   <- ?active_order_holons(Orders);
-     getActiveLocks(Locks);
+     getActiveLocks(LocksStr);
+     .term2string(Locks, LocksStr);
      .findall(O,
          (.member(O, Orders) & not .member(lock(_, _, O), Locks)),
          LowPri);

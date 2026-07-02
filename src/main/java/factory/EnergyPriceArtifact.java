@@ -54,41 +54,39 @@ public class EnergyPriceArtifact extends Artifact {
             if (MainSimulator.INSTANCE.forceSpikeAt != null && simTime >= MainSimulator.INSTANCE.forceSpikeAt) {
                 newPrice = Math.max(newPrice, spikeThresholdEurMwh + 15.0);
             }
-            synchronized(priceLock) {
-                if (Math.abs(newPrice - currentPrice) > 1e-6) {
-                    beginExtSession();
-                    try {
-                        currentPrice = newPrice;
-                        if (hasObsProperty("energy_price")) {
-                            updateObsProperty("energy_price", currentPrice);
-                        }
-                        signal("energy_price_changed", currentPrice);
-                    } finally {
-                        endExtSession();
-                    }
+            if (Math.abs(newPrice - currentPrice) > 1e-6 || (!spikeActive && newPrice >= spikeThresholdEurMwh) || (spikeActive && newPrice < spikeThresholdEurMwh * 0.90)) {
+                try {
+                    System.out.println("[EnergyPriceArtifact] Submitting internalUpdatePrice for newPrice=" + newPrice + " at simT=" + simTime);
+                    execInternalOp("internalUpdatePrice", newPrice, simTime);
+                } catch (Exception e) {
+                    System.err.println("Failed to execInternalOp in EnergyPriceArtifact: " + e);
                 }
-                
-                if (!spikeActive && currentPrice >= spikeThresholdEurMwh) {
-                    spikeActive = true;
-                    beginExtSession();
-                    try {
-                        defineObsProperty("energy_price_spike", currentPrice);
-                        signal("energy_price_spike", currentPrice);
-                    } finally {
-                        endExtSession();
-                    }
-                    log("Price spike: " + currentPrice + " EUR/MWh at simT=" + simTime);
-                } else if (spikeActive && currentPrice < spikeThresholdEurMwh * 0.90) {
-                    spikeActive = false;
-                    beginExtSession();
-                    try {
-                        removeObsProperty("energy_price_spike");
-                        signal("energy_price_normal", currentPrice);
-                    } finally {
-                        endExtSession();
-                    }
-                    log("Price normal: " + currentPrice + " EUR/MWh at simT=" + simTime);
+            }
+        }
+    }
+
+    @INTERNAL_OPERATION
+    void internalUpdatePrice(double newPrice, double simTime) {
+        System.out.println("[EnergyPriceArtifact] Executing internalUpdatePrice for newPrice=" + newPrice);
+        synchronized(priceLock) {
+            if (Math.abs(newPrice - currentPrice) > 1e-6) {
+                currentPrice = newPrice;
+                if (hasObsProperty("energy_price")) {
+                    updateObsProperty("energy_price", currentPrice);
                 }
+                signal("energy_price_changed", currentPrice);
+            }
+            
+            if (!spikeActive && currentPrice >= spikeThresholdEurMwh) {
+                spikeActive = true;
+                defineObsProperty("energy_price_spike", currentPrice);
+                signal("energy_price_spike", currentPrice);
+            } else if (spikeActive && currentPrice < spikeThresholdEurMwh * 0.90) {
+                spikeActive = false;
+                if (hasObsProperty("energy_price_spike")) {
+                    removeObsProperty("energy_price_spike");
+                }
+                signal("energy_price_normal", currentPrice);
             }
         }
     }

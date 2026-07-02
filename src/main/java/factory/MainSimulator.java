@@ -164,6 +164,9 @@ public class MainSimulator {
         schemaEpoch.set(0);
         
         // 4. start simulation tick loop thread
+        logger.info("Waiting for JaCaMo agents to spawn...");
+        Thread.sleep(5000); // Wait for agents to parse and boot
+        
         Thread tickLoop = new Thread(this::tickLoop, "TMC-TickLoop");
         tickLoop.setDaemon(true);
         tickLoop.start();
@@ -196,7 +199,7 @@ public class MainSimulator {
                 nerLatch = new CountDownLatch(registeredAgentCount);
                 if (!nerLatch.await(TICK_QUORUM_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
                     droppedNerCount.incrementAndGet();
-                    logger.warn("NER Quorum timeout. Proceeding anyway.");
+                    logger.trace("NER Quorum timeout. Proceeding anyway.");
                 }
                 
                 double computedDt = MAX_DT;
