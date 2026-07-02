@@ -93,18 +93,18 @@ mas factory_twin {
     }
 
     workspace factory_ws {
-        artifact base_station_1  : factory.BaseStationArtifact("S1", 1, 45.0,  5.0,  0.005, 0)
-        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 120.0, 15.0, 0.012, 0)
-        artifact base_station_3  : factory.BaseStationArtifact("S3", 3, 30.0,  2.0,  0.002, 0)
-        artifact base_station_4  : factory.BaseStationArtifact("S4", 4, 240.0, 30.0, 0.008, 0)
-        artifact test_bench      : factory.TestBenchArtifact("S5", 0)
-        artifact amr_artifact    : factory.AMRArtifact(20, 12, 2)
-        artifact utility_system  : factory.UtilitySystemArtifact()
-        artifact timer_artifact  : factory.TimerArtifact()
-        artifact energy_price    : factory.EnergyPriceArtifact("price_series.csv")
-        artifact database        : factory.DatabaseArtifact("factory_history.db")
-        artifact telemetry       : factory.TelemetryArtifact(8080)
-        artifact supervisor_artifact : factory.SupervisorArtifact()   // Phase 3 addition
+        artifact base_station_1  : factory.BaseStationArtifact("S1", 1, 45.0,  5.0,  0.005, {{RUN_ID}})
+        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 120.0, 15.0, 0.012, {{RUN_ID}})
+        artifact base_station_3  : factory.BaseStationArtifact("S3", 3, 30.0,  2.0,  0.002, {{RUN_ID}})
+        artifact base_station_4  : factory.BaseStationArtifact("S4", 4, 240.0, 30.0, 0.008, {{RUN_ID}})
+        artifact test_bench      : factory.TestBenchArtifact("S5", {{RUN_ID}})
+        artifact amr_artifact    : factory.AMRArtifact(20, 12, 2, {{RUN_ID}})
+        artifact utility_system  : factory.UtilitySystemArtifact({{RUN_ID}})
+        artifact timer_artifact  : factory.TimerArtifact({{RUN_ID}})
+        artifact energy_price    : factory.EnergyPriceArtifact("price_series.csv", {{RUN_ID}})
+        artifact database        : factory.DatabaseArtifact("factory_history.db", {{RUN_ID}})
+        artifact telemetry       : factory.TelemetryArtifact(8080, {{RUN_ID}})
+        artifact supervisor_artifact : factory.SupervisorArtifact({{RUN_ID}})   // Phase 3 addition
     }
 
     organisation factory_prosa_org : prosa_org.xml {

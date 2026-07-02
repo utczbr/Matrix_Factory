@@ -1,13 +1,53 @@
 # Phase 4: Production Scale (Monte Carlo Simulation) — Implementation Plan
 
-> **Revision note:** this draft was checked against the live repository a second time after
-> initial review and corrected on six points: the `factory.jcm` agent count (13, not 12), an
-> unflagged `0.0.0.0` bind on the Python daemon, a `TelemetryHub` connection-limit rule that
-> incorrectly keyed exclusivity on `run_id` instead of dashboard session, a vacuous assertion in
-> the seeding test, a `DatabaseArtifact` failure path that could silently drop records on a failed
-> batch commit, and a missing wall-clock (39-day) success criterion from doc5 that had been
-> replaced by the simulated-time (8760h) figure from doc1 instead of checking both. All six are
-> fixed in place below.
+> **Revision note (third audit, current):** the repository was re-pulled from
+> `github.com/utczbr/Matrix_Factory` (`main`) and re-checked file-by-file. Since the previous
+> revision of this plan, **`docs/phases_archive/Phase3.5.md` has been executed and its code is now
+> live in the repo**, closing all seven gaps the original Current State Audit below had flagged as
+> blocking: `DatabaseArtifact` (real async queue + WAL + backpressure, including the batch-commit
+> failure path), `TelemetryArtifact` + `TelemetryWebSocketEndpoint` (WebSocket send wired, no
+> longer commented out, confirmed-delivery semantics implemented), `visualization/` (a real
+> `index.html` / `dashboard.js` / `factory_layout.json` single-run dashboard now exists),
+> `sim_bridge_server.py` (loopback bind fixed, `run_id`/`stack_id` seeding wired via a standalone
+> `derive_seed()` helper), `MainSimulator.java` (constructor now takes `runId`/`port` instead of
+> hardcoding `0`/`50051`), and `factory.jcm`/`factory.jcm.template` (templated `run_id({{RUN_ID}})`
+> rendered via `scripts/render_factory_jcm.py`). This was verified by direct inspection of the
+> current file contents, not by trusting Phase 3.5's own checklist.
+>
+> **What this changes about Phase 4:** the plan's original framing — "the historian, telemetry
+> pipeline, and dashboard don't exist as working code" — is now stale and is corrected in the audit
+> below. Components E ("DatabaseArtifact — Real Implementation"), F ("TelemetryArtifact — Real
+> Implementation"), and part of Component D (`MainSimulator`'s runId/port parameterization)
+> described further down in this document **build on top of that Phase 3.5 baseline rather than
+> building from nothing** — the "Before" code samples in those sections describing hardcoded/stub
+> state predate Phase 3.5 and no longer match the repository. The target designs in those sections
+> remain accurate; their premise (what already exists) needed updating. Per-component status notes
+> are inserted below at each affected section.
+>
+> **What genuinely remains unimplemented**, re-confirmed against the live repo rather than carried
+> over from the prior draft: there is still no `daemon_launcher.py`, no `multiprocessing.get_context
+> ('spawn')` orchestrator, no `os.sched_setaffinity()` call, and no `taskset` invocation anywhere in
+> the repo (Component A, in full). There is still no `scripts/generate_factory_jcm.py` — only the
+> single-run `scripts/render_factory_jcm.py` from Phase 3.5 exists. There is still no `RunManager`,
+> and `MainSimulator.main()` remains a single-process, single-run entry point — nothing in the repo
+> instantiates more than one `MainSimulator` per JVM (Component D's fan-out orchestration, in full).
+> `TelemetryWebSocketEndpoint` remains the Phase 3.5 single-global-session stand-in (an
+> `AtomicReference<Session>` that evicts any prior session on new connect) — there is no `run_id`
+> query-param routing, no per-run frame filtering, and no Case-1/Case-2 connection-limit semantics
+> from doc6 §6 (Component F's multi-session `TelemetryHub` work, in full). `visualization/dashboard.js`
+> has no run selector, no `CLIENT_TOKEN`, and no WebGL budget guard — it is exactly the Phase 3.5
+> single-run baseline (Component G, in full). The Python gRPC server (`serve()` in
+> `sim_bridge_server.py`) still hardcodes `max_workers: int = 4` rather than deriving it from the
+> shared `threads = max(1, os.cpu_count() // 30)` formula — `GrpcClientBridge.java` on the Java side
+> already derives this correctly, but the Python side does not yet (doc4 §4.6, part of Component B).
+> There is no `launch_phase4.sh` and no 30×8760h soak-test tooling (Component A/V8).
+>
+> Six prior-revision corrections remain valid and unchanged: the `factory.jcm` agent count (13, not
+> 12, reconfirmed — 1 supervisor + 5 order holons + 5 resource holons + 2 AMRs), the (now-fixed)
+> `0.0.0.0` bind, the `TelemetryHub` connection-limit rule keyed on dashboard session rather than
+> `run_id`, the seeding-test assertion fix, the `DatabaseArtifact` batch-commit failure path (now
+> implemented in the repo — see below), and checking both the 8760h simulated-time and 39-day
+> wall-clock budgets.
 
 ## Background
 
@@ -29,10 +69,14 @@ tags (§6 WebSocket hardening, §7 Phase 4 addenda) as the dashboard's Phase 4 s
 
 ### Current State Audit
 
-Before scoping work, the repository was pulled (`github.com/utczbr/Matrix_Factory`, `main`) and
-checked file-by-file against the doc5 Phase 4 success criteria. Two classes of finding emerged:
+The repository was re-pulled (`github.com/utczbr/Matrix_Factory`, `main`, via the codeload tarball
+endpoint) and checked file-by-file against the doc5 Phase 4 success criteria. This is the third
+pass over this section; the repository has changed materially since the previous pass because
+`docs/phases_archive/Phase3.5.md` — a prerequisite plan that closed out the single-instance
+baseline for exactly the components this document originally flagged as missing — has since been
+implemented. Three classes of finding now emerge instead of two:
 
-**Correctly implemented already — reusable as-is:**
+**Correctly implemented already — reusable as-is (unchanged from prior audits):**
 - `physical_engine/factory_simulation/pemfc_model.py` — `batch_polarization_sweep` uses a
   pre-allocated 2-D scratchpad indexed by `i % numba_threads`, `@njit(nogil=True, cache=True)`
   with no `get_thread_id()`, exactly per doc4 §4.2.
@@ -42,47 +86,82 @@ checked file-by-file against the doc5 Phase 4 success criteria. Two classes of f
   `Math.max(1, availableProcessors() / 30)` and already takes `port` as a constructor argument,
   which is exactly the shape Phase 4's fan-out needs to replicate 30 times.
 
-**Gaps found — these block Phase 4 and are scoped below.** The doc1/doc3/doc6
-`[Status: Production-Verified]` tags on some of these describe a *finalized specification*, not
-verified running code; the actual files are materially behind that label:
+**Closed since the last audit — Phase 3.5 delivered these, confirmed by direct inspection of the
+current repo (not by trusting Phase 3.5's own checklist):**
 
-| File | Actual state found | doc reference implying it should already exist |
+| File | Previous finding | Current state (re-verified) |
 |---|---|---|
-| `src/main/java/factory/MainSimulator.java` | `public final int runId = 0;` hardcoded; `grpcBridge = new GrpcClientBridge(50051);` hardcoded single port | doc1 §3 "routes RPCs across 30 isolated Python daemons" |
-| `factory.jcm` | One workspace, 13 agents (1 supervisor + 5 order holons + 5 resource holons + 2 AMRs), `run_id(0)` static belief on every order holon | doc1 §3 1:30 fan-out topology |
-| `physical_engine/sim_bridge_server.py` | Single-daemon script; `_NUMBA_THREADS` defaults to hardcoded `2`; `serve(max_workers=4)` hardcoded; binds `0.0.0.0:{port}` (no loopback restriction); no `run_id`/`stack_id` constructor params | doc1 §3 (dynamic thread budget), doc4 §4 pt. 3 (deterministic seeding) |
-| — (no such file) | No `daemon_launcher.py`, no `multiprocessing.get_context('spawn')` orchestrator, no `os.sched_setaffinity()` anywhere in the repo | doc1 §3 mandates exactly this launcher pattern |
-| `src/main/java/factory/DatabaseArtifact.java` | 53 lines; synchronous `PreparedStatement.executeUpdate()` directly on the CArtAgO operation thread; no queue, no WAL pragmas, no backpressure signal | doc3 §4.1, doc5 Phase 4 criterion ("300,000-record bounded queue with adaptive drain-to-occupancy batching") |
-| `src/main/java/factory/TelemetryArtifact.java` | 36 lines; the WebSocket send call is commented out (`// wsSession.getAsyncRemote().sendObject(...)`); comment reads *"the actual frontend dashboard is Phase 3"* | doc3 §4.2, doc6 §2–§5 |
-| `visualization/` | Directory does not exist. No `index.html`, `dashboard.js`, `factory_layout.json`, or WebSocket server anywhere in the repo | doc6 §2–§5 marked "Production-Verified (Phase 1 & 2)" |
+| `src/main/java/factory/DatabaseArtifact.java` | 53 lines, synchronous, no queue/WAL/backpressure | 112 lines. `ArrayBlockingQueue<>(300_000)`, `journal_mode=WAL` / `wal_autocheckpoint=100` / `synchronous=NORMAL` pragmas, `database_backpressure`/`database_pressure_normal` hysteresis at 300,000/3,000, adaptive `min(MAX_BATCH, queue.size())` drain every 500ms, **and** the batch-commit failure path re-queues drained-but-uncommitted records and signals `database_batch_commit_failed` instead of dropping them silently |
+| `src/main/java/factory/TelemetryArtifact.java` | 36 lines, WebSocket send commented out | 97 lines. `broadcast()` decimates to ~18Hz before touching the queue, a real `consumeLoop()` thread sends binary frames via `sendBinary(..., callback)`, and `lastPublishedSimTimeS` advances only inside the `result.isOK()` branch of that callback (confirmed-delivery semantics, not queue-offer time) |
+| `src/main/java/factory/TelemetryWebSocketEndpoint.java` | Did not exist | Exists. Single-session `AtomicReference<Session>` endpoint at `/telemetry`; newest `@OnOpen` evicts and closes the prior session |
+| `visualization/` | Directory did not exist | Exists: `index.html` (28 lines), `dashboard.js` (129 lines), `factory_layout.json` (14 lines). Connects to a bare `ws://127.0.0.1:8080/telemetry` (no query params yet), decodes Protobuf frames, renders on a Canvas 2D floor layer, auto-reconnects on close |
+| `physical_engine/sim_bridge_server.py` — bind address | Bound `0.0.0.0:{port}` | Now binds `127.0.0.1:{port}` (`bind_addr = f"127.0.0.1:{port}"`, line 350) |
+| `physical_engine/sim_bridge_server.py` — seeding | No `run_id`/`stack_id` constructor params anywhere | `SimBridgeServicer.__init__` takes `run_id: int = 0, stack_id: str = "S5"`; a standalone `derive_seed(stack_id, run_id)` helper implements `int.from_bytes(stack_id.encode('utf-8')[:8], 'little') ^ run_id` exactly per doc4 §4 pt. 3; `__main__` exposes `--run-id` on the CLI |
+| `src/main/java/factory/MainSimulator.java` | `public final int runId = 0;` hardcoded; `grpcBridge = new GrpcClientBridge(50051);` hardcoded single port | Constructor is `MainSimulator(int runId, int port)`; `main()` parses `runId`/`port` as the first two positional args, defaulting to `0`/`50051` when absent — default invocation is unchanged, but the class is no longer structurally locked to a single instance |
+| `factory.jcm` | Static `run_id(0)` belief hardcoded on every order holon | `factory.jcm.template` now has `run_id({{RUN_ID}})` on all five order-holon blocks; `scripts/render_factory_jcm.py --run-id=N` renders the committed `factory.jcm` from it. Still one workspace / 13 agents (1 supervisor + 5 order holons + 5 resource holons + 2 AMRs) — the templating exists, the 30-workspace *generation* does not yet |
 
-The practical implication: **Phase 4 cannot be scoped as "add the 30-daemon fan-out on top of a
-working system."** Three pieces doc5/doc6 assume are already solid — the historian, the telemetry
-pipeline, and the dashboard itself — do not exist as working code yet and are on the critical path,
-because Phase 4's entire purpose (surviving 30× concurrent burst load) is the first time these
-components would be exercised hard enough to matter. This plan treats them as Phase 4
-prerequisites (Components E–G below) rather than pretending they're already mitigated.
+**Gaps that still block Phase 4 — re-confirmed against the live repo, not carried over from memory:**
+
+| File / capability | Actual state found | doc reference implying it should exist |
+|---|---|---|
+| — (no such file) | No `daemon_launcher.py`, no `multiprocessing.get_context('spawn')` orchestrator, no `os.sched_setaffinity()`, no `taskset` invocation anywhere in the repo (`grep -rn` for all four returns zero matches) | doc1 §3 mandates exactly this launcher pattern |
+| — (no such file) | No `scripts/generate_factory_jcm.py`. Only `scripts/render_factory_jcm.py` exists, and it renders exactly **one** workspace from `factory.jcm.template` (`--run-id` substitutes a single `{{RUN_ID}}` value) — there is no 30-workspace generator | doc1 §3 1:30 fan-out topology |
+| — (no such file) | No `RunManager` class; `MainSimulator.main()` is a single-process entry point. Nothing in the repo instantiates more than one `MainSimulator` inside a JVM | doc1 §3 "A single JaCaMo JVM instance routes RPCs across 30 isolated Python daemons" |
+| `src/main/java/factory/TelemetryWebSocketEndpoint.java` | Single global `AtomicReference<Session>` — any new connection evicts the prior one regardless of `run_id` or client identity. No `run_id` query-param parsing, no per-run frame filtering, no distinction between "different tab, same run" (must stay open) and "same tab, run switch" (must supersede) | doc6 §6 connection-limit rules (Case 1 vs. Case 2) |
+| `visualization/dashboard.js`, `visualization/index.html` | Connects to a fixed `ws://127.0.0.1:8080/telemetry` with no `run_id`/`client` query params; no run-selector UI, no `CLIENT_TOKEN`, no WebGL thermal-overlay layer, no budget-guard self-disable logic, no dropped-frame divergence check | doc6 §6–§7 Phase-4-tagged addenda |
+| `physical_engine/sim_bridge_server.py` — `serve()` | `max_workers: int = 4` remains hardcoded; not derived from `threads = max(1, os.cpu_count() // 30)`. (Phase 3.5 explicitly deferred this default to Phase 4, per its own Component D notes — it is not an oversight, but it is still open.) | doc4 §4.6 gRPC executor sizing consistency |
+| — (no such file) | No `launch_phase4.sh`, no 30×8760h soak-test harness | doc5 Phase 4 goal |
+
+The practical implication is narrower than the previous audit found: **Phase 4 is no longer
+blocked by the historian, telemetry pipeline, or dashboard not existing** — Phase 3.5 delivered
+working single-instance versions of all three, verified by inspection of the code actually in the
+repo. What Phase 4 is still blocked by is the fan-out multiplication itself: nothing yet turns one
+verified single-run instance into thirty concurrently supervised ones (Components A and D below),
+and nothing yet turns the single-session telemetry/dashboard baseline into the multi-run,
+multi-viewer system doc6 §6–§7 specifies (Components F and G below). Those four components remain
+the critical path.
 
 ---
 
 ## Scope of Phase 4
 
-In scope, mapped to doc5's Phase 4 success criteria and doc6's Phase-4-tagged sections:
+In scope, mapped to doc5's Phase 4 success criteria and doc6's Phase-4-tagged sections. Items are
+annotated with their actual starting point per the audit above — most of this list is no longer
+greenfield work:
 
-1. Deterministic 30-daemon Python launcher with per-daemon CPU/thread budget (doc1 §3).
+1. Deterministic 30-daemon Python launcher with per-daemon CPU/thread budget (doc1 §3). **Fully
+   unbuilt** — no `daemon_launcher.py` exists.
 2. Single-JVM fan-out: one JVM process driving 30 concurrent simulation runs, each bound to its
-   own daemon port, under `taskset` core isolation (doc1 §3).
+   own daemon port, under `taskset` core isolation (doc1 §3). **Fully unbuilt** — `MainSimulator`
+   accepts `runId`/`port` as of Phase 3.5, but no `RunManager` or multi-instance orchestration
+   exists yet.
 3. Deterministic RNG seeding wired end-to-end (`seed = stack_id ⊕ run_id`) (doc4 §4 pt. 3).
+   **Already wired** by Phase 3.5 (`derive_seed()` in `sim_bridge_server.py`) — remaining work here
+   is verification only (Component H / V6).
 4. A real `DatabaseArtifact` — async bounded queue, WAL pragmas, backpressure/hysteresis (doc3 §4.1).
+   **Already implemented** by Phase 3.5, including the batch-commit failure path — remaining work
+   is verification under 30-run burst load (V5), not new code.
 5. A real `TelemetryArtifact` + WebSocket server multiplexed across 30 runs, each tagged by
-   `run_id` (doc3 §4.2, doc6 §4–§5).
-6. A minimal dashboard implementing doc6's run-selector, WebGL performance-budget guard, and
+   `run_id` (doc3 §4.2, doc6 §4–§5). **Partially built**: Phase 3.5 delivered a working
+   single-session `TelemetryArtifact`/`TelemetryWebSocketEndpoint`; the multi-run multiplexing
+   itself (`TelemetryHub`, per-run frame slots, per-client `run_id` subscriptions) is still fully
+   unbuilt.
+6. A dashboard implementing doc6's run-selector, WebGL performance-budget guard, and
    dropped-frame divergence check — the doc6 §7 Phase 4 addenda specifically (full rendering
-   detail — AMR interpolation, station color states, gap recovery — is already fully specified in
-   doc6 §2–§5 and is implemented following that document directly, not re-derived here).
-7. Consistent gRPC executor sizing across Java and Python (doc4 §4.6).
-8. WebSocket endpoint hardening (doc6 §6): loopback binding, one connection per dashboard session, publish-only.
-9. A 30×8760-hour Monte Carlo soak test.
+   detail — AMR interpolation, station color states, gap recovery — was already implemented as a
+   single-run baseline by Phase 3.5 following doc6 §2–§5 directly; this item is the addenda layered
+   on top, not a rebuild). **Partially built**: base skeleton exists, all §6–§7 additions are
+   unbuilt.
+7. Consistent gRPC executor sizing across Java and Python (doc4 §4.6). **Partially built**: the
+   Java side (`GrpcClientBridge.java`) is already correctly sized; the Python side
+   (`sim_bridge_server.py`'s `serve()`) still hardcodes `max_workers=4`.
+8. WebSocket endpoint hardening (doc6 §6): loopback binding, one connection per dashboard session,
+   publish-only. **Partially built**: the Phase 3.5 endpoint already evicts stale sessions and is
+   loopback-reachable-only via the JVM's own binding; the *correct* per-dashboard-session (not
+   per-`run_id`) exclusivity rule and the publish-only inbound-frame rejection are not yet
+   implemented.
+9. A 30×8760-hour Monte Carlo soak test. **Fully unbuilt** — no `launch_phase4.sh`, no soak-test
+   harness.
 
 Out of scope: re-litigating Phase 1–3 physics/MAS correctness (already verified); TLS/JWT
 production auth for the dashboard (doc6 §6 describes it as required for *public* exposure — Phase
@@ -261,12 +340,23 @@ if __name__ == "__main__":
 
 ---
 
-### Component B: `sim_bridge_server.py` — Fixes
+### Component B: `sim_bridge_server.py` — Remaining Fixes
+
+> **Status update:** of the four changes originally scoped here, **two are already done** by
+> Phase 3.5 and confirmed live in the repo: change #2 (`run_id`/`stack_id` constructor params +
+> seeded RNG, via the `derive_seed()` helper) and change #3 (loopback-only bind,
+> `bind_addr = f"127.0.0.1:{port}"`). Their code samples are left in place below only as a record —
+> no further action needed on either. Changes #1 (remove the silent `NUMBA_NUM_THREADS` default of
+> `2`) and #4 (derive `max_workers` from the shared thread budget instead of the hardcoded `4`)
+> remain open; the live `_NUMBA_THREADS = int(os.environ.get("NUMBA_NUM_THREADS", "2"))` and
+> `serve(..., max_workers: int = 4, ...)` signatures are unchanged from the original finding.
+> Phase 3.5's own text explicitly deferred #4 to this plan rather than touching it early, so this
+> is expected staleness, not drift.
 
 #### [MODIFIED] `physical_engine/sim_bridge_server.py`
 
-Three targeted changes; the `AdvanceTime`/`RunBatchTest`/`HealthCheck` RPC logic and the
-`_physics_step_lock` pattern are unchanged.
+Four targeted changes were originally scoped here; the `AdvanceTime`/`RunBatchTest`/`HealthCheck` RPC logic and the
+`_physics_step_lock` pattern are unchanged throughout.
 
 **1. Remove the hardcoded thread default; the value must come from the launcher's env
 injection only, so a missing env var fails loud instead of silently capping at 2:**
@@ -388,9 +478,20 @@ kill "${LAUNCHER_PID}" 2>/dev/null || true
 
 ### Component D: Single-JVM 1:30 Fan-Out — `MainSimulator` and `factory.jcm`
 
-This is the architectural core of Phase 4. `MainSimulator` currently assumes it is the only
-simulation instance in the JVM (`public final int runId = 0`, one hardcoded `GrpcClientBridge`).
-Hand-authoring 30 copies of the 13-agent block in `factory.jcm` (390 agents) is both unwieldy and
+> **Status update:** Phase 3.5 already parameterized `MainSimulator`'s constructor to
+> `MainSimulator(int runId, int port)` and already templated `factory.jcm.template` with
+> `run_id({{RUN_ID}})`, rendered via `scripts/render_factory_jcm.py`. The "Before" framing directly
+> below (`public final int runId = 0`, a single hardcoded `GrpcClientBridge`) describes the
+> pre-Phase-3.5 state and no longer matches the repo — it is kept here only as the historical
+> baseline the `RunManager` code below is diffed against. What Phase 3.5 did **not** deliver, and
+> what remains this component's actual scope, is everything below the class-level parameterization:
+> the `RunManager` that owns 30 `MainSimulator` instances inside one JVM, and
+> `scripts/generate_factory_jcm.py` to emit 30 workspaces instead of the one
+> `render_factory_jcm.py` renders today. Neither exists in the repo.
+
+This is the architectural core of Phase 4. Historically `MainSimulator` assumed it was the only
+simulation instance in the JVM; Phase 3.5 fixed the constructor signature, but the JVM still only
+ever runs one instance of it. Hand-authoring 30 copies of the 13-agent block in `factory.jcm` (390 agents) is both unwieldy and
 almost certainly too much concurrent BDI reasoning for two reserved JVM cores — so population
 per run is a tunable, not a fixed copy of the Phase 3 config, and must be validated empirically
 (see Verification V4).
@@ -521,11 +622,28 @@ public class RunManager {
 
 ---
 
-### Component E: `DatabaseArtifact` — Real Implementation (Prerequisite Fix)
+### Component E: `DatabaseArtifact` — Already Implemented (Phase 3.5); Verify at 30× Scale
 
-#### [REWRITTEN] `src/main/java/factory/DatabaseArtifact.java`
+> **Status update:** this component is **already implemented in the repo**, delivered by Phase 3.5,
+> not by this plan. The current `src/main/java/factory/DatabaseArtifact.java` (112 lines) already
+> has the bounded `ArrayBlockingQueue<>(300_000)`, the three WAL pragmas, the
+> `database_backpressure`/`database_pressure_normal` hysteresis pair at the 300,000/3,000
+> thresholds, adaptive drain-to-occupancy batching, and — the specific gap the previous audit
+> flagged — a batch-commit failure path that re-queues drained records and signals
+> `database_batch_commit_failed` rather than dropping them. It already accepts a `runId` parameter
+> on `recordEvent(int runId, ...)`, so it is already structurally the "single shared historian
+> distinguished by a `run_id` column" Strategic Constraint 6 requires — no rewrite is needed to add
+> that column, it is already there. **The code sample immediately below is retained as a reference
+> for what "correct" looks like and matches the live file almost exactly (the live version uses a
+> single `TelemetryRecord` type rather than the `StartRecord`/`FinishRecord` sealed-interface split
+> shown here, and omits the `Logger`; functionally both are equivalent), not as something to newly
+> author.** The only work this component still owes Phase 4 is verification under actual 30-run
+> concurrent load — that is Verification V5 further down, unchanged in scope from the prior draft,
+> since Phase 3.5 explicitly validated this artifact only at `run_count = 1`.
 
-Replaces the 53-line synchronous stub. Per Strategic Constraint 6, this is a **single shared**
+#### [REFERENCE] `src/main/java/factory/DatabaseArtifact.java` (already live; shown for design record)
+
+Per Strategic Constraint 6, this is a **single shared**
 historian across all 30 runs — one `ArrayBlockingQueue<>(300_000)`, one writer thread, one SQLite
 connection, with a `run_id` column distinguishing rows.
 
@@ -720,11 +838,27 @@ public class DatabaseArtifact extends Artifact {
 
 ---
 
-### Component F: `TelemetryArtifact` + WebSocket Server — Real Implementation
+### Component F: `TelemetryArtifact` + WebSocket Server — Multi-Session Hub (still needed)
+
+> **Status update:** unlike Component E, this component's work is **still genuinely needed** — but
+> its starting point has changed. Phase 3.5 already wired a real, working `TelemetryArtifact`
+> (97 lines: decimates to ~18Hz before touching its queue, sends binary frames over a real
+> `jakarta.websocket` session, advances `lastPublishedSimTimeS` only from inside the
+> `sendBinary(...).onResult` confirmed-delivery callback) and a matching
+> `TelemetryWebSocketEndpoint.java`. What Phase 3.5 explicitly did **not** build — and documented as
+> deferred to this plan — is multi-run addressing: the live `TelemetryWebSocketEndpoint` holds a
+> single `AtomicReference<Session>` and closes *any* prior session the instant a new one connects,
+> with no `run_id` or client-identity awareness at all. That means today, two different browser
+> tabs watching the same run_id would incorrectly evict each other (doc6 §6 Case 1, which must be
+> *allowed*), and there is no way to route a run's frames to only the sessions subscribed to that
+> run. The rewrite below — a `TelemetryHub`-backed multiplexer with one frame slot per run_id and
+> per-client `run_id` subscriptions — is still accurate as the target design and is still entirely
+> unbuilt. Do not confuse this with Component E: Component E was a documentation staleness issue
+> (the code already existed), Component F is a real, current gap.
 
 #### [REWRITTEN] `src/main/java/factory/TelemetryArtifact.java`
 
-Replaces the 36-line stub. Becomes a `TelemetryHub`-backed multiplexer: one
+Replaces the Phase 3.5 single-session baseline. Becomes a `TelemetryHub`-backed multiplexer: one
 `AtomicReference<TelemetryFrameSnapshot>` slot per run, one non-blocking WebSocket endpoint per
 connected browser client, each client subscribed to exactly one `run_id` at a time.
 
@@ -932,17 +1066,30 @@ public class TelemetryWebSocketEndpoint {
 
 ---
 
-### Component G: Minimal Dashboard — Phase 4 Addenda Only
+### Component G: Dashboard — Phase 4 Addenda on Top of the Phase 3.5 Baseline
 
-`visualization/` does not exist yet, so it must be created from scratch. doc6 §2–§5 is the
+> **Status update:** `visualization/` **already exists** — `index.html` (28 lines), `dashboard.js`
+> (129 lines), and `factory_layout.json` (14 lines) were delivered by Phase 3.5, connect to a bare
+> `ws://127.0.0.1:8080/telemetry`, decode Protobuf frames, and render a Canvas 2D floor layer with
+> auto-reconnect on close, per doc6 §2–§5's single-run baseline. This closes the "no `visualization/`
+> directory" finding from the earlier draft of this plan. What has **not** been built — confirmed
+> absent by grepping `dashboard.js`/`index.html` for `run_id`, `WebGL`, `switchRun`, and
+> `clientToken`, all of which return zero matches — is every doc6 §6–§7 Phase-4-tagged addition:
+> the run selector, `CLIENT_TOKEN` identity, the WebGL thermal-overlay layer, its budget-guard
+> self-disable, and the dropped-frame divergence check. Those additions are this component's actual
+> remaining scope, layered on top of the existing single-run skeleton rather than built from an
+> empty directory.
+
+doc6 §2–§5 is the
 complete, already-frozen rendering spec (Canvas 2D floor layer, AMR interpolation, gap recovery,
-500ms interruption handling) — that is implemented directly from doc6, not redesigned here. This
-component lists only the Phase 4-specific additions doc6 §7 calls out, layered on top:
+500ms interruption handling) — the Phase 3.5 baseline already implements that directly from doc6,
+and it is not redesigned here. This component lists only the Phase 4-specific additions doc6 §7
+calls out, layered on top of the existing files:
 
-#### [NEW] `visualization/index.html`, `visualization/dashboard.js`, `visualization/factory_layout.json`, `visualization/protobuf_decoder.js`
+#### [MODIFIED] `visualization/index.html`, `visualization/dashboard.js`, `visualization/factory_layout.json`; [NEW] `visualization/protobuf_decoder.js`
 
-Base skeleton per doc6 §2.1–§2.5 (two-layer canvas stack, `VisualStateBuffer`, rAF loop,
-`protobufjs`-based `TelemetryFrame.decode()`).
+Existing base skeleton per doc6 §2.1–§2.5 (two-layer canvas stack, `VisualStateBuffer`, rAF loop,
+`protobufjs`-based `TelemetryFrame.decode()`) is retained; the addenda below extend it in place.
 
 #### Phase 4 addenda on top of the base skeleton:
 
@@ -996,7 +1143,14 @@ rebasing, 500ms interruption banner) follows doc6 §2.3–§5.5 verbatim.
 
 ---
 
-### Component H: Seeding & Determinism — Verification Wiring
+### Component H: Seeding & Determinism — Verification Only (wiring already done)
+
+> **Status update:** the seeding formula itself is **already wired** — Phase 3.5 added
+> `derive_seed(stack_id, run_id)` and the `run_id`/`stack_id` constructor parameters to
+> `SimBridgeServicer` exactly as shown in the test below expects. This component was never about
+> building the wiring (it wasn't, even in the prior draft — it was already framed as verification);
+> re-confirming against the live repo just removes any doubt that the test's assumptions hold. The
+> test file itself still does not exist and remains this component's actual, sole deliverable.
 
 #### [NEW] `physical_engine/factory_simulation/seeding_test.py`
 
@@ -1062,28 +1216,29 @@ Full 30×8760h Monte Carlo soak test (Verification V7/V8)
 
 ## File Manifest
 
-| Status | File | Component |
-|---|---|---|
-| NEW | `physical_engine/daemon_launcher.py` | A |
-| MODIFIED | `physical_engine/sim_bridge_server.py` | B |
-| NEW | `physical_engine/factory_simulation/seeding_test.py` | H |
-| NEW | `scripts/launch_phase4.sh` | C |
-| NEW | `scripts/generate_factory_jcm.py` | D |
-| MODIFIED | `src/main/java/factory/MainSimulator.java` | D |
-| NEW | `src/main/java/factory/RunManager.java` | D |
-| REWRITTEN | `src/main/java/factory/DatabaseArtifact.java` | E |
-| REWRITTEN | `src/main/java/factory/TelemetryArtifact.java` | F |
-| NEW | `src/main/java/factory/TelemetryHub.java` | F |
-| NEW | `src/main/java/factory/TelemetryWebSocketEndpoint.java` | F |
-| NEW | `visualization/index.html` | G |
-| NEW | `visualization/dashboard.js` | G |
-| NEW | `visualization/dashboard.css` | G |
-| NEW | `visualization/factory_layout.json` | G |
-| NEW | `visualization/protobuf_decoder.js` | G |
-| GENERATED | `factory_phase4.jcm` (via generate_factory_jcm.py) | D |
+| Status | File | Component | Note |
+|---|---|---|---|
+| NEW | `physical_engine/daemon_launcher.py` | A | Confirmed absent from repo |
+| MODIFIED | `physical_engine/sim_bridge_server.py` | B | Already partially modified by Phase 3.5 (bind, seeding); this plan applies the remaining #1/#4 changes |
+| NEW | `physical_engine/factory_simulation/seeding_test.py` | H | Confirmed absent; the wiring it tests already exists |
+| NEW | `scripts/launch_phase4.sh` | C | Confirmed absent from repo |
+| NEW | `scripts/generate_factory_jcm.py` | D | Confirmed absent; `scripts/render_factory_jcm.py` (single-run only) already exists from Phase 3.5 and is not reused as-is |
+| ALREADY MODIFIED (Phase 3.5); further MODIFIED here | `src/main/java/factory/MainSimulator.java` | D | `runId`/`port` constructor already live; this plan's `RunManager` integration is the remaining change |
+| NEW | `src/main/java/factory/RunManager.java` | D | Confirmed absent from repo |
+| **NONE — already live** | `src/main/java/factory/DatabaseArtifact.java` | E | Fully implemented by Phase 3.5, including the batch-commit failure path; no code change, verification only (V5) |
+| MODIFIED | `src/main/java/factory/TelemetryArtifact.java` | F | Phase 3.5 delivered a working single-session 97-line version; this plan converts it to the multi-run `TelemetryHub`-backed multiplexer |
+| NEW | `src/main/java/factory/TelemetryHub.java` | F | Confirmed absent from repo |
+| MODIFIED | `src/main/java/factory/TelemetryWebSocketEndpoint.java` | F | Phase 3.5's 34-line single-`AtomicReference<Session>` version already exists; this plan adds `run_id`/client routing |
+| MODIFIED | `visualization/index.html` | G | Phase 3.5's 28-line version already exists |
+| MODIFIED | `visualization/dashboard.js` | G | Phase 3.5's 129-line version already exists; run selector / WebGL guard / divergence check are additions |
+| NEW | `visualization/dashboard.css` | G | Confirmed absent from repo |
+| MODIFIED | `visualization/factory_layout.json` | G | Phase 3.5's 14-line `layout_version: "phase3_5_provisional"` version already exists |
+| NEW | `visualization/protobuf_decoder.js` | G | Confirmed absent from repo |
+| GENERATED | `factory_phase4.jcm` (via generate_factory_jcm.py) | D | — |
 
-**Total: 13 new files, 2 rewritten, 1 modified**, plus one generated config. No Phase 1–3 Python
-physics files or Protobuf field numbers are touched.
+**Total: 9 new files, 6 modified (3 of which were themselves already Phase-3.5-authored, not
+pre-Phase-3.5 stubs), 1 file requiring no code change at all.** No Phase 1–3 Python physics files
+or Protobuf field numbers are touched.
 
 ---
 

@@ -2,6 +2,7 @@ package factory;
 
 import cartago.*;
 import jakarta.websocket.Session;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,37 +15,33 @@ public class TelemetryArtifact extends Artifact {
     private static final int QUEUE_CAPACITY = 5_000;
     private static final double PUBLISH_INTERVAL_S = 1.0 / 18.0; // ~18Hz, within 15-20Hz band
 
-    private final ArrayBlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+    private record PendingFrame(int runId, byte[] frameBytes, double simTimeS) {
+    }
+
+    private final ArrayBlockingQueue<PendingFrame> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final AtomicLong droppedTelemetryFrameCount = new AtomicLong(0);
     private volatile double lastPublishedSimTimeS = Double.NEGATIVE_INFINITY;
     private Thread consumerThread;
-    private Server server;
-
-    void init(int port) {
-        server = new Server("127.0.0.1", port, "/", null, TelemetryWebSocketEndpoint.class);
-        try {
-            server.start();
-            logger.info("Telemetry WebSocket server started on port " + port);
-        } catch (Exception e) {
-            logger.error("Failed to start Telemetry WebSocket server", e);
-        }
-        
-        consumerThread = new Thread(this::consumeLoop, "telemetry-artifact-consumer");
+    private int runId;
+    @OPERATION
+    void init(int port, int runId) {
+        this.runId = runId;
+        consumerThread = new Thread(this::consumeLoop, "telemetry-artifact-consumer-" + runId);
         consumerThread.setDaemon(true);
         consumerThread.start();
-        
-        // Also register with MainSimulator
-        MainSimulator.INSTANCE.telemetryArtifact = this;
+
+        RunManager.getSimulator(runId).telemetryArtifact = this;
     }
 
     // In MainSimulator, we use broadcast(TelemetryFrameSnapshot snap) right now.
     @OPERATION
-    public void broadcast(TelemetryFrameSnapshot snap) {
-        if (snap == null) return;
-        if (snap.simTimeS() - lastPublishedSimTimeS < PUBLISH_INTERVAL_S) return;
+    public void broadcast(TelemetryFrameSnapshot snap, int runId) {
+        if (snap == null)
+            return;
+        if (snap.simTimeS() - lastPublishedSimTimeS < PUBLISH_INTERVAL_S)
+            return;
 
-        byte[] frameBytes = snap.payload();
-        boolean offered = queue.offer(frameBytes);
+        boolean offered = queue.offer(new PendingFrame(runId, snap.payload(), snap.simTimeS()));
         if (!offered) {
             droppedTelemetryFrameCount.incrementAndGet();
         }
@@ -53,27 +50,13 @@ public class TelemetryArtifact extends Artifact {
     private void consumeLoop() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                byte[] frame = queue.take();
-                Session s = TelemetryWebSocketEndpoint.currentSession();
-                if (s == null || !s.isOpen()) continue;
-
-                s.getAsyncRemote().sendBinary(
-                    java.nio.ByteBuffer.wrap(frame),
-                    result -> {
-                        if (result.isOK()) {
-                            // Needs access to simTimeS. If we just sent payload(), we can extract it.
-                            // StateSnapshot.extractSimTimeS(frame) logic in doc:
-                            try {
-                                SimBridgeProto.TelemetryFrame parsed = SimBridgeProto.TelemetryFrame.parseFrom(frame);
-                                lastPublishedSimTimeS = parsed.getSimTimeS();
-                            } catch (Exception e) {
-                                // fallback
-                            }
-                        } else {
-                            droppedTelemetryFrameCount.incrementAndGet();
-                        }
-                    }
-                );
+                PendingFrame pending = queue.take();
+                TelemetryHub.broadcast(
+                        pending.runId(),
+                        ByteBuffer.wrap(pending.frameBytes()),
+                        pending.simTimeS(),
+                        () -> lastPublishedSimTimeS = pending.simTimeS(),
+                        droppedTelemetryFrameCount::incrementAndGet);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -83,12 +66,9 @@ public class TelemetryArtifact extends Artifact {
     long getDroppedTelemetryFrameCount() {
         return droppedTelemetryFrameCount.get();
     }
-    
+
     @Override
     protected void dispose() {
-        if (server != null) {
-            server.stop();
-        }
         if (consumerThread != null) {
             consumerThread.interrupt();
         }

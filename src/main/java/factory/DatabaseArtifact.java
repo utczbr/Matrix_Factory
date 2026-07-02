@@ -15,9 +15,12 @@ public class DatabaseArtifact extends Artifact {
     private final ArrayBlockingQueue<TelemetryRecord> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final AtomicBoolean backpressureActive = new AtomicBoolean(false);
     private Connection conn;
+    private int runId;
     private Thread drainThread;
 
-    void init(String dbPath) {
+    @OPERATION
+    void init(String dbPath, int runId) {
+        this.runId = runId;
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             try (Statement s = conn.createStatement()) {

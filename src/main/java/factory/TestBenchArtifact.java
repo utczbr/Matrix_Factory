@@ -14,17 +14,19 @@ import factory.SimBridgeProto.BatchTestResponse;
 import factory.SimBridgeProto.StationStateEnum;
 
 public class TestBenchArtifact extends Artifact {
-    private final ConcurrentHashMap<String, ClientCall<BatchTestRequest, BatchTestResponse>>
-        activeCalls = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ClientCall<BatchTestRequest, BatchTestResponse>> activeCalls = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, java.util.concurrent.CountDownLatch> latches = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicBoolean> completedCalls = new ConcurrentHashMap<>();
 
     public volatile StationSummary currentSummary = StationSummary.IDLE;
     public String stationId;
+    private int runId;
 
+    @OPERATION
     void init(String stationId, int runId) {
         this.stationId = stationId;
-        MainSimulator.INSTANCE.stationArtifacts.add(this);
+        this.runId = runId;
+        RunManager.getSimulator(runId).stationArtifacts.add(this);
     }
 
     @OPERATION
@@ -39,8 +41,8 @@ public class TestBenchArtifact extends Artifact {
 
     @OPERATION
     public void processOrder(String stackId, OpFeedbackParam<String> result) {
-        if (currentSummary.state() != StationStateEnum.STATION_PROVISIONAL_LOCK || 
-            !currentSummary.activeOrderId().equals(stackId)) {
+        if (currentSummary.state() != StationStateEnum.STATION_PROVISIONAL_LOCK ||
+                !currentSummary.activeOrderId().equals(stackId)) {
             failed("Station not locked for this order");
             return;
         }
@@ -52,17 +54,17 @@ public class TestBenchArtifact extends Artifact {
         double pO2Bar = 2.0;
 
         BatchTestRequest req = BatchTestRequest.newBuilder()
-            .setStackId(stackId).setNumCells(numCells)
-            .setOperatingTempK(tempK)
-            .setInletPressureH2Bar(pH2Bar)
-            .setInletPressureO2Bar(pO2Bar)
-            .build();
+                .setStackId(stackId).setNumCells(numCells)
+                .setOperatingTempK(tempK)
+                .setInletPressureH2Bar(pH2Bar)
+                .setInletPressureO2Bar(pO2Bar)
+                .build();
 
         String corrId = UUID.randomUUID().toString();
-        
-        ClientCall<BatchTestRequest, BatchTestResponse> call =
-            MainSimulator.INSTANCE.getGrpcBridge().getChannel().newCall(SimBridgeGrpc.getRunBatchTestMethod(), CallOptions.DEFAULT);
-            
+
+        ClientCall<BatchTestRequest, BatchTestResponse> call = RunManager.getSimulator(runId).getGrpcBridge().getChannel()
+                .newCall(SimBridgeGrpc.getRunBatchTestMethod(), CallOptions.DEFAULT);
+
         activeCalls.put(corrId, call);
         completedCalls.put(corrId, new AtomicBoolean(false));
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
@@ -75,14 +77,17 @@ public class TestBenchArtifact extends Artifact {
                     boolean passed = resp.getPassed();
                     int flags = resp.getFailureFlags();
                     currentSummary = passed
-                        ? new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f)
-                        : new StationSummary(StationStateEnum.STATION_DEFECT_DETECTED, stackId, 1.0f);
+                            ? new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f)
+                            : new StationSummary(StationStateEnum.STATION_DEFECT_DETECTED, stackId, 1.0f);
                     try {
                         execInternalOp("handleResult", corrId, passed, flags);
-                    } catch(Exception e) { e.printStackTrace(); }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     latch.countDown();
                 }
             }
+
             @Override
             public void onClose(Status status, Metadata trailers) {
                 activeCalls.remove(corrId);
@@ -91,7 +96,9 @@ public class TestBenchArtifact extends Artifact {
                         currentSummary = new StationSummary(StationStateEnum.STATION_OFFLINE, stackId, 0.0f);
                         try {
                             execInternalOp("handleResult", corrId, false, 0x10);
-                        } catch(Exception e) { e.printStackTrace(); }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                         latch.countDown();
                     }
                 }
@@ -113,10 +120,10 @@ public class TestBenchArtifact extends Artifact {
         activeCalls.remove(corrId);
         completedCalls.remove(corrId);
         latches.remove(corrId);
-        
+
         result.set(currentSummary.state() == StationStateEnum.STATION_IDLE ? "ok" : "defect");
     }
-    
+
     @INTERNAL_OPERATION
     void handleResult(String corrId, boolean passed, int flags) {
         signal("test_complete_" + corrId, passed, flags);
@@ -129,9 +136,11 @@ public class TestBenchArtifact extends Artifact {
                 currentSummary = StationSummary.IDLE;
                 try {
                     execInternalOp("handleResult", corrId, false, 0x10);
-                } catch(Exception e) {}
+                } catch (Exception e) {
+                }
                 java.util.concurrent.CountDownLatch latch = latches.get(corrId);
-                if (latch != null) latch.countDown();
+                if (latch != null)
+                    latch.countDown();
             }
         });
         activeCalls.clear();
@@ -150,9 +159,9 @@ public class TestBenchArtifact extends Artifact {
         try {
             ArtifactId timerArtifactId = lookupArtifact("timer_artifact");
             execLinkedOp(timerArtifactId, "cancelTimer", orderId);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         log("Station " + stationId + " released for order " + orderId + " — currentSummary reset to IDLE");
     }
-
 
 }

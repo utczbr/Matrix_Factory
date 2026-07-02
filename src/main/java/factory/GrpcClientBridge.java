@@ -18,27 +18,29 @@ public class GrpcClientBridge {
     private final SimBridgeBlockingStub blockingStub;
     private final SimBridgeStub asyncStub;
     private final ExecutorService executor;
+    private final int port;
 
     public GrpcClientBridge(int port) {
+        this.port = port;
         int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 30);
         this.executor = new ThreadPoolExecutor(
-            threads, threads, 0L, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(256),
-            new ThreadPoolExecutor.CallerRunsPolicy()
-        );
+                threads, threads, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(256),
+                new ThreadPoolExecutor.CallerRunsPolicy());
         this.channel = NettyChannelBuilder.forAddress("127.0.0.1", port)
-            .usePlaintext()
-            .executor(this.executor)
-            .build();
+                .usePlaintext()
+                .executor(this.executor)
+                .build();
         this.blockingStub = SimBridgeGrpc.newBlockingStub(channel);
         this.asyncStub = SimBridgeGrpc.newStub(channel);
     }
 
     public void pollUntilReady() {
-        logger.info("Polling gRPC server on port 50051 until ready...");
+        logger.info("Polling gRPC server on port {} until ready...", port);
         while (true) {
             try {
-                SimBridgeProto.HealthStatus status = blockingStub.healthCheck(SimBridgeProto.Empty.getDefaultInstance());
+                SimBridgeProto.HealthStatus status = blockingStub
+                        .healthCheck(SimBridgeProto.Empty.getDefaultInstance());
                 if (status.getReady()) {
                     logger.info("gRPC server is ready.");
                     break;
@@ -57,17 +59,17 @@ public class GrpcClientBridge {
 
     public SimBridgeProto.StepReady advanceTime(double t, double dt, int schemaEpoch) {
         SimBridgeProto.TimeStep req = SimBridgeProto.TimeStep.newBuilder()
-            .setCurrentTime(t)
-            .setDt(dt)
-            .setSchemaEpoch(schemaEpoch)
-            .build();
+                .setCurrentTime(t)
+                .setDt(dt)
+                .setSchemaEpoch(schemaEpoch)
+                .build();
         return blockingStub.advanceTime(req);
     }
 
     public ManagedChannel getChannel() {
         return channel;
     }
-    
+
     public SimBridgeStub getAsyncStub() {
         return asyncStub;
     }

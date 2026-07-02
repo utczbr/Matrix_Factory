@@ -47,8 +47,21 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Thread pinning — must precede ANY Numba import (doc4 §4.2)
 # ---------------------------------------------------------------------------
-_NUMBA_THREADS = int(os.environ.get("NUMBA_NUM_THREADS", "2"))
-os.environ.setdefault("NUMBA_NUM_THREADS", str(_NUMBA_THREADS))
+def _derive_numba_threads() -> int:
+    env_value = os.environ.get("NUMBA_NUM_THREADS")
+    if env_value is not None:
+        return max(1, int(env_value))
+
+    derived = max(1, (os.cpu_count() or 1) // 30)
+    os.environ["NUMBA_NUM_THREADS"] = str(derived)
+    logger.warning(
+        "NUMBA_NUM_THREADS was unset; defaulting to %s for standalone runs.",
+        derived,
+    )
+    return derived
+
+
+_NUMBA_THREADS = _derive_numba_threads()
 
 # ---------------------------------------------------------------------------
 # Conditional imports — proto stubs may not be compiled yet
@@ -309,7 +322,7 @@ class SimBridgeServicer:
 
 def serve(
     port: int = 50051,
-    max_workers: int = 4,
+    max_workers: int | None = None,
     num_cells: int = 200,
     R_internal: float = 0.1,
     T_initial: float = 353.15,
@@ -334,6 +347,9 @@ def serve(
             "physical_engine/protos/sim_bridge.proto"
         )
         sys.exit(1)
+
+    if max_workers is None:
+        max_workers = _NUMBA_THREADS or max(1, (os.cpu_count() or 1) // 30)
 
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers)

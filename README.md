@@ -29,18 +29,51 @@ It features a hybrid architecture combining a Java-based multi-agent system (MAS
 
 ### Python Environment
 1. Ensure Python 3.11+ is installed.
-2. Install the required dependencies:
+2. Create and activate a virtual environment (recommended):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
 ### Running the System
-The multi-agent system runs via Gradle. You can pass various simulation arguments:
+The simulation requires both the Python backend and the Java MAS engine running.
 
+**1. Start the Python physical engine daemon (in `venv`):**
 ```bash
-# Run with max ticks and log epochs
-./gradlew run --args="--max-ticks=100 --log-epochs"
-
-# Run a test simulating an energy price spike
-./gradlew run --args="--price-series=price_series_spike_test.csv --max-ticks=100"
+python -m physical_engine.sim_bridge_server --port=50051 --run-id=0
 ```
+
+**2. Start the Multi-Agent System (MAS) via Gradle:**
+```bash
+# Run with parameter overrides (run_id, port, max_ticks)
+./gradlew run --args="0 50051 --max-ticks=1000"
+```
+
+## Advanced Features (Phase 3.5+)
+
+- **Asynchronous Telemetry:** Embedded Tyrus standalone WebSocket server (`ws://127.0.0.1:8080/telemetry`) securely multiplexes and streams real-time simulation state to clients without blocking BDI reasoning.
+- **Asynchronous Database Drain:** Thread-safe, lock-free SQLite JDBC integration utilizing `ArrayBlockingQueue`, WAL pragmas, and adaptive batching for high-throughput historic data storage.
+
+## Phase 4: High-Concurrency Monte Carlo Scale
+
+Phase 4 introduces a Single-JVM Fan-Out architecture, allowing up to 30 parallel, fully isolated JaCaMo simulation runs to execute within a single JVM instance. This avoids the memory overhead of spawning 30 separate JVMs.
+
+Key features of Phase 4 scaling:
+- **Namespace-Rewriting Generator:** `scripts/generate_factory_jcm.py` dynamically rewrites ASL definitions and bindings to create strictly isolated agent namespaces (e.g., `run_0_amr_agent`, `run_1_amr_agent`) without cross-talk.
+- **Isolated State Registry:** `RunManager` explicitly tracks and binds artifact state to its respective run ID.
+- **Pinned Execution:** The multi-agent JVM operates on a restricted set of CPU cores while the Python physical engine daemons utilize the rest.
+
+### Running Phase 4 (Full Scale)
+To launch a full 30-run Monte Carlo simulation:
+```bash
+./scripts/launch_phase4.sh
+```
+This script will automatically:
+1. Spin up 30 isolated Python `sim_bridge_server` daemons (ports `50051`-`50080`).
+2. Generate the isolated `factory_phase4.jcm` and required ASL files using the namespace-rewriting generator.
+3. Wait for all gRPC endpoints to become ready.
+4. Launch a single, taskset-pinned JVM via Gradle that orchestrates all 30 parallel runs.

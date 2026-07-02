@@ -8,15 +8,16 @@ public class SupervisorArtifact extends Artifact {
     /**
      * Maps OrderId (UUID string) → LockEntry(StationId, OrderHolonName).
      *
-     * Populated by Resource Holons on accept_proposal (transition to busy_processing),
+     * Populated by Resource Holons on accept_proposal (transition to
+     * busy_processing),
      * so the supervisor knows which agent pair to abort or monitor.
      * The station agent name and order holon name are stored as atoms (un-quoted),
      * enabling direct use in Jason .send() calls and list membership checks.
      */
-    private final ConcurrentHashMap<String, LockEntry> reservationRegistry =
-        new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LockEntry> reservationRegistry = new ConcurrentHashMap<>();
 
-    private record LockEntry(String stationAgentName, String orderHolonName) {}
+    private record LockEntry(String stationAgentName, String orderHolonName) {
+    }
 
     private MainSimulator mainSimulator;
 
@@ -25,32 +26,36 @@ public class SupervisorArtifact extends Artifact {
         this.mainSimulator = ms;
     }
 
-    void init() {
-        MainSimulator.INSTANCE.supervisorArtifact = this;
-        
-        if (MainSimulator.INSTANCE.cnpSlowAccept) {
+    private int runId;
+    @OPERATION
+    void init(int runId) {
+        this.runId = runId;
+        RunManager.getSimulator(runId).supervisorArtifact = this;
+
+        if (RunManager.getSimulator(runId).cnpSlowAccept) {
             defineObsProperty("test_hook_cnp_slow_accept", true);
         }
-        if (MainSimulator.INSTANCE.ttl > 0) {
-            defineObsProperty("test_hook_ttl", MainSimulator.INSTANCE.ttl);
+        if (RunManager.getSimulator(runId).ttl > 0) {
+            defineObsProperty("test_hook_ttl", RunManager.getSimulator(runId).ttl);
         }
-        if (MainSimulator.INSTANCE.blockAckFrom != null) {
-            defineObsProperty("test_hook_block_ack_from", MainSimulator.INSTANCE.blockAckFrom);
+        if (RunManager.getSimulator(runId).blockAckFrom != null) {
+            defineObsProperty("test_hook_block_ack_from", RunManager.getSimulator(runId).blockAckFrom);
         }
-        if (MainSimulator.INSTANCE.injectEpochMismatchOn != null) {
-            defineObsProperty("test_hook_inject_epoch_mismatch", MainSimulator.INSTANCE.injectEpochMismatchOn);
+        if (RunManager.getSimulator(runId).injectEpochMismatchOn != null) {
+            defineObsProperty("test_hook_inject_epoch_mismatch", RunManager.getSimulator(runId).injectEpochMismatchOn);
         }
     }
 
     // ── Lock Registry Operations ─────────────────────────────────────────
 
     /**
-     * Register a confirmed lock when a Resource Holon transitions to busy_processing.
+     * Register a confirmed lock when a Resource Holon transitions to
+     * busy_processing.
      *
      * Called from resource_holon.asl's accept_proposal plan with three arguments:
-     *   - orderId:        the stable UUID from the CFP (quoted Jason string)
-     *   - stationName:    the Resource Holon's agent name atom (e.g., station_1)
-     *   - orderHolonName: the Order Holon's agent name atom (e.g., order_2)
+     * - orderId: the stable UUID from the CFP (quoted Jason string)
+     * - stationName: the Resource Holon's agent name atom (e.g., station_1)
+     * - orderHolonName: the Order Holon's agent name atom (e.g., order_2)
      *
      * Storing the order holon name eliminates the need to derive it from the UUID
      * and prevents the type-mismatch that would cause the grid-saturation filter to
@@ -60,7 +65,7 @@ public class SupervisorArtifact extends Artifact {
     void registerLock(String orderId, String stationName, String orderHolonName) {
         reservationRegistry.put(orderId, new LockEntry(stationName, orderHolonName));
         log("Registry: registered " + orderId + " → [" + stationName
-            + ", " + orderHolonName + "]");
+                + ", " + orderHolonName + "]");
     }
 
     /**
@@ -78,21 +83,22 @@ public class SupervisorArtifact extends Artifact {
      * lock(OrderId, StationAgentName, OrderHolonName) terms.
      *
      * Term format:
-     *   lock("f3a1-uuid", station_1, order_2)
-     *   ┌── quoted string: UUID may contain hyphens (invalid atom characters)
-     *                        └── unquoted atoms: valid Jason identifiers
+     * lock("f3a1-uuid", station_1, order_2)
+     * ┌── quoted string: UUID may contain hyphens (invalid atom characters)
+     * └── unquoted atoms: valid Jason identifiers
      *
      * Caller (supervisor_agent) uses this to:
-     *   1. Grid saturation: filter Order Holons NOT in any lock → low-priority candidates
-     *   2. Phase 0 abort:   extract (StationName, OrderHolonName) pairs for .send() dispatch
+     * 1. Grid saturation: filter Order Holons NOT in any lock → low-priority
+     * candidates
+     * 2. Phase 0 abort: extract (StationName, OrderHolonName) pairs for .send()
+     * dispatch
      */
     @OPERATION
     void getActiveLocks(OpFeedbackParam<String> locks) {
         StringBuilder sb = new StringBuilder("[");
-        reservationRegistry.forEach((oid, entry) ->
-            sb.append("lock(\"").append(oid).append("\",")
-              .append(entry.stationAgentName()).append(",")    // unquoted atom
-              .append(entry.orderHolonName()).append("),")     // unquoted atom
+        reservationRegistry.forEach((oid, entry) -> sb.append("lock(\"").append(oid).append("\",")
+                .append(entry.stationAgentName()).append(",") // unquoted atom
+                .append(entry.orderHolonName()).append("),") // unquoted atom
         );
         if (sb.length() > 1 && sb.charAt(sb.length() - 1) == ',') {
             sb.deleteCharAt(sb.length() - 1);
@@ -105,16 +111,18 @@ public class SupervisorArtifact extends Artifact {
 
     /**
      * Begins Phase 0 of the two-phase commit. Calls MainSimulator.beginTransition()
-     * to reserve the next epoch. Returns the reserved epoch number for the supervisor
+     * to reserve the next epoch. Returns the reserved epoch number for the
+     * supervisor
      * to log and later verify at commit.
      */
+
     @OPERATION
     void initiateTransition(String targetSchema, double currentSimTimeS,
-                            OpFeedbackParam<Integer> reservedEpoch) {
+            OpFeedbackParam<Integer> reservedEpoch) {
         OrgSchemaTransition t = mainSimulator.beginTransition(targetSchema, currentSimTimeS);
         reservedEpoch.set(t.newEpoch());
         log("Transition initiated: target=" + targetSchema + " reservedEpoch="
-            + t.newEpoch() + " simT=" + currentSimTimeS);
+                + t.newEpoch() + " simT=" + currentSimTimeS);
     }
 
     /**
@@ -130,8 +138,8 @@ public class SupervisorArtifact extends Artifact {
             return;
         }
         mainSimulator.commitTransition(
-            t.advanceTo(OrgSchemaTransition.TransitionPhase.COMMITTED, currentSimTimeS));
+                t.advanceTo(OrgSchemaTransition.TransitionPhase.COMMITTED, currentSimTimeS));
         log("Transition committed: schema=" + t.targetSchema()
-            + " epoch=" + t.newEpoch() + " simT=" + currentSimTimeS);
+                + " epoch=" + t.newEpoch() + " simT=" + currentSimTimeS);
     }
 }

@@ -10,22 +10,28 @@ import java.io.InputStream;
 public class EnergyPriceArtifact extends Artifact {
     private final NavigableMap<Double, Double> priceAtSimTime = new TreeMap<>();
     private final Object priceLock = new Object();
-    
+
     private double currentPrice = 0.0;
-    
+
     private double spikeThresholdEurMwh = 150.0;
     private boolean spikeActive = false;
+    private int runId;
 
-    void init(String csvPath) {
+    @OPERATION
+    void init(String csvPath, int runId) {
+        this.runId = runId;
         try {
-            String filename = MainSimulator.INSTANCE.priceSeriesFile != null ? MainSimulator.INSTANCE.priceSeriesFile : csvPath;
-            if (filename.startsWith("/")) filename = filename.substring(1);
+            String filename = RunManager.getSimulator(runId).priceSeriesFile != null ? RunManager.getSimulator(runId).priceSeriesFile
+                    : csvPath;
+            if (filename.startsWith("/"))
+                filename = filename.substring(1);
             InputStream is = getClass().getResourceAsStream("/" + filename);
             if (is != null) {
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
                     String line;
                     while ((line = br.readLine()) != null) {
-                        if (line.trim().isEmpty() || line.startsWith("#") || line.startsWith("simTime")) continue;
+                        if (line.trim().isEmpty() || line.startsWith("#") || line.startsWith("simTime"))
+                            continue;
                         String[] parts = line.split(",");
                         if (parts.length >= 2) {
                             double t = Double.parseDouble(parts[0].trim());
@@ -42,21 +48,23 @@ public class EnergyPriceArtifact extends Artifact {
             System.err.println("Failed to load price_series.csv, using flat 50.0 EUR/MWh. " + e.getMessage());
             priceAtSimTime.put(0.0, 50.0);
         }
-        
+
         defineObsProperty("energy_price", 0.0);
-        MainSimulator.INSTANCE.energyPriceArtifact = this;
+        RunManager.getSimulator(runId).energyPriceArtifact = this;
     }
 
     public void updatePrice(double simTime) {
         var entry = priceAtSimTime.floorEntry(simTime);
         if (entry != null) {
             double newPrice = entry.getValue();
-            if (MainSimulator.INSTANCE.forceSpikeAt != null && simTime >= MainSimulator.INSTANCE.forceSpikeAt) {
+            if (RunManager.getSimulator(runId).forceSpikeAt != null && simTime >= RunManager.getSimulator(runId).forceSpikeAt) {
                 newPrice = Math.max(newPrice, spikeThresholdEurMwh + 15.0);
             }
-            if (Math.abs(newPrice - currentPrice) > 1e-6 || (!spikeActive && newPrice >= spikeThresholdEurMwh) || (spikeActive && newPrice < spikeThresholdEurMwh * 0.90)) {
+            if (Math.abs(newPrice - currentPrice) > 1e-6 || (!spikeActive && newPrice >= spikeThresholdEurMwh)
+                    || (spikeActive && newPrice < spikeThresholdEurMwh * 0.90)) {
                 try {
-                    System.out.println("[EnergyPriceArtifact] Submitting internalUpdatePrice for newPrice=" + newPrice + " at simT=" + simTime);
+                    System.out.println("[EnergyPriceArtifact] Submitting internalUpdatePrice for newPrice=" + newPrice
+                            + " at simT=" + simTime);
                     execInternalOp("internalUpdatePrice", newPrice, simTime);
                 } catch (Exception e) {
                     System.err.println("Failed to execInternalOp in EnergyPriceArtifact: " + e);
@@ -68,7 +76,7 @@ public class EnergyPriceArtifact extends Artifact {
     @INTERNAL_OPERATION
     void internalUpdatePrice(double newPrice, double simTime) {
         System.out.println("[EnergyPriceArtifact] Executing internalUpdatePrice for newPrice=" + newPrice);
-        synchronized(priceLock) {
+        synchronized (priceLock) {
             if (Math.abs(newPrice - currentPrice) > 1e-6) {
                 currentPrice = newPrice;
                 if (hasObsProperty("energy_price")) {
@@ -76,7 +84,7 @@ public class EnergyPriceArtifact extends Artifact {
                 }
                 signal("energy_price_changed", currentPrice);
             }
-            
+
             if (!spikeActive && currentPrice >= spikeThresholdEurMwh) {
                 spikeActive = true;
                 defineObsProperty("energy_price_spike", currentPrice);

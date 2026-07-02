@@ -2,14 +2,20 @@
 
 let layout = null;
 let TelemetryFrame = null;
+const CLIENT_TOKEN = crypto.randomUUID();
+const DEFAULT_RUN_COUNT = 30;
 
 const canvas = document.getElementById('factoryCanvas');
 const ctx = canvas.getContext('2d');
+const runSelect = document.getElementById('runSelect');
 
 let lastAMRPositions = {};
 let currentAMRPositions = {};
 let lastFrameTime = 0;
 let currentFrameTime = 0;
+let activeWebSocket = null;
+let currentRunId = 0;
+let connectionEpoch = 0;
 
 async function init() {
     // Load layout
@@ -21,7 +27,7 @@ async function init() {
     // For Phase 3.5, we'll try to load physical_engine/proto/sim_bridge.proto if accessible,
     // or just mock the decode if we're hitting CORS issues running from file://
     try {
-        const root = await protobuf.load("../physical_engine/proto/sim_bridge.proto");
+        const root = await protobuf.load("../physical_engine/protos/sim_bridge.proto");
         TelemetryFrame = root.lookupType("factory.TelemetryFrame");
     } catch (e) {
         console.warn("Could not load .proto, using a mock decode for V5 visual validation", e);
@@ -35,12 +41,40 @@ async function init() {
         };
     }
 
-    connect();
+    populateRunSelector();
+    const initialRunId = Number(new URLSearchParams(window.location.search).get('run_id') || '0');
+    currentRunId = Number.isFinite(initialRunId) ? initialRunId : 0;
+    runSelect.value = String(currentRunId);
+    runSelect.addEventListener('change', () => switchRun(Number(runSelect.value)));
+
+    connect(currentRunId);
     requestAnimationFrame(renderLoop);
 }
 
-function connect() {
-    const ws = new WebSocket("ws://127.0.0.1:8080/telemetry");
+function populateRunSelector() {
+    runSelect.innerHTML = '';
+    for (let i = 0; i < DEFAULT_RUN_COUNT; i++) {
+        const option = document.createElement('option');
+        option.value = String(i);
+        option.textContent = `Run ${i}`;
+        runSelect.appendChild(option);
+    }
+}
+
+function telemetryUrl(runId) {
+    return `ws://127.0.0.1:8080/telemetry?run_id=${runId}&client=${CLIENT_TOKEN}`;
+}
+
+function connect(runId) {
+    if (activeWebSocket) {
+        const previousSocket = activeWebSocket;
+        activeWebSocket = null;
+        previousSocket.close(1000, 'run switch');
+    }
+
+    const myEpoch = ++connectionEpoch;
+    const ws = new WebSocket(telemetryUrl(runId));
+    activeWebSocket = ws;
     ws.binaryType = "arraybuffer";
 
     ws.onmessage = (event) => {
@@ -51,15 +85,15 @@ function connect() {
             console.error("Decode error", e);
             return;
         }
-        
+
         // Update interpolation state
         lastFrameTime = currentFrameTime;
         currentFrameTime = performance.now();
         lastAMRPositions = JSON.parse(JSON.stringify(currentAMRPositions));
-        
+
         if (frame.amrPositions) {
             for (let amr of frame.amrPositions) {
-                currentAMRPositions[amr.id] = {x: amr.x, y: amr.y};
+                currentAMRPositions[amr.id] = { x: amr.x, y: amr.y };
             }
         }
 
@@ -68,15 +102,27 @@ function connect() {
     };
 
     ws.onclose = (event) => {
+        if (connectionEpoch !== myEpoch) {
+            return;
+        }
+        if (activeWebSocket === ws) {
+            activeWebSocket = null;
+        }
         console.warn(`Telemetry connection closed (code ${event.code}) — reconnecting in 2s`);
-        setTimeout(connect, 2000);
+        setTimeout(() => connect(currentRunId), 2000);
     };
+}
+
+function switchRun(runId) {
+    currentRunId = runId;
+    runSelect.value = String(runId);
+    connect(runId);
 }
 
 function renderStations(states) {
     if (!layout || !states) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Draw stations
     for (let station of layout.stations) {
         ctx.fillStyle = "#555"; // Default
@@ -98,16 +144,16 @@ function renderLoop() {
         let dt = now - currentFrameTime;
         let frameDuration = currentFrameTime - lastFrameTime;
         if (frameDuration <= 0) frameDuration = 50; // default 50ms (20hz)
-        
+
         let alpha = Math.min(dt / frameDuration, 1.0);
 
         for (let id in currentAMRPositions) {
             let curr = currentAMRPositions[id];
             let prev = lastAMRPositions[id] || curr;
-            
+
             let interpX = prev.x + (curr.x - prev.x) * alpha;
             let interpY = prev.y + (curr.y - prev.y) * alpha;
-            
+
             ctx.fillStyle = "#3498db";
             ctx.beginPath();
             ctx.arc(interpX, interpY, 10, 0, Math.PI * 2);

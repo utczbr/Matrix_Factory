@@ -5,13 +5,16 @@ import factory.SimBridgeProto.StepReady;
 
 public class UtilitySystemArtifact extends Artifact {
     private volatile double currentSimTimeS = 0.0;
+    private int runId;
 
-    void init() {
+    @OPERATION
+    void init(int runId) {
+        this.runId = runId;
         defineObsProperty("h2_pressure_bar", 0.0);
         defineObsProperty("h2_fill_fraction", 0.0);
         defineObsProperty("chiller_temp_k", 0.0);
         defineObsProperty("compressor_power_kw", 0.0);
-        MainSimulator.INSTANCE.utilitySystemArtifact = this;
+        RunManager.getSimulator(runId).utilitySystemArtifact = this;
     }
 
     public void updateFromStateVector(StepReady ready, double simTimeS) {
