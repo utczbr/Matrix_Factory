@@ -3,55 +3,175 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Factory Twin Telemetry</title>
     <style>
+        :root {
+            --bg: #14161a;
+            --panel: #1e2126;
+            --panel-border: #2c3038;
+            --text: #e8e8ea;
+            --text-dim: #9aa0a8;
+            --accent-amber: #f1c40f;
+            --grid-line: #2a2e35;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: sans-serif;
-            background: #222;
-            color: #fff;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 16px;
         }
 
-        #canvas-container {
+        h1 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+
+        .hud-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .hud-bar select {
+            background: #14161a;
+            color: var(--text);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 4px 6px;
+        }
+
+        .hud-bar strong { color: var(--text); }
+
+        /* Org-schema pill flashes amber for 400ms on any schema transition */
+        #orgSchemaPill {
+            margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--panel-border);
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            transition: background-color 400ms ease, color 400ms ease, border-color 400ms ease;
+        }
+
+        #orgSchemaPill.flash {
+            background: var(--accent-amber);
+            color: #1a1a1a;
+            border-color: var(--accent-amber);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        /* Responsive stage: keeps the grid's true aspect ratio and scales
+           to fill available width, from phone to ultrawide, without
+           distorting the factory floor geometry. */
+        #stage {
             position: relative;
-            width: 800px;
-            height: 600px;
-            background: #333;
-            margin-top: 20px;
+            width: 100%;
+            aspect-ratio: var(--grid-aspect, 20 / 12);
+            background: #0e0f12;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        canvas {
+        #stage canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             display: block;
         }
 
-        .hud {
-            margin-bottom: 10px;
+        /* thermalCanvas sits above the static grid but below the dynamic
+           sprite layer so heat coloring never occludes stations/AMRs */
+        #thermalCanvas { opacity: 0.55; pointer-events: none; }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 13px;
         }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--text-dim); }
+        .panel-row strong { color: var(--text); font-weight: 500; }
+
+        #stationTabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        #stationTabs button {
+            background: #14161a;
+            color: var(--text-dim);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        #stationTabs button.active { color: #14161a; background: var(--accent-amber); border-color: var(--accent-amber); font-weight: 600; }
+
+        .amr-list-item { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid var(--panel-border); font-size: 12px; }
+        .amr-list-item:first-child { border-top: none; }
     </style>
-    <!-- Basic protobuf decoding -->
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
 </head>
 
 <body>
     <h1>Matrix Factory Telemetry</h1>
-    <div class="hud">
+
+    <div class="hud-bar">
         <label for="runSelect">Run:</label>
         <select id="runSelect"></select>
-        <span>Sim Time: <span id="simTime">0.00</span>s</span> |
-        <span>Dropped Frames: <span id="droppedFrames">0</span></span>
-    </div>
-    <div id="canvas-container">
-        <canvas id="factoryCanvas" width="800" height="600"></canvas>
-    </div>
-
-    <div id="station5Panel" style="margin-top:16px; padding:12px; background:#2a2a2a; border-radius:6px; max-width:800px; font-size:14px;">
-        <h3 style="margin:0 0 8px 0;">Station 5 — PEMFC Test Bench</h3>
-        <div id="station5Body">Waiting for telemetry…</div>
+        <span>Sim Time: <strong id="simTime">0.00</strong>s</span>
+        <span>Dropped Frames: <strong id="droppedFrames">0</strong></span>
+        <span>WS: <strong id="wsStatus" style="color:var(--text-dim);">—</strong></span>
+        <span id="orgSchemaPill">SCHEMA: —</span>
     </div>
 
-    <!-- The compiled protobuf script will be needed in a real setup, but for Phase 3.5 we'll load the .proto dynamically or mock it if not available, since the doc just says "TelemetryFrame.decode". We'll try to load factory.proto if it exists or use a dynamic approach in dashboard.js -->
-    <script src="dashboard.js?v=5"></script>
+    <div class="layout">
+        <div id="stage">
+            <canvas id="gridCanvas"></canvas>
+            <canvas id="thermalCanvas"></canvas>
+            <canvas id="sceneCanvas"></canvas>
+        </div>
+
+        <div class="panel">
+            <h3>Station Detail</h3>
+            <div id="stationTabs"></div>
+            <div id="stationBody">Waiting for telemetry…</div>
+
+            <h3 style="margin-top:18px;">AMR Fleet</h3>
+            <div id="amrList">Waiting for telemetry…</div>
+        </div>
+    </div>
+
+    <script src="dashboard.js?v=6"></script>
 </body>
 
 </html>

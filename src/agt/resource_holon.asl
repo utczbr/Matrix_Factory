@@ -48,10 +48,14 @@
 // Phase 3 Amended accept_proposal plan
 +accept_proposal(OrderId)[source(Sender)]
   : station_state(provisional_lock(OrderId)) & my_name(Me) & my_recipe_step(Step)
-  <- -+station_state(busy_processing(OrderId));
-     cancelTimer(OrderId, Me);
+  <- cancelTimer(OrderId, Me);
      registerLock(OrderId, Me, Sender);
      +active_order(OrderId, Sender, Step);      // NEW — remember who + what step
+     .print("Accepted proposal for ", OrderId, ", waiting for item to arrive").
+
++item_arrived(OrderId)[source(Sender)]
+  : station_state(provisional_lock(OrderId)) & my_name(Me) & active_order(OrderId, Sender, Step)
+  <- -+station_state(busy_processing(OrderId));
      .send(Sender, tell, inform_start(Me));
      !execute_physical_operation(OrderId).
 

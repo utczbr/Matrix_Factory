@@ -12,22 +12,22 @@
      +current_epoch(0).
 
 +!transport(OrderId, From, To)[source(Sender)]
-  : my_name(Me)
+  : my_name(Me) & amr_id(AmrPhysicalId)
   <- .print("AMR ", Me, " transporting ", OrderId, " from ", From, " to ", To);
      !notify_grid_saturation(OrderId);
-     // Simulate grid routing
-     +transporting(OrderId, Sender);
-     startTimer(OrderId, 3000, Me).
+     requestTransport(AmrPhysicalId, From, To, OrderId)[artifact_name("amr_artifact")];
+     +transporting(OrderId, Sender).
 
-+timer_expired(OrderId, Me)
-  : transporting(OrderId, Sender) & my_name(Me)
++amr_arrived(AmrPhysicalId, OrderId)
+  : amr_id(AmrPhysicalId) & transporting(OrderId, Sender)
   <- -transporting(OrderId, Sender);
      .send(Sender, tell, transport_done(OrderId)).
 
 +abort_transport(OrderId)[source(Sender)]
-  : transporting(OrderId, Sender) & my_name(Me)
+  : transporting(OrderId, Sender) & my_name(Me) & amr_id(AmrPhysicalId)
   <- .drop_intention(transport(OrderId, _, _));
      cancelTimer(OrderId, Me);
+     cancelTransport(AmrPhysicalId, OrderId)[artifact_name("amr_artifact")];
      -transporting(OrderId, Sender);
      .print("Transport aborted for ", OrderId).
 

@@ -24,6 +24,7 @@
      +my_order_id(OrderId);
      +order_random(OrderId, R);
      +recipe_remaining(OrderId, [2,3]);          // NEW — steps left after step 1
+     +current_location(OrderId, start);
      .print("Spawning order: ", OrderId);
      !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
 
@@ -39,7 +40,9 @@
      .send(Amr, achieve, transport(OrderId, From, To)).
 
 +transport_done(OrderId)[source(Amr)]
-  <- .print("Transport done for ", OrderId).
+  <- .print("Transport done for ", OrderId);
+     ?cnp_winner(OrderId, Winner);
+     .send(Winner, tell, item_arrived(OrderId)).
 
 +transport_blocked(OrderId)[source(Amr)]
   <- .print("Transport blocked for ", OrderId, " - signaling supervisor");
@@ -48,6 +51,7 @@
 +step_complete(OrderId, Step)[source(Station)]
   : recipe_remaining(OrderId, Remaining)
   <- .print("Step ", Step, " complete for ", OrderId, " at ", Station);
+     -+current_location(OrderId, Station);
      if (Remaining == []) {
          .print("Order ", OrderId, " fully complete");
          -recipe_remaining(OrderId, Remaining);
@@ -90,7 +94,8 @@
   <- !finish_select_proposal(OrderId, Winner).
 
 +!finish_select_proposal(OrderId, Winner)
-  <- .send(Winner, tell, accept_proposal(OrderId));
+  <- +cnp_winner(OrderId, Winner);
+     .send(Winner, tell, accept_proposal(OrderId));
      for ( propose(Loser, _) ) {
          if (Loser \== Winner) {
              .send(Loser, tell, reject_proposal(OrderId));
@@ -98,7 +103,8 @@
      }
      .abolish(propose(_, _));
      .abolish(refuse(_));
-     !request_transport(OrderId, start, Winner);
+     ?current_location(OrderId, CurrentLoc);
+     !request_transport(OrderId, CurrentLoc, Winner);
      !await_station_start(OrderId, Winner).
 
 +!select_proposal(Step, Stations, OrderId)
@@ -111,10 +117,9 @@
 +!await_station_start(OrderId, Station)
   <- .my_name(Me);
      .concat(OrderId, "_await", AwaitKey);
-     startTimer(AwaitKey, 10000, Me);
-     .wait(inform_start(Station)[source(Station)] | timer_expired(AwaitKey, _), 15000, _);
+     // Wait for up to 60 seconds to allow physical AMR travel time
+     .wait(inform_start(Station)[source(Station)], 60000, _);
      if (inform_start(Station)[source(Station)]) {
-         cancelTimer(AwaitKey, Me);
          .print("Station ", Station, " started processing ", OrderId);
      } else {
          .print("Failed to get inform_start from ", Station, " - retrying CNP");
