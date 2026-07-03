@@ -50,6 +50,21 @@ message BatchTestRequest {
   // Optional client-side specification for advanced diagnostics.
   // If empty, the server computes a 12-point fixed curve autonomously.
   repeated double current_densities = 6 [packed = true];
+
+  // --- Manufacturing-quality bridge (Stations 1-4 -> Station 5) ---
+  // Cumulative area-specific resistance PENALTY [Ω·cm²] derived from the
+  // stack's manufacturing quality profile (defect events + processing-time
+  // variance logged by Stations 1-4). Added on top of the physics engine's
+  // baseline R_internal before the polarization sweep is run. 0.0 for a
+  // perfect-quality stack.
+  double r_internal_penalty_ohm_cm2 = 7;
+
+  // Fractional derate of active catalyst/reactant availability caused by
+  // manufacturing defects, in [0.0, 1.0). Applied as a multiplier to the
+  // inlet activities (a_h2, a_o2) so that upstream defects can manifest as
+  // reactant-starvation failures (LOW_ACTIVATION) at Station 5, not just
+  // ohmic ones. 0.0 for a perfect-quality stack.
+  double activity_derate_fraction = 8;
 }
 
 message BatchTestResponse {

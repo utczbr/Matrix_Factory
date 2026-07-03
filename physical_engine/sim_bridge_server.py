@@ -11,11 +11,15 @@ Topology (doc1 §3.2):
 
 Thread Safety:
     - ``_physics_step_lock``: Global ``threading.Lock`` serialising
-      ``AdvanceTime`` calls.  No two ``AdvanceTime`` RPCs may execute
-      concurrently.
-    - ``RunBatchTest`` acquires the PEMFC model read-only and can run
-      concurrently with other ``RunBatchTest`` calls (Numba prange
-      handles internal parallelism).
+      ``AdvanceTime`` calls. No two ``AdvanceTime`` RPCs may execute
+      concurrently, and ``RunBatchTest`` also takes it briefly (per sweep
+      point) when mirroring in-progress current/voltage into ``_state`` so
+      telemetry can observe a live test instead of only ever seeing 0
+      before/after it.
+    - ``RunBatchTest``'s actual electrochemistry computation
+      (``batch_polarization_sweep``) is read-only and can run concurrently
+      with other ``RunBatchTest`` calls (Numba prange handles internal
+      parallelism) — only the telemetry-mirroring writes are serialised.
     - Per-component ``_state_lock`` (e.g. ``TankArray._state_lock``)
       protects Numba nogil in-place mutations.
 
@@ -270,9 +274,12 @@ class SimBridgeServicer:
     def RunBatchTest(self, request, context):
         """Execute a polarization curve sweep on the PEMFC stack.
 
-        This RPC does NOT acquire ``_physics_step_lock`` — it runs
-        read-only against the PEMFC model and can execute concurrently
-        with other ``RunBatchTest`` calls.
+        The polarization sweep itself (``batch_polarization_sweep``) is
+        computed read-only and does not touch ``_physics_step_lock`` — it
+        can run concurrently with other ``RunBatchTest`` calls. Only the
+        brief per-point telemetry-visibility writes below (mirroring the
+        in-progress current/voltage into ``_state`` for ``AdvanceTime`` to
+        observe) take the lock, and only for the instant of each write.
 
         Args:
             request: ``BatchTestRequest`` with operating conditions.
@@ -289,6 +296,40 @@ class SimBridgeServicer:
             a_h2 = np.clip(request.inlet_pressure_h2_bar * 1e5 / P_ref, 0.5, 10.0)
             a_o2 = np.clip(request.inlet_pressure_o2_bar * 1e5 / P_ref, 0.5, 10.0)
 
+            # --- Manufacturing-quality bridge -----------------------------
+            # Stations 1-4 log defect/variance events to the DatabaseArtifact
+            # over the stack's lifetime. TestBenchArtifact (Station 5) reads
+            # that cumulative quality profile back and translates it into
+            # two physical penalties carried on the request:
+            #
+            #   r_internal_penalty_ohm_cm2 — added onto this server's
+            #     baseline R_internal before the sweep, so a poorly
+            #     assembled stack (bad bipolar-plate stamping, contact
+            #     resistance defects, ...) shows up as a *higher* ohmic
+            #     slope on the polarization curve.
+            #
+            #   activity_derate_fraction — shrinks the effective reactant
+            #     activity seen by the electrochemistry, modelling reduced
+            #     active catalyst area / clogged flow fields as starvation
+            #     rather than pure resistance.
+            #
+            # Both default to 0.0 (perfect stack) for backward compatibility
+            # with any caller that doesn't populate them.
+            r_internal_penalty = max(0.0, request.r_internal_penalty_ohm_cm2)
+            derate = float(np.clip(request.activity_derate_fraction, 0.0, 0.95))
+
+            R_internal_effective = self._R_internal + r_internal_penalty
+            a_h2 = np.clip(a_h2 * (1.0 - derate), 0.5, 10.0)
+            a_o2 = np.clip(a_o2 * (1.0 - derate), 0.5, 10.0)
+
+            if r_internal_penalty > 0.0 or derate > 0.0:
+                logger.info(
+                    "RunBatchTest stack_id=%s quality penalty applied: "
+                    "R_internal %.4f -> %.4f Ω·cm² (+%.4f), activity derate=%.3f",
+                    request.stack_id, self._R_internal, R_internal_effective,
+                    r_internal_penalty, derate,
+                )
+
             # Current densities
             if request.current_densities:
                 j_values = np.array(
@@ -301,15 +342,22 @@ class SimBridgeServicer:
             # Vectorized computation
             voltages, failure_flags = batch_polarization_sweep(
                 j_values, T, a_h2, a_o2,
-                self._R_internal, N_cells, _NUMBA_THREADS,
+                R_internal_effective, N_cells, _NUMBA_THREADS,
             )
 
             # Simulate physical time passing so the background telemetry
             # reflects the test cycle drawing current and generating heat.
-            for j_val in j_values:
-                self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j_val
+            # Writes are taken under `_physics_step_lock` so AdvanceTime
+            # (running concurrently now that the gRPC threadpool has more
+            # than one worker — see the max_workers fix in `serve()`) never
+            # reads a torn/half-updated state vector mid-sweep.
+            for j_val, v_val in zip(j_values, voltages):
+                with self._physics_step_lock:
+                    self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j_val
+                    self._state[ThermoStateIndex.STACK_VOLTAGE_V] = v_val
                 time.sleep(0.5)
-            self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = 0.0
+            with self._physics_step_lock:
+                self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = 0.0
 
             # Diagnostic checks
             flags = int(failure_flags)
@@ -364,7 +412,22 @@ def serve(
         sys.exit(1)
 
     if max_workers is None:
-        max_workers = _NUMBA_THREADS or max(1, (os.cpu_count() or 1) // 30)
+        # BUG FIX: this used to default to `_NUMBA_THREADS`, which is the
+        # per-daemon Numba *compute* thread count (usually 1 in the
+        # standard 30-daemon Phase-4 topology — see daemon_launcher.py,
+        # `num_threads = max(1, total_cores // run_count)`). Reusing that
+        # value for the gRPC server's ThreadPoolExecutor meant the server
+        # could only service ONE RPC at a time. RunBatchTest holds its
+        # worker thread for several seconds (12-point sweep, 0.5s/point);
+        # with max_workers=1, AdvanceTime queued behind it and could never
+        # execute until RunBatchTest returned — so the tick loop never
+        # observed a non-zero STACK_CURRENT_A_CM2 mid-sweep, and telemetry
+        # always showed 0.000 A/cm² by the time it could run again.
+        #
+        # gRPC RPC-concurrency and Numba compute-parallelism are unrelated
+        # knobs: keep at least 2 gRPC workers (headroom for AdvanceTime +
+        # one in-flight RunBatchTest) independent of _NUMBA_THREADS.
+        max_workers = max(2, _NUMBA_THREADS + 1)
 
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers)

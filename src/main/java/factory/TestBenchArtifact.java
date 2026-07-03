@@ -73,11 +73,56 @@ public class TestBenchArtifact extends Artifact {
         double pH2Bar = 2.0;
         double pO2Bar = 2.0;
 
+        // --- Manufacturing-quality bridge -------------------------------
+        // Fetch this stack's cumulative quality profile (defects + process
+        // variance logged by Stations 1-4 via BaseStationArtifact) and
+        // translate it into physical penalties carried on the request, so
+        // the polarization sweep run by the Python physics engine actually
+        // reflects what happened upstream instead of testing every stack
+        // under identical, idealized conditions.
+        double rInternalPenalty = 0.0;
+        double activityDerate = 0.0;
+        try {
+            ArtifactId databaseArtifactId = lookupArtifact("database");
+            OpFeedbackParam<Integer> defectCountParam = new OpFeedbackParam<>();
+            OpFeedbackParam<Integer> stationsVisitedParam = new OpFeedbackParam<>();
+            OpFeedbackParam<Double> varianceRatioParam = new OpFeedbackParam<>();
+            execLinkedOp(databaseArtifactId, "getQualityProfile", stackId,
+                    defectCountParam, stationsVisitedParam, varianceRatioParam);
+            int defectCount = defectCountParam.get();
+            double cumulativeVarianceRatio = varianceRatioParam.get();
+
+            // Each logged defect is a meaningful manufacturing fault (bad MEA
+            // seal, catalyst deposition miss, plate-stamping tolerance,
+            // assembly misalignment, ...): +0.08 Ω·cm² each is enough on its
+            // own to push a stack over the OHMIC_DEGRADATION_ETA_V=0.35V
+            // threshold at high current density, matching how a single
+            // serious defect can fail a real end-of-line test.
+            rInternalPenalty += defectCount * 0.08;
+
+            // Cumulative processing-time variance (stations that ran hot/cold
+            // relative to their mean, even without tripping the boolean
+            // defect flag) is a proxy for assembly imprecision: a smaller,
+            // continuous resistance penalty.
+            rInternalPenalty += cumulativeVarianceRatio * 0.02;
+
+            // Defects concentrated in MEA prep / catalytic deposition
+            // (Stations 1-2) plausibly reduce active catalyst area or clog
+            // flow fields — modeled as reactant-activity derating so those
+            // stacks can trip LOW_ACTIVATION instead of only ohmic failures.
+            activityDerate = Math.min(0.6, defectCount * 0.15);
+        } catch (Exception e) {
+            log("Station " + stationId + ": failed to fetch quality profile for " + stackId
+                    + " — testing with zero quality penalty: " + e);
+        }
+
         BatchTestRequest req = BatchTestRequest.newBuilder()
                 .setStackId(stackId).setNumCells(numCells)
                 .setOperatingTempK(tempK)
                 .setInletPressureH2Bar(pH2Bar)
                 .setInletPressureO2Bar(pO2Bar)
+                .setRInternalPenaltyOhmCm2(rInternalPenalty)
+                .setActivityDerateFraction(activityDerate)
                 .build();
 
         String corrId = UUID.randomUUID().toString();

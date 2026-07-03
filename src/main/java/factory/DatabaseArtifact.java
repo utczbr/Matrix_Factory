@@ -3,6 +3,7 @@ package factory;
 import cartago.*;
 import java.sql.*;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DatabaseArtifact extends Artifact {
@@ -13,10 +14,45 @@ public class DatabaseArtifact extends Artifact {
     private static final long DRAIN_INTERVAL_MS = 500L;
 
     private final ArrayBlockingQueue<TelemetryRecord> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+    private final ArrayBlockingQueue<QualityRecord> qualityQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final AtomicBoolean backpressureActive = new AtomicBoolean(false);
     private Connection conn;
     private int runId;
     private Thread drainThread;
+
+    // ------------------------------------------------------------------
+    // Manufacturing-quality bridge (Stations 1-4 -> Station 5)
+    // ------------------------------------------------------------------
+    // In-memory accumulator, keyed by stack_id. Stations 1-4 push into this
+    // synchronously (via recordStationQuality) so Station 5 can read a
+    // stack's *complete* cumulative quality profile the instant it arrives
+    // at the test bench, without waiting on the async SQLite drain loop
+    // (which is write-behind on a 500ms cadence and only intended for
+    // durable audit history, not the process-order hot path).
+    private final ConcurrentHashMap<String, QualityProfile> qualityProfiles = new ConcurrentHashMap<>();
+
+    /**
+     * Immutable, additively-mergeable quality accumulator for one stack.
+     *
+     * @param defectCount            number of station events flagged as
+     *                                defective (rng.nextDouble() < defectRate)
+     * @param stationsVisited        number of Stations 1-4 events recorded
+     * @param cumulativeVarianceRatio sum over visited stations of
+     *                                |tProc - tMean| / tMean — a proxy for
+     *                                cumulative process imprecision even on
+     *                                runs that didn't trip the boolean
+     *                                defect flag
+     */
+    public record QualityProfile(int defectCount, int stationsVisited, double cumulativeVarianceRatio) {
+        static final QualityProfile EMPTY = new QualityProfile(0, 0, 0.0);
+
+        QualityProfile plus(QualityProfile other) {
+            return new QualityProfile(
+                    this.defectCount + other.defectCount,
+                    this.stationsVisited + other.stationsVisited,
+                    this.cumulativeVarianceRatio + other.cumulativeVarianceRatio);
+        }
+    }
 
     @OPERATION
     void init(String dbPath, int runId) {
@@ -29,6 +65,9 @@ public class DatabaseArtifact extends Artifact {
                 s.execute("PRAGMA synchronous=NORMAL;");
                 s.execute("CREATE TABLE IF NOT EXISTS Orders(" +
                           "run_id INTEGER, order_id TEXT, event_type TEXT, sim_time REAL)");
+                s.execute("CREATE TABLE IF NOT EXISTS StationQuality(" +
+                          "run_id INTEGER, stack_id TEXT, station_id TEXT, " +
+                          "defect INTEGER, t_proc_s REAL, t_mean_s REAL, sim_time REAL)");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("DatabaseArtifact init failed", e);
@@ -36,6 +75,47 @@ public class DatabaseArtifact extends Artifact {
         drainThread = new Thread(this::drainLoop, "database-artifact-drain");
         drainThread.setDaemon(true);
         drainThread.start();
+    }
+
+    /**
+     * Stations 1-4 call this at the end of {@code processOrder} to log the
+     * process variation ({@code rng.nextGaussian()}-derived processing time)
+     * and defect roll ({@code rng.nextDouble() < defectRate}) that just
+     * occurred, so Station 5 can later reconstruct the stack's cumulative
+     * manufacturing-quality profile.
+     *
+     * Updates the in-memory accumulator synchronously (read path for
+     * Station 5 is instant) and enqueues a durable row for SQLite (write
+     * path is async/batched, same as {@link #recordEvent}).
+     */
+    @OPERATION
+    public void recordStationQuality(int runId, String stackId, String stationId,
+                                      boolean defect, double tProcS, double tMeanS, double simTime) {
+        double varianceRatio = tMeanS > 0.0 ? Math.abs(tProcS - tMeanS) / tMeanS : 0.0;
+        QualityProfile delta = new QualityProfile(defect ? 1 : 0, 1, varianceRatio);
+        qualityProfiles.merge(stackId, delta, QualityProfile::plus);
+
+        QualityRecord rec = new QualityRecord(runId, stackId, stationId, defect, tProcS, tMeanS, simTime);
+        if (!qualityQueue.offer(rec)) {
+            signal("database_write_dropped", stackId);
+        }
+    }
+
+    /**
+     * Station 5 (TestBenchArtifact) calls this when a stack arrives at the
+     * test bench, to fetch its cumulative quality profile before building
+     * the {@code BatchTestRequest}. Returns all-zero for a stack with no
+     * logged station events (never seen defects/variance — treated as a
+     * perfect stack, not an error).
+     */
+    @OPERATION
+    public void getQualityProfile(String stackId, OpFeedbackParam<Integer> defectCount,
+                                   OpFeedbackParam<Integer> stationsVisited,
+                                   OpFeedbackParam<Double> cumulativeVarianceRatio) {
+        QualityProfile p = qualityProfiles.getOrDefault(stackId, QualityProfile.EMPTY);
+        defectCount.set(p.defectCount());
+        stationsVisited.set(p.stationsVisited());
+        cumulativeVarianceRatio.set(p.cumulativeVarianceRatio());
     }
 
     @OPERATION
@@ -105,6 +185,38 @@ public class DatabaseArtifact extends Artifact {
                 if (queue.size() <= BACKPRESSURE_LOW && backpressureActive.compareAndSet(true, false)) {
                     signal("database_pressure_normal");
                 }
+
+                int qBatchSize = Math.min(MAX_BATCH, qualityQueue.size());
+                if (qBatchSize > 0) {
+                    java.util.ArrayList<QualityRecord> qBatch = new java.util.ArrayList<>(qBatchSize);
+                    for (int i = 0; i < qBatchSize; i++) {
+                        QualityRecord rec = qualityQueue.poll();
+                        if (rec == null) break;
+                        qBatch.add(rec);
+                    }
+                    if (!qBatch.isEmpty()) {
+                        try (PreparedStatement ps = conn.prepareStatement(
+                                "INSERT INTO StationQuality(run_id, stack_id, station_id, defect, t_proc_s, t_mean_s, sim_time) " +
+                                "VALUES (?,?,?,?,?,?,?)")) {
+                            conn.setAutoCommit(false);
+                            for (QualityRecord rec : qBatch) {
+                                ps.setInt(1, rec.runId());
+                                ps.setString(2, rec.stackId());
+                                ps.setString(3, rec.stationId());
+                                ps.setInt(4, rec.defect() ? 1 : 0);
+                                ps.setDouble(5, rec.tProcS());
+                                ps.setDouble(6, rec.tMeanS());
+                                ps.setDouble(7, rec.simTime());
+                                ps.addBatch();
+                            }
+                            ps.executeBatch();
+                            conn.commit();
+                            conn.setAutoCommit(true);
+                        } catch (SQLException e) {
+                            signal("database_batch_commit_failed", qBatch.size());
+                        }
+                    }
+                }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -112,4 +224,7 @@ public class DatabaseArtifact extends Artifact {
     }
 
     private record TelemetryRecord(int runId, String orderId, String eventType, double simTime) {}
+
+    private record QualityRecord(int runId, String stackId, String stationId,
+                                  boolean defect, double tProcS, double tMeanS, double simTime) {}
 }

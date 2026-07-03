@@ -97,6 +97,18 @@ public class BaseStationArtifact extends Artifact {
         }
         RunManager.getSimulator(runId).removeNER(agentId);
 
+        // Log this station's process variation to the manufacturing-quality
+        // bridge so Station 5 can later reconstruct the stack's cumulative
+        // quality profile (doc2 §2 / digital-twin fidelity requirement).
+        // Best-effort: a lookup/log failure here must not fail the order.
+        try {
+            ArtifactId databaseArtifactId = lookupArtifact("database");
+            execLinkedOp(databaseArtifactId, "recordStationQuality",
+                    runId, orderId, stationId, defect, tProc, tMean_s, currentSimTime);
+        } catch (Exception e) {
+            log("Station " + stationId + ": failed to log quality profile for " + orderId + ": " + e);
+        }
+
         currentSummary = new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
         result.set(defect ? "defect" : "ok");
     }
