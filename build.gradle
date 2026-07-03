@@ -67,4 +67,3 @@ protobuf {
 
 sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/java'
 sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/grpc'
-sourceSets.main.proto.srcDirs = ['physical_engine/protos']

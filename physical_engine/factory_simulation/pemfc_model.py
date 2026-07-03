@@ -61,13 +61,45 @@ __all__ = [
     "newton_raphson_solver",
     "batch_polarization_sweep",
     "PEMFCConstants",
+    "OHMIC_DEGRADATION",
+    "MASS_TRANSPORT_STARVATION",
+    "THERMAL_SHUTDOWN",
+    "LOW_ACTIVATION",
     "SOLVER_DID_NOT_CONVERGE",
 ]
 
 # ---------------------------------------------------------------------------
 # Failure flag bitmask (doc4 §2 — BatchTestResponse.failure_flags)
+#
+# Single source of truth for the bitmask: sim_bridge_server.py imports these
+# rather than redefining them, so the flag values and the physics that set
+# them can never drift apart.
 # ---------------------------------------------------------------------------
-SOLVER_DID_NOT_CONVERGE: int = 0x10  # bit 4
+OHMIC_DEGRADATION: int = 0x01          # bit 0 — set in batch_polarization_sweep
+MASS_TRANSPORT_STARVATION: int = 0x02  # bit 1 — set by sim_bridge_server (monotonicity check)
+THERMAL_SHUTDOWN: int = 0x04           # bit 2 — set in batch_polarization_sweep
+LOW_ACTIVATION: int = 0x08             # bit 3 — set in batch_polarization_sweep
+SOLVER_DID_NOT_CONVERGE: int = 0x10    # bit 4
+
+# ---------------------------------------------------------------------------
+# QC thresholds for the end-of-line test bench (doc2 §3, station5 spec)
+# ---------------------------------------------------------------------------
+OHMIC_DEGRADATION_ETA_V: float = 0.35
+"""Per-cell ohmic overpotential [V] above which the stack is flagged as
+ohmically degraded (membrane/contact resistance too high)."""
+
+THERMAL_SHUTDOWN_TEMP_K: float = 358.15
+"""Operating temperature [K] (~85 degC) above which the PEM membrane is at
+risk of drying out; the test bench refuses to certify a stack tested above
+this temperature."""
+
+LOW_ACTIVATION_ACTIVITY_FLOOR: float = 0.7
+"""Reactant activity floor. j0/alpha (the catalyst kinetic parameters) are
+fixed constants in this model — there is no per-stack "catalyst health"
+input — so genuine catalyst degradation cannot be represented directly.
+As a reachable proxy, a stack tested under starved reactant supply
+(a_h2 or a_o2 below this floor) is flagged, since starvation pushes the
+cell into the same activation-dominated regime a degraded catalyst would."""
 
 # ---------------------------------------------------------------------------
 # Physical constants
@@ -352,7 +384,8 @@ def batch_polarization_sweep(
     voltages = np.empty(n, dtype=np.float64)
     # Per-thread scratchpad: [V_stack, eta_act, eta_ohm, eta_conc, E_ocv]
     scratch = np.empty((numba_threads, 5), dtype=np.float64)
-    failure = np.uint32(0)
+    # Per-thread flag accumulator — avoids a shared-write race inside prange.
+    flag_scratch = np.zeros(numba_threads, dtype=np.uint32)
 
     for i in prange(n):
         j = current_densities[i]
@@ -369,5 +402,33 @@ def batch_polarization_sweep(
         scratch[idx, 4] = E_ocv
 
         voltages[i] = V_stack
+
+        # OHMIC_DEGRADATION: ohmic overpotential exceeds the healthy ceiling
+        # at any tested point (membrane/contact resistance too high).
+        #
+        # NOTE: OHMIC_DEGRADATION is a plain Python int at module scope (it's
+        # also imported and used outside any @njit function, e.g. in
+        # sim_bridge_server.py). Numba infers such literals as int64. OR-ing
+        # an int64 against a uint32 accumulator makes Numba's type unifier
+        # fall back to float64 as the "common" type (it can't safely unify
+        # uint32 and int64), and float64 has no |= implementation — hence
+        # the explicit np.uint32(...) cast at every OR site below.
+        if eta_ohm > OHMIC_DEGRADATION_ETA_V:
+            flag_scratch[idx] |= np.uint32(OHMIC_DEGRADATION)
+
+    failure = np.uint32(0)
+    for t in range(numba_threads):
+        failure |= flag_scratch[t]
+
+    # THERMAL_SHUTDOWN: the requested test temperature alone is enough to
+    # evaluate this — constant across the sweep, so it's checked once here
+    # rather than per-point.
+    if T > THERMAL_SHUTDOWN_TEMP_K:
+        failure |= np.uint32(THERMAL_SHUTDOWN)
+
+    # LOW_ACTIVATION: reactant starvation proxy (see constant docstring for
+    # why catalyst-kinetic degradation itself can't be modeled directly).
+    if a_h2 < LOW_ACTIVATION_ACTIVITY_FLOOR or a_o2 < LOW_ACTIVATION_ACTIVITY_FLOOR:
+        failure |= np.uint32(LOW_ACTIVATION)
 
     return (voltages, failure)

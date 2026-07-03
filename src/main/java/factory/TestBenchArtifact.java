@@ -19,6 +19,18 @@ public class TestBenchArtifact extends Artifact {
     private final ConcurrentHashMap<String, AtomicBoolean> completedCalls = new ConcurrentHashMap<>();
 
     public volatile StationSummary currentSummary = StationSummary.IDLE;
+    // Last RunBatchTest result — surfaced to telemetry (MainSimulator) instead
+    // of being dropped after the CArtAgO operation returns. Deliberately
+    // separate from currentSummary: currentSummary's DEFECT_DETECTED value is
+    // reset to IDLE by releaseStation() almost immediately (required so the
+    // station remains claimable for the next order), so it is not a reliable
+    // channel for "what was the outcome of the last test". These fields are
+    // the reliable channel and are never reset by releaseStation().
+    public volatile int lastFailureFlags = 0;
+    public volatile boolean lastTestPassed = false;
+    public volatile boolean hasRunAnyTest = false;
+    public volatile String lastTestedStackId = "";
+    public volatile java.util.List<Double> lastMeasuredVoltages = java.util.List.of();
     public String stationId;
     private int runId;
     private int recipeStep;
@@ -81,9 +93,18 @@ public class TestBenchArtifact extends Artifact {
         call.start(new ClientCall.Listener<>() {
             @Override
             public void onMessage(BatchTestResponse resp) {
-                if (completedCalls.get(corrId).compareAndSet(false, true)) {
+                // corrId may already have been evicted from completedCalls if
+                // processOrder timed out and cleaned up before this stale
+                // callback arrived — null-guard instead of assuming presence.
+                AtomicBoolean completedFlag = completedCalls.get(corrId);
+                if (completedFlag != null && completedFlag.compareAndSet(false, true)) {
                     boolean passed = resp.getPassed();
                     int flags = resp.getFailureFlags();
+                    lastFailureFlags = flags;
+                    lastTestPassed = passed;
+                    hasRunAnyTest = true;
+                    lastTestedStackId = stackId;
+                    lastMeasuredVoltages = java.util.List.copyOf(resp.getMeasuredVoltagesList());
                     currentSummary = passed
                             ? new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f)
                             : new StationSummary(StationStateEnum.STATION_DEFECT_DETECTED, stackId, 1.0f);
@@ -92,7 +113,8 @@ public class TestBenchArtifact extends Artifact {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    latch.countDown();
+                    java.util.concurrent.CountDownLatch l = latches.get(corrId);
+                    if (l != null) l.countDown();
                 }
             }
 
@@ -100,14 +122,20 @@ public class TestBenchArtifact extends Artifact {
             public void onClose(Status status, Metadata trailers) {
                 activeCalls.remove(corrId);
                 if (!status.isOk()) {
-                    if (completedCalls.get(corrId).compareAndSet(false, true)) {
+                    AtomicBoolean completedFlag = completedCalls.get(corrId);
+                    if (completedFlag != null && completedFlag.compareAndSet(false, true)) {
                         currentSummary = new StationSummary(StationStateEnum.STATION_OFFLINE, stackId, 0.0f);
+                        lastFailureFlags = 0x10; // SOLVER_DID_NOT_CONVERGE, reused as "comms failure"
+                        lastTestPassed = false;
+                        hasRunAnyTest = true;
+                        lastTestedStackId = stackId;
                         try {
                             execInternalOp("handleResult", corrId, false, 0x10);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        latch.countDown();
+                        java.util.concurrent.CountDownLatch l = latches.get(corrId);
+                        if (l != null) l.countDown();
                     }
                 }
             }
@@ -118,7 +146,30 @@ public class TestBenchArtifact extends Artifact {
         call.request(1);
 
         try {
-            latch.await(30, java.util.concurrent.TimeUnit.SECONDS);
+            boolean completedInTime = latch.await(30, java.util.concurrent.TimeUnit.SECONDS);
+            if (!completedInTime) {
+                log("Station " + stationId + ": RunBatchTest timed out after 30s (corrId="
+                        + corrId + ") — cancelling RPC instead of abandoning it");
+                ClientCall<BatchTestRequest, BatchTestResponse> pending = activeCalls.get(corrId);
+                if (pending != null) {
+                    pending.cancel("client-side 30s timeout", null);
+                }
+                // Give cancellation a short window to land and drive onClose,
+                // which performs its own map cleanup + latch countdown.
+                latch.await(2, java.util.concurrent.TimeUnit.SECONDS);
+                // If onClose still hasn't fired (e.g. cancel() itself was
+                // swallowed), claim completion here so callback threads that
+                // arrive later see the entry as already resolved rather than
+                // finding it removed out from under them.
+                AtomicBoolean completedFlag = completedCalls.get(corrId);
+                if (completedFlag != null && completedFlag.compareAndSet(false, true)) {
+                    currentSummary = new StationSummary(StationStateEnum.STATION_OFFLINE, stackId, 0.0f);
+                    lastFailureFlags = 0x10;
+                    lastTestPassed = false;
+                    hasRunAnyTest = true;
+                    lastTestedStackId = stackId;
+                }
+            }
         } catch (InterruptedException e) {
             log("ADACOR drop_intention received — cancelling pending gRPC call (Interrupted)");
             cancelPendingRpc();
@@ -140,7 +191,8 @@ public class TestBenchArtifact extends Artifact {
     public void cancelPendingRpc() {
         activeCalls.forEach((corrId, call) -> {
             call.cancel("ADACOR suspend", null);
-            if (completedCalls.get(corrId).compareAndSet(false, true)) {
+            AtomicBoolean completedFlag = completedCalls.get(corrId);
+            if (completedFlag != null && completedFlag.compareAndSet(false, true)) {
                 currentSummary = StationSummary.IDLE;
                 try {
                     execInternalOp("handleResult", corrId, false, 0x10);

@@ -45,6 +45,11 @@
         <canvas id="factoryCanvas" width="800" height="600"></canvas>
     </div>
 
+    <div id="station5Panel" style="margin-top:16px; padding:12px; background:#2a2a2a; border-radius:6px; max-width:800px; font-size:14px;">
+        <h3 style="margin:0 0 8px 0;">Station 5 — PEMFC Test Bench</h3>
+        <div id="station5Body">Waiting for telemetry…</div>
+    </div>
+
     <!-- The compiled protobuf script will be needed in a real setup, but for Phase 3.5 we'll load the .proto dynamically or mock it if not available, since the doc just says "TelemetryFrame.decode". We'll try to load factory.proto if it exists or use a dynamic approach in dashboard.js -->
     <script src="dashboard.js?v=5"></script>
 </body>

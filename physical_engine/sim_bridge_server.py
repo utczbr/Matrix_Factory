@@ -90,6 +90,10 @@ from physical_engine.factory_simulation.pemfc_model import (
     newton_raphson_solver,
     batch_polarization_sweep,
     PEMFCConstants,
+    OHMIC_DEGRADATION,
+    MASS_TRANSPORT_STARVATION,
+    THERMAL_SHUTDOWN,
+    LOW_ACTIVATION,
     SOLVER_DID_NOT_CONVERGE,
 )
 from physical_engine.factory_simulation.stack_thermal_model import (
@@ -97,13 +101,10 @@ from physical_engine.factory_simulation.stack_thermal_model import (
 )
 
 # ---------------------------------------------------------------------------
-# Failure flags bitmask (matches BatchTestResponse.failure_flags in .proto)
+# Failure flags bitmask (matches BatchTestResponse.failure_flags in .proto).
+# All flag values are imported from pemfc_model.py, which is now the single
+# source of truth (see that module's docstring).
 # ---------------------------------------------------------------------------
-OHMIC_DEGRADATION: int = 0x01          # bit 0
-MASS_TRANSPORT_STARVATION: int = 0x02  # bit 1
-THERMAL_SHUTDOWN: int = 0x04           # bit 2
-LOW_ACTIVATION: int = 0x08            # bit 3
-# SOLVER_DID_NOT_CONVERGE = 0x10       # bit 4 (imported from pemfc_model)
 
 
 def derive_seed(stack_id: str, run_id: int) -> int:
@@ -218,7 +219,8 @@ class SimBridgeServicer:
                 # --- Current density from state ---
                 j = self._state[ThermoStateIndex.STACK_CURRENT_A_CM2]
                 if j < 1e-10:
-                    j = 1.0  # Default operating point
+                    j = 0.0  # Default operating point
+                    self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j
 
                 # --- Electrochemistry ---
                 V_stack, eta_act, eta_ohm, eta_conc, E_ocv = (
@@ -232,6 +234,12 @@ class SimBridgeServicer:
                 # Q_gen = I * (η_act + η_ohm)   [Watts]
                 I_total = j  # A/cm² × active_area would give Amps
                 Q_gen = I_total * (eta_act + eta_ohm)
+                
+                # Test Bench Heater: maintain 80°C (353.15 K) standby temperature
+                if T < 353.15:
+                    Q_heater = min(5000.0, (353.15 - T) * 1000.0)
+                    Q_gen += Q_heater
+
                 Q_output = self._thermal.step(dt, Q_gen, T_coolant)
 
                 # --- Update state vector ---
@@ -295,6 +303,13 @@ class SimBridgeServicer:
                 j_values, T, a_h2, a_o2,
                 self._R_internal, N_cells, _NUMBA_THREADS,
             )
+
+            # Simulate physical time passing so the background telemetry
+            # reflects the test cycle drawing current and generating heat.
+            for j_val in j_values:
+                self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j_val
+                time.sleep(0.5)
+            self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = 0.0
 
             # Diagnostic checks
             flags = int(failure_flags)

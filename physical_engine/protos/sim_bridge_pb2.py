@@ -24,19 +24,28 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\'physical_engine/protos/sim_bridge.proto\x12\x07\x66\x61\x63tory\"B\n\x08TimeStep\x12\x14\n\x0c\x63urrent_time\x18\x01 \x01(\x01\x12\n\n\x02\x64t\x18\x02 \x01(\x01\x12\x14\n\x0cschema_epoch\x18\x03 \x01(\x05\"K\n\tStepReady\x12\x13\n\x0btarget_time\x18\x01 \x01(\x01\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x18\n\x0cstate_vector\x18\x03 \x03(\x01\x42\x02\x10\x01\"\xae\x01\n\x10\x42\x61tchTestRequest\x12\x10\n\x08stack_id\x18\x01 \x01(\t\x12\x11\n\tnum_cells\x18\x02 \x01(\x05\x12\x18\n\x10operating_temp_k\x18\x03 \x01(\x01\x12\x1d\n\x15inlet_pressure_h2_bar\x18\x04 \x01(\x01\x12\x1d\n\x15inlet_pressure_o2_bar\x18\x05 \x01(\x01\x12\x1d\n\x11\x63urrent_densities\x18\x06 \x03(\x01\x42\x02\x10\x01\"Y\n\x11\x42\x61tchTestResponse\x12\x0e\n\x06passed\x18\x01 \x01(\x08\x12\x1d\n\x11measured_voltages\x18\x02 \x03(\x01\x42\x02\x10\x01\x12\x15\n\rfailure_flags\x18\x03 \x01(\r\"\x07\n\x05\x45mpty\"\x1d\n\x0cHealthStatus\x12\r\n\x05ready\x18\x01 \x01(\x08\x32\xbe\x01\n\tSimBridge\x12\x34\n\x0b\x41\x64vanceTime\x12\x11.factory.TimeStep\x1a\x12.factory.StepReady\x12\x45\n\x0cRunBatchTest\x12\x19.factory.BatchTestRequest\x1a\x1a.factory.BatchTestResponse\x12\x34\n\x0bHealthCheck\x12\x0e.factory.Empty\x1a\x15.factory.HealthStatusb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\'physical_engine/protos/sim_bridge.proto\x12\x07\x66\x61\x63tory\"B\n\x08TimeStep\x12\x14\n\x0c\x63urrent_time\x18\x01 \x01(\x01\x12\n\n\x02\x64t\x18\x02 \x01(\x01\x12\x14\n\x0cschema_epoch\x18\x03 \x01(\x05\"K\n\tStepReady\x12\x13\n\x0btarget_time\x18\x01 \x01(\x01\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x18\n\x0cstate_vector\x18\x03 \x03(\x01\x42\x02\x10\x01\"\xae\x01\n\x10\x42\x61tchTestRequest\x12\x10\n\x08stack_id\x18\x01 \x01(\t\x12\x11\n\tnum_cells\x18\x02 \x01(\x05\x12\x18\n\x10operating_temp_k\x18\x03 \x01(\x01\x12\x1d\n\x15inlet_pressure_h2_bar\x18\x04 \x01(\x01\x12\x1d\n\x15inlet_pressure_o2_bar\x18\x05 \x01(\x01\x12\x1d\n\x11\x63urrent_densities\x18\x06 \x03(\x01\x42\x02\x10\x01\"Y\n\x11\x42\x61tchTestResponse\x12\x0e\n\x06passed\x18\x01 \x01(\x08\x12\x1d\n\x11measured_voltages\x18\x02 \x03(\x01\x42\x02\x10\x01\x12\x15\n\rfailure_flags\x18\x03 \x01(\r\"\x07\n\x05\x45mpty\"\x1d\n\x0cHealthStatus\x12\r\n\x05ready\x18\x01 \x01(\x08\"\xc2\x01\n\x08\x41MRState\x12\x0e\n\x06\x61mr_id\x18\x01 \x01(\t\x12\x0e\n\x06grid_x\x18\x02 \x01(\x02\x12\x0e\n\x06grid_y\x18\x03 \x01(\x02\x12\x13\n\x0bnext_grid_x\x18\x04 \x01(\x02\x12\x13\n\x0bnext_grid_y\x18\x05 \x01(\x02\x12\x19\n\x11movement_progress\x18\x06 \x01(\x02\x12&\n\x06status\x18\x07 \x01(\x0e\x32\x16.factory.AMRStatusEnum\x12\x19\n\x11\x63\x61rrying_order_id\x18\x08 \x01(\t\"\x82\x01\n\x0cStationState\x12\x12\n\nstation_id\x18\x01 \x01(\t\x12(\n\x05state\x18\x02 \x01(\x0e\x32\x19.factory.StationStateEnum\x12\x17\n\x0f\x61\x63tive_order_id\x18\x03 \x01(\t\x12\x1b\n\x13processing_progress\x18\x04 \x01(\x02\"\x90\x06\n\x0eTelemetryFrame\x12\x17\n\x0fsequence_number\x18\x01 \x01(\x04\x12\x12\n\nsim_time_s\x18\x02 \x01(\x01\x12\x14\n\x0cschema_epoch\x18\x03 \x01(\x05\x12\x19\n\x11\x61\x63tive_org_schema\x18\x04 \x01(\t\x12%\n\namr_states\x18\x05 \x03(\x0b\x32\x11.factory.AMRState\x12-\n\x0estation_states\x18\x06 \x03(\x0b\x32\x15.factory.StationState\x12\x1f\n\x13thermo_state_vector\x18\x07 \x03(\x01\x42\x02\x10\x01\x12 \n\x18station5_stack_voltage_v\x18\x08 \x01(\x01\x12&\n\x1estation5_current_density_a_cm2\x18\t \x01(\x01\x12\x1d\n\x15station5_stack_temp_k\x18\n \x01(\x01\x12\"\n\x1astation5_stack_core_temp_k\x18\x0b \x01(\x01\x12\"\n\x1astation5_stack_skin_temp_k\x18\x0c \x01(\x01\x12\x1e\n\x16station5_failure_flags\x18\r \x01(\r\x12\x1d\n\x15station5_has_run_test\x18\x15 \x01(\x08\x12!\n\x19station5_last_test_passed\x18\x16 \x01(\x08\x12%\n\x1dstation5_last_tested_stack_id\x18\x17 \x01(\t\x12+\n\x1fstation5_last_measured_voltages\x18\x18 \x03(\x01\x42\x02\x10\x01\x12\x1c\n\x14h2_tank_pressure_bar\x18\x0e \x01(\x01\x12\x1d\n\x15h2_tank_fill_fraction\x18\x0f \x01(\x01\x12\x16\n\x0e\x63hiller_temp_k\x18\x10 \x01(\x01\x12\x1b\n\x13\x63ompressor_power_kw\x18\x11 \x01(\x01\x12%\n\x1d\x64ropped_telemetry_frame_count\x18\x12 \x01(\r\x12\x19\n\x11\x64ropped_ner_count\x18\x13 \x01(\r\x12\x0e\n\x06run_id\x18\x14 \x01(\r*b\n\rAMRStatusEnum\x12\x0c\n\x08\x41MR_IDLE\x10\x00\x12\x0e\n\nAMR_MOVING\x10\x01\x12\x0f\n\x0b\x41MR_LOADING\x10\x02\x12\x11\n\rAMR_UNLOADING\x10\x03\x12\x0f\n\x0b\x41MR_BLOCKED\x10\x04*\x91\x01\n\x10StationStateEnum\x12\x10\n\x0cSTATION_IDLE\x10\x00\x12\x1c\n\x18STATION_PROVISIONAL_LOCK\x10\x01\x12\x1b\n\x17STATION_BUSY_PROCESSING\x10\x02\x12\x1b\n\x17STATION_DEFECT_DETECTED\x10\x03\x12\x13\n\x0fSTATION_OFFLINE\x10\x04\x32\xbe\x01\n\tSimBridge\x12\x34\n\x0b\x41\x64vanceTime\x12\x11.factory.TimeStep\x1a\x12.factory.StepReady\x12\x45\n\x0cRunBatchTest\x12\x19.factory.BatchTestRequest\x1a\x1a.factory.BatchTestResponse\x12\x34\n\x0bHealthCheck\x12\x0e.factory.Empty\x1a\x15.factory.HealthStatusB\x12\x42\x0eSimBridgeProtoP\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'physical_engine.protos.sim_bridge_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
+  _globals['DESCRIPTOR']._loaded_options = None
+  _globals['DESCRIPTOR']._serialized_options = b'B\016SimBridgeProtoP\000'
   _globals['_STEPREADY'].fields_by_name['state_vector']._loaded_options = None
   _globals['_STEPREADY'].fields_by_name['state_vector']._serialized_options = b'\020\001'
   _globals['_BATCHTESTREQUEST'].fields_by_name['current_densities']._loaded_options = None
   _globals['_BATCHTESTREQUEST'].fields_by_name['current_densities']._serialized_options = b'\020\001'
   _globals['_BATCHTESTRESPONSE'].fields_by_name['measured_voltages']._loaded_options = None
   _globals['_BATCHTESTRESPONSE'].fields_by_name['measured_voltages']._serialized_options = b'\020\001'
+  _globals['_TELEMETRYFRAME'].fields_by_name['thermo_state_vector']._loaded_options = None
+  _globals['_TELEMETRYFRAME'].fields_by_name['thermo_state_vector']._serialized_options = b'\020\001'
+  _globals['_TELEMETRYFRAME'].fields_by_name['station5_last_measured_voltages']._loaded_options = None
+  _globals['_TELEMETRYFRAME'].fields_by_name['station5_last_measured_voltages']._serialized_options = b'\020\001'
+  _globals['_AMRSTATUSENUM']._serialized_start=1622
+  _globals['_AMRSTATUSENUM']._serialized_end=1720
+  _globals['_STATIONSTATEENUM']._serialized_start=1723
+  _globals['_STATIONSTATEENUM']._serialized_end=1868
   _globals['_TIMESTEP']._serialized_start=52
   _globals['_TIMESTEP']._serialized_end=118
   _globals['_STEPREADY']._serialized_start=120
@@ -49,6 +58,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_EMPTY']._serialized_end=472
   _globals['_HEALTHSTATUS']._serialized_start=474
   _globals['_HEALTHSTATUS']._serialized_end=503
-  _globals['_SIMBRIDGE']._serialized_start=506
-  _globals['_SIMBRIDGE']._serialized_end=696
+  _globals['_AMRSTATE']._serialized_start=506
+  _globals['_AMRSTATE']._serialized_end=700
+  _globals['_STATIONSTATE']._serialized_start=703
+  _globals['_STATIONSTATE']._serialized_end=833
+  _globals['_TELEMETRYFRAME']._serialized_start=836
+  _globals['_TELEMETRYFRAME']._serialized_end=1620
+  _globals['_SIMBRIDGE']._serialized_start=1871
+  _globals['_SIMBRIDGE']._serialized_end=2061
 # @@protoc_insertion_point(module_scope)

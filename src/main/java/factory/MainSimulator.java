@@ -336,6 +336,30 @@ public class MainSimulator {
                     .setCompressorPowerKw(sv.get(ProtoIndex.COMPRESSOR_POWER_KW));
         }
 
+        // station5_failure_flags mirrors the last RunBatchTest result (doc6
+        // §3.1). This is sourced from the TestBenchArtifact directly, not the
+        // AdvanceTime state vector — RunBatchTest is a separate, read-only
+        // RPC path and never mutates self._state on the Python side.
+        //
+        // Also NOT sourced from tb.currentSummary: STATION_DEFECT_DETECTED is
+        // reset back to STATION_IDLE by releaseStation() almost immediately
+        // after being set (resource_holon.asl calls it right after
+        // processOrder returns, on both the pass and fail paths, so the
+        // station remains claimable for the next order). That reset makes
+        // currentSummary.state() an unreliable channel for "what happened on
+        // the last test" — these fields on TestBenchArtifact are the
+        // reliable channel; they are never touched by releaseStation().
+        for (Object obj : stationArtifacts) {
+            if (obj instanceof TestBenchArtifact tb) {
+                b.setStation5FailureFlags(tb.lastFailureFlags)
+                        .setStation5HasRunTest(tb.hasRunAnyTest)
+                        .setStation5LastTestPassed(tb.lastTestPassed)
+                        .setStation5LastTestedStackId(tb.lastTestedStackId)
+                        .addAllStation5LastMeasuredVoltages(tb.lastMeasuredVoltages);
+                break;
+            }
+        }
+
         // b.setDroppedTelemetryFrameCount(((TelemetryArtifact)
         // telemetryArtifact).droppedTelemetryFrameCount.intValue())
         b.setDroppedTelemetryFrameCount(0)
