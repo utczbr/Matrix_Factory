@@ -1,0 +1,41 @@
+{
+  "sequenceNumber": "2",
+  "simTimeS": 2,
+  "activeOrgSchema": "centralized",
+  "stationStates": [
+    {
+      "stationId": "S5"
+    },
+    {
+      "stationId": "S2"
+    },
+    {
+      "stationId": "S1"
+    },
+    {
+      "stationId": "S4"
+    },
+    {
+      "stationId": "S3"
+    }
+  ],
+  "thermoStateVector": [
+    3,
+    1,
+    298.15,
+    0,
+    170.26821515581807,
+    0,
+    298.1576907096337,
+    298.1580569339016,
+    298.15732448536573
+  ],
+  "station5StackVoltageV": 170.26821515581807,
+  "station5StackTempK": 298.1576907096337,
+  "station5StackCoreTempK": 298.1580569339016,
+  "station5StackSkinTempK": 298.15732448536573,
+  "h2TankPressureBar": 3,
+  "h2TankFillFraction": 1,
+  "chillerTempK": 298.15,
+  "droppedNerCount": 2
+}
