@@ -11,8 +11,7 @@
      +my_name(Me); .print("Resource Holon ", Me, " starting");
      -+station_state(idle);
      +current_epoch(0);
-     +my_station(Me);
-     +current_processing_cost(10).
+     +my_station(Me).
 
 // ── CNP Reservation State-Machine (Phase 2) ──────────────────────────────
 
@@ -30,10 +29,12 @@
       }.
 
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
-   <- ?my_name(Me);
-      ?station_state(State);
-      .print("CFP refused (station busy/locked). Me: ", Me, ", State: ", State);
-      .send(Sender, tell, refuse(Me)).
+   : my_name(Me) & .member(Me, Stations) & station_state(idle) & not my_recipe_step(Step)
+   <- .send(Sender, tell, refuse(Me, "step_mismatch")).
+
++!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
+   : my_name(Me) & .member(Me, Stations) & not station_state(idle)
+   <- .send(Sender, tell, refuse(Me, "station_busy")).
 
 -!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
    <- ?my_name(Me);
@@ -46,13 +47,11 @@
 
 // Phase 3 Amended accept_proposal plan
 +accept_proposal(OrderId)[source(Sender)]
-  : station_state(provisional_lock(OrderId)) & my_name(Me)
-  <- -+station_state(busy_processing(OrderId)); // Update Jason synchronously before external action
+  : station_state(provisional_lock(OrderId)) & my_name(Me) & my_recipe_step(Step)
+  <- -+station_state(busy_processing(OrderId));
      cancelTimer(OrderId, Me);
-     // Phase 3: register with all three fields so the supervisor's lock filter
-     // can correctly identify which Order Holon holds a commitment at this station.
-     // Sender is the Order Holon's agent name atom (e.g., order_2) — correct type.
      registerLock(OrderId, Me, Sender);
+     +active_order(OrderId, Sender, Step);      // NEW — remember who + what step
      .send(Sender, tell, inform_start(Me));
      !execute_physical_operation(OrderId).
 
@@ -75,15 +74,18 @@
 
 // Phase 3 Amended execute_physical_operation plan
 +!execute_physical_operation(OrderId)
-  : station_state(busy_processing(OrderId)) & my_station(SId)
+  : station_state(busy_processing(OrderId)) & my_station(SId) & active_order(OrderId, OrderHolon, Step)
   <- processOrder(OrderId, ResultCode);
-     releaseLock(OrderId);        // Remove from registry on normal completion
+     releaseLock(OrderId);
+     -active_order(OrderId, OrderHolon, Step);
      if (ResultCode == "defect") {
-         releaseStation(OrderId); // Sync artifact volatile field
-         -+station_state(idle);   // Ensure Jason returns to idle on defect
+         releaseStation(OrderId);
+         -+station_state(idle);
+         .send(OrderHolon, tell, step_failed(OrderId, Step, "defect"));  // NEW
          !report_defect(OrderId);
      } else {
-         -+station_state(idle);    // processOrder already set artifact to IDLE on success
+         -+station_state(idle);
+         .send(OrderHolon, tell, step_complete(OrderId, Step));         // NEW
      }.
 
 +!report_defect(OrderId)

@@ -23,6 +23,7 @@
      .concat("ORD-", Me, "-", R, OrderId);
      +my_order_id(OrderId);
      +order_random(OrderId, R);
+     +recipe_remaining(OrderId, [2,3]);          // NEW — steps left after step 1
      .print("Spawning order: ", OrderId);
      !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
 
@@ -33,6 +34,7 @@
      ?order_random(OrderId, R);
      I = math.round(R * 10000) mod N;
      .nth(I, Amrs, Amr);
+     -+dispatched_amr(OrderId, Amr);                        // NEW (overwrite)
      .print("Requesting transport for ", OrderId, " to ", To, " via ", Amr);
      .send(Amr, achieve, transport(OrderId, From, To)).
 
@@ -42,6 +44,23 @@
 +transport_blocked(OrderId)[source(Amr)]
   <- .print("Transport blocked for ", OrderId, " - signaling supervisor");
      .send(supervisor, tell, transport_blocked(OrderId)).
+
++step_complete(OrderId, Step)[source(Station)]
+  : recipe_remaining(OrderId, Remaining)
+  <- .print("Step ", Step, " complete for ", OrderId, " at ", Station);
+     if (Remaining == []) {
+         .print("Order ", OrderId, " fully complete");
+         -recipe_remaining(OrderId, Remaining);
+     } else {
+         .nth(0, Remaining, NextStep);
+         .delete(0, Remaining, Rest);
+         -+recipe_remaining(OrderId, Rest);
+         !call_for_proposals(NextStep, [station_1,station_2,station_3,station_4,station_5], OrderId);
+     }.
+
++step_failed(OrderId, Step, Reason)[source(Station)]
+  <- .print("Step ", Step, " failed for ", OrderId, " (", Reason, ") — retrying same step");
+     !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId).
 
 +!call_for_proposals(Step, Stations, OrderId)
   : my_name(Me)
@@ -90,13 +109,19 @@
      !call_for_proposals(Step, Stations, OrderId).
 
 +!await_station_start(OrderId, Station)
-  <- .wait(inform_start(Station)[source(Station)], 10000, TimedOut);
-     if (TimedOut >= 10000) {
-          .print("Failed to get inform_start from ", Station, " - retrying CNP");
-          !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId);
-      } else {
-          .print("Station ", Station, " started processing ", OrderId);
-      }.
+  <- .my_name(Me);
+     .concat(OrderId, "_await", AwaitKey);
+     startTimer(AwaitKey, 10000, Me);
+     .wait(inform_start(Station)[source(Station)] | timer_expired(AwaitKey, _), 15000, _);
+     if (inform_start(Station)[source(Station)]) {
+         cancelTimer(AwaitKey, Me);
+         .print("Station ", Station, " started processing ", OrderId);
+     } else {
+         .print("Failed to get inform_start from ", Station, " - retrying CNP");
+         ?dispatched_amr(OrderId, Amr);
+         .send(Amr, tell, abort_transport(OrderId));
+         !call_for_proposals(1, [station_1,station_2,station_3,station_4,station_5], OrderId);
+     }.
 
 // ── ADACOR Phase 0 Compensating Abort ────────────────────────────────────
 

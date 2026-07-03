@@ -24,6 +24,16 @@
   <- -transporting(OrderId, Sender);
      .send(Sender, tell, transport_done(OrderId)).
 
++abort_transport(OrderId)[source(Sender)]
+  : transporting(OrderId, Sender) & my_name(Me)
+  <- .drop_intention(transport(OrderId, _, _));
+     cancelTimer(OrderId, Me);
+     -transporting(OrderId, Sender);
+     .print("Transport aborted for ", OrderId).
+
++abort_transport(OrderId)[source(Sender)]
+  <- true.   // no matching in-flight transport — ignore
+
 +!notify_grid_saturation(OrderId)
   <- getGridUtilization(Util);
      if (Util > 0.85) {
@@ -54,3 +64,6 @@
 +!reinitialize_schema
   <- .drop_all_intentions;
      !start.
+
++timer_expired(OrderId, _)
+  <- true.
