@@ -93,8 +93,8 @@ mas factory_twin {
     }
 
     workspace factory_ws {
-        artifact base_station_1  : factory.BaseStationArtifact("S1", 1, 45.0,  5.0,  0.005, 0, 1, 10.0)
-        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 120.0, 15.0, 0.012, 0, 1, 15.0)
+        artifact base_station_1  : factory.BaseStationArtifact("S1", 1, 5.0,  5.0,  0.005, 0, 1, 10.0)
+        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 12.0, 15.0, 0.012, 0, 1, 15.0)
         artifact base_station_3  : factory.BaseStationArtifact("S3", 3, 30.0,  2.0,  0.002, 0, 2, 10.0)
         artifact base_station_4  : factory.BaseStationArtifact("S4", 4, 240.0, 30.0, 0.008, 0, 2, 20.0)
         artifact test_bench      : factory.TestBenchArtifact("S5", 0, 3, 10.0)
