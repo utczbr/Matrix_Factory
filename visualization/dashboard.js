@@ -23,6 +23,10 @@ function field(obj, camel, snake) {
     return obj[camel] !== undefined ? obj[camel] : obj[snake];
 }
 
+let frozenTestCurrent = null;
+let frozenTestVoltage = null;
+
+
 const STATION_STATE_NAMES = ["IDLE", "PROVISIONAL_LOCK", "BUSY_PROCESSING", "DEFECT_DETECTED", "OFFLINE"];
 const STATION_STATE_COLORS = {
     0: "#2ecc71", // IDLE - green
@@ -213,12 +217,26 @@ function renderStation5Panel(frame) {
     const liveStateNum = s5 ? stationStateNumber(s5) : 0;
     const liveStateName = STATION_STATE_NAMES[liveStateNum] || "UNKNOWN";
 
+    // Freeze mechanism: keep the peak/most recent non-zero value during active testing
+    if (liveStateNum === 2) { // BUSY_PROCESSING
+        if (current > 0.0) {
+            frozenTestCurrent = current;
+            frozenTestVoltage = voltage;
+        }
+    } else {
+        frozenTestCurrent = null;
+        frozenTestVoltage = null;
+    }
+
+    let displayCurrent = (liveStateNum === 2 && frozenTestCurrent !== null) ? frozenTestCurrent : current;
+    let displayVoltage = (liveStateNum === 2 && frozenTestVoltage !== null) ? frozenTestVoltage : voltage;
+
 
     let html = `
         <div>Live state: <strong style="color:${STATION_STATE_COLORS[liveStateNum]}">${liveStateName}</strong></div>
         <div style="font-weight: 500; font-size: 14px; color: #4b5563; margin-top: 15px;">Test Bench Background State:</div>
-        <div>Background voltage: ${voltage !== undefined ? voltage.toFixed(2) + " V" : "—"}</div>
-        <div>Background current: ${current !== undefined ? current.toFixed(3) + " A/cm²" : "—"}</div>
+        <div>Background voltage: ${displayVoltage !== undefined ? displayVoltage.toFixed(2) + " V" : "—"}</div>
+        <div>Background current: ${displayCurrent !== undefined ? displayCurrent.toFixed(3) + " A/cm²" : "—"}</div>
         <div>Background core temp: ${tempCore !== undefined ? tempCore.toFixed(1) + " K" : "—"}</div>
         <div>Background skin temp: ${tempSkin !== undefined ? tempSkin.toFixed(1) + " K" : "—"}</div>
     `;
