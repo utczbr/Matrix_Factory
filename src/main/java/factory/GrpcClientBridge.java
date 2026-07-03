@@ -22,7 +22,25 @@ public class GrpcClientBridge {
 
     public GrpcClientBridge(int port) {
         this.port = port;
-        int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 30);
+        // BUG FIX (mirrors the Python-side sim_bridge_server.py `max_workers`
+        // fix): this was previously `availableProcessors() / 30`, sized for
+        // the 30-daemon-per-machine Phase-4 production topology. In that
+        // divisor, any single-daemon dev/test run (e.g. `./gradlew run
+        // --args="0 50051 ..."` against one manually-launched Python
+        // process) collapses to exactly 1 thread on any machine with <60
+        // cores.
+        //
+        // This executor backs the Netty ManagedChannel's callback dispatch
+        // for EVERY RPC on this channel — both MainSimulator's blocking
+        // AdvanceTime calls (the tick loop) and TestBenchArtifact's
+        // long-lived RunBatchTest streaming call share the same channel.
+        // With only 1 thread here, a slow/queued callback on one RPC can
+        // starve the other's completion callback, which is exactly the
+        // client-side mirror of the server-side gRPC threadpool bug that
+        // caused AdvanceTime to stall (and telemetry/live-state to freeze)
+        // for the duration of a RunBatchTest sweep. Keep at least 2,
+        // independent of the /30 production heuristic.
+        int threads = Math.max(2, Runtime.getRuntime().availableProcessors() / 30);
         this.executor = new ThreadPoolExecutor(
                 threads, threads, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(256),
