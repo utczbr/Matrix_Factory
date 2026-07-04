@@ -53,8 +53,22 @@
   <- .print("Step ", Step, " complete for ", OrderId, " at ", Station);
      -+current_location(OrderId, Station);
      if (Remaining == []) {
+         // FIX: this branch previously just printed and stopped — no new
+         // order was ever spawned afterwards. Since each order holon only
+         // ever creates one order (in +timer_expired("batch_wait", Me)),
+         // that meant every order holon produced exactly one order for the
+         // entire run and then sat idle forever once it finished, which is
+         // why AMRs return to their dock and stay there ("stopping at
+         // base") instead of continuing to work. Clean up this order's
+         // beliefs and request the next batch so production continues.
          .print("Order ", OrderId, " fully complete");
          -recipe_remaining(OrderId, Remaining);
+         -my_order_id(OrderId);
+         -order_random(OrderId, _);
+         -current_location(OrderId, _);
+         -dispatched_amr(OrderId, _);
+         -cnp_winner(OrderId, _);
+         !request_next_batch;
      } else {
          .nth(0, Remaining, NextStep);
          .delete(0, Remaining, Rest);
@@ -84,17 +98,19 @@
      .print("Selected ", Winner, " for ", OrderId, " with cost ", BestCost);
      if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]) {
          .print("Test Hook: CNP slow accept — waiting to simulate delay");
+         +pending_accept_step(OrderId, Step);        // NEW — preserve Step; cnp_state is already gone by the time this timer fires
          startTimer(OrderId, 3000, Me);
      } else {
-         !finish_select_proposal(OrderId, Winner);
+         !finish_select_proposal(OrderId, Winner, Step);
      }.
 
 +timer_expired(OrderId, Me)
-  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")] & my_name(Me)
-  <- !finish_select_proposal(OrderId, Winner).
+  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")] & my_name(Me) & pending_accept_step(OrderId, Step)
+  <- -pending_accept_step(OrderId, Step);
+     !finish_select_proposal(OrderId, Winner, Step).
 
-+!finish_select_proposal(OrderId, Winner)
-  <- +cnp_winner(OrderId, Winner);
++!finish_select_proposal(OrderId, Winner, Step)
+  <- -+cnp_winner(OrderId, Winner);
      .send(Winner, tell, accept_proposal(OrderId));
      for ( propose(Loser, _) ) {
          if (Loser \== Winner) {
@@ -105,7 +121,7 @@
      .abolish(refuse(_));
      ?current_location(OrderId, CurrentLoc);
      !request_transport(OrderId, CurrentLoc, Winner);
-     !await_station_start(OrderId, Winner).
+     !await_station_start(OrderId, Winner, Step).
 
 +!select_proposal(Step, Stations, OrderId)
   <- .print("No proposals received for ", OrderId, " - retrying CNP");
@@ -114,25 +130,32 @@
      .wait(1000);
      !call_for_proposals(Step, Stations, OrderId).
 
-+!await_station_start(OrderId, Station)
++!await_station_start(OrderId, Station, Step)
   <- .my_name(Me);
      .concat(OrderId, "_await", AwaitKey);
-     // Wait for up to 60 seconds to allow physical AMR travel time
-     .wait(inform_start(Station)[source(Station)], 60000, _);
+     // Wait for up to 60 seconds of SIMULATED time (using TimerArtifact)
+     startTimer(AwaitKey, 60000, Me);
+     .wait(inform_start(Station)[source(Station)] | sim_timeout(AwaitKey));
      if (inform_start(Station)[source(Station)]) {
+         cancelTimer(AwaitKey, Me);
          .print("Station ", Station, " started processing ", OrderId);
      } else {
-         .print("Failed to get inform_start from ", Station, " - retrying CNP");
+         -sim_timeout(AwaitKey);
+         .print("Failed to get inform_start from ", Station, " (simulated timeout) - retrying CNP for step ", Step);
          ?dispatched_amr(OrderId, Amr);
          .send(Amr, tell, abort_transport(OrderId));
-         !call_for_proposals(1, [station_1,station_2,station_3,station_4,station_5], OrderId);
+         !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId);
      }.
+
++timer_expired(AwaitKey, Me)
+  : .substring("_await", AwaitKey)
+  <- +sim_timeout(AwaitKey).
 
 // ── ADACOR Phase 0 Compensating Abort ────────────────────────────────────
 
 +abort_current_operation(OrderId)
   : my_order_id(OrderId)
-  <- .drop_intention(await_station_start(OrderId, _));
+  <- .drop_intention(await_station_start(OrderId, _, _));
      .drop_intention(request_transport(OrderId, _, _));
      .print("ADACOR Phase0 abort: Order Holon dropping intentions for ", OrderId);
      !request_next_batch.
@@ -147,7 +170,7 @@
   : my_name(Me)
   <- .drop_intention(request_next_batch);
      .drop_intention(call_for_proposals(_, _, _));     // Order Holons initiate CFPs
-     .drop_intention(await_station_start(_, _));
+     .drop_intention(await_station_start(_, _, _));
      .drop_intention(request_transport(_, _, _));
      .send(supervisor, tell, suspend_ack(Me));
      .print("Order Holon ", Me, " suspended by ADACOR Phase1").

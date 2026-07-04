@@ -58,7 +58,7 @@ public class AMRArtifact extends Artifact {
             {6, 2},  // S2 - Cat. Dep. (Stage 1)
             {11, 2}, // S3 - BP Stamp (Stage 2)
             {15, 2}, // S4 - Stack Asm. (Stage 2)
-            {9, 7},  // S5 - Test Bench (Stage 3)
+            {4, 7},  // S5 - Test Bench (Stage 3)
     };
 
     private AMRSim[] fleet;
@@ -84,7 +84,7 @@ public class AMRArtifact extends Artifact {
         float x, y;                 // current grid cell (integer-valued, float type per proto)
         float nextX, nextY;         // cell currently being entered
         float progress;             // [0,1] progress from (x,y) to (nextX,nextY)
-        double secPerCell = 1.4;    // travel speed
+        double secPerCell = 0.5;    // travel speed
         double dwellRemaining = 0;  // seconds paused at a waypoint
         java.util.List<int[]> path = new java.util.ArrayList<>();
         int pathIndex = 0;
@@ -286,7 +286,6 @@ public class AMRArtifact extends Artifact {
 
     private void stepAMR(AMRSim a, double dt) {
         if (a.dwellRemaining > 0) {
-            a.status = AMRStatusEnum.AMR_IDLE;
             a.dwellRemaining -= dt;
             return;
         }
@@ -297,9 +296,13 @@ public class AMRArtifact extends Artifact {
                 signal("amr_arrived", a.amrId, a.carryingOrderId);
                 a.carryingOrderId = "";
                 a.pendingOrderId = "";
+                a.status = AMRStatusEnum.AMR_UNLOADING;
             } else if (!a.pendingOrderId.isEmpty() && a.carryingOrderId.isEmpty() && a.destinations.size() == 1) {
                 // Reached pickup (one destination left, the dropoff)
                 a.carryingOrderId = a.pendingOrderId;
+                a.status = AMRStatusEnum.AMR_LOADING;
+            } else {
+                a.status = AMRStatusEnum.AMR_IDLE;
             }
 
             // Free and there's a queued job waiting for this AMR — start it
@@ -342,7 +345,7 @@ public class AMRArtifact extends Artifact {
         int[] target = a.path.get(a.pathIndex);
         a.nextX = target[0];
         a.nextY = target[1];
-        a.status = a.carryingOrderId.isEmpty() ? AMRStatusEnum.AMR_MOVING : AMRStatusEnum.AMR_MOVING;
+        a.status = AMRStatusEnum.AMR_MOVING;
 
         a.progress += (float) (dt / a.secPerCell);
         if (a.progress >= 1f) {

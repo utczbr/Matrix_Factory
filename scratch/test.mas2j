@@ -1,0 +1,4 @@
+MAS test {
+    infrastructure: Centralised
+    agents: test;
+}
