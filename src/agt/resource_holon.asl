@@ -25,7 +25,20 @@
       if (test_hook_ttl(TTL)[artifact_name("supervisor_artifact"), wsp("factory_ws")]) {
           startTimer(OrderId, TTL, Me);
       } else {
-          startTimer(OrderId, 5000, Me);  // Discrete-event NER Timer
+          // ROOT CAUSE FIX (bid-TTL race against accept_proposal): this was
+          // 5000ms against the order holon's 3000ms CNP-collection window —
+          // only a ~2s margin for the winning station to actually receive
+          // and process accept_proposal before its own bid TTL reverted it
+          // to idle first. Once the simulation clock advances at its
+          // intended (correct) speed instead of being accidentally
+          // throttled by the NER-registration leak, that margin is blown
+          // through routinely (measured: 60 CNP rounds picked a winner,
+          // only 18 stations ever got to acknowledge it). order_holon.asl
+          // now recovers immediately instead of stalling 60s when this
+          // still happens (see await_station_start's reject_proposal
+          // branch), but widening the margin here means it happens far
+          // less often in the first place.
+          startTimer(OrderId, 20000, Me);  // Discrete-event NER Timer
       }.
 
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]

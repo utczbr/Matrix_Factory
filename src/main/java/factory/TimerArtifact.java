@@ -35,6 +35,18 @@ public class TimerArtifact extends Artifact {
         synchronized (timerQueue) {
             timerQueue.removeIf(entry -> entry.orderId().equals(orderId) && entry.targetAgentId().equals(agentId));
         }
+        // ROOT CAUSE FIX (stale NER registrations dragging the sim clock):
+        // startTimer() registers this agent's fireAt with MainSimulator's
+        // NER registry (submitNER) so the tick loop knows to advance to at
+        // least that time. Previously only evaluateTTLs() ever called
+        // removeNER() — i.e. only when a timer actually fired. A timer that
+        // gets cancelled instead (the normal, successful-path outcome: CNP
+        // accepted in time, inform_start received in time, ...) never fires,
+        // so its stale, increasingly-in-the-past requestedNextTime stayed in
+        // nerRegistry forever, forcing computedDt down toward MIN_DT on
+        // every subsequent tick for that agent. Every successful
+        // cancelTimer() call was quietly making the rest of the run slower.
+        RunManager.getSimulator(runId).removeNER(agentId);
     }
 
     public void evaluateTTLs(double simTime) {

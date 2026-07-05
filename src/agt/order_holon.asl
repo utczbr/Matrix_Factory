@@ -28,15 +28,26 @@
      .print("Spawning order: ", OrderId);
      !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
 
+// ROOT CAUSE FIX (blind AMR selection): this used to pick a transport AMR
+// by hashing the order's own random id (I = round(R*10000) mod N) with zero
+// regard for which AMRs were actually busy. With 5 concurrent order holons
+// and only 2 physical AMRs, that routinely piled several jobs onto one
+// AMR's jobQueue while the other sat idle at the dock — and a deep enough
+// queue behind a 2-leg station-to-station transport can exceed the 60s
+// await_station_start patience even though the AMR itself works correctly.
+// Ask AMRArtifact which AMR is least loaded (amr_load: queued jobs + 1 if
+// currently committed/carrying, so 0 == genuinely idle) and dispatch there.
 +!request_transport(OrderId, From, To)
-  <- .send(supervisor, askOne, active_transport_holons(Amrs), active_transport_holons(Amrs));
-     .length(Amrs, N);
-     .my_name(Me);
-     ?order_random(OrderId, R);
-     I = math.round(R * 10000) mod N;
-     .nth(I, Amrs, Amr);
+  <- .my_name(Me);
+     .send(supervisor, askOne, amr_physical_ids(AmrIds), amr_physical_ids(AmrIds));
+     getFleetStatus(StatusStr)[artifact_name("amr_artifact"), wsp("factory_ws")];
+     .term2string(Statuses, StatusStr);
+     .findall(load(Load, AgentName),
+              (.member(amr(AgentName, PhysicalId), AmrIds) & .member(amr_load(PhysicalId, Load), Statuses)),
+              Loads);
+     .min(Loads, load(BestLoad, Amr));
      -+dispatched_amr(OrderId, Amr);                        // NEW (overwrite)
-     .print("Requesting transport for ", OrderId, " to ", To, " via ", Amr);
+     .print("Requesting transport for ", OrderId, " to ", To, " via ", Amr, " (load=", BestLoad, ")");
      .send(Amr, achieve, transport(OrderId, From, To)).
 
 +transport_done(OrderId)[source(Amr)]
@@ -96,6 +107,10 @@
   : .findall(cost(C,W), propose(W,C)[source(W)], L) & L \== []
   <- .min(L, cost(BestCost,Winner));
      .print("Selected ", Winner, " for ", OrderId, " with cost ", BestCost);
+     // FIX: order_1..order_5 are likewise players in factory_prosa_org and
+     // factory_adacor_org on top of their explicit factory_ws focus, so
+     // artifact_name("supervisor_artifact") alone is the same ambiguous
+     // CArtAgO lookup described in amr_agent.asl -- pin it with wsp().
      if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact"), wsp("factory_ws")]) {
          .print("Test Hook: CNP slow accept — waiting to simulate delay");
          +pending_accept_step(OrderId, Step);        // NEW — preserve Step; cnp_state is already gone by the time this timer fires
@@ -130,21 +145,60 @@
      .wait(1000);
      !call_for_proposals(Step, Stations, OrderId).
 
+// ROOT CAUSE FIX (silent 60s stall on a station-side lock-TTL race):
+// resource_holon.asl's provisional-lock bid TTL (started when it proposes)
+// only had a ~2s margin over this order's 3s CNP-collection window. When
+// the discrete-event clock advances in large jumps (as it now correctly
+// does after the NER-leak fix), that margin is regularly blown through —
+// the station's own bid TTL fires and reverts it to idle before it has
+// processed our accept_proposal. It then correctly detects the mismatch
+// (station_state no longer provisional_lock) and replies with
+// reject_proposal(Me, "lock_expired_or_superseded") instead of ever
+// starting — but that plan has no .print, and nothing here was listening
+// for it, so the order holon just sat out the full 60s await timeout
+// waiting for an inform_start that had already been refused. Confirmed
+// empirically: 60 CNP rounds picked a winner in one run, only 18 stations
+// ever printed "Accepted proposal" — the other 42 hit this silent path.
+// Wait for the rejection too and recover immediately instead of stalling.
 +!await_station_start(OrderId, Station, Step)
   <- .my_name(Me);
      .concat(OrderId, "_await", AwaitKey);
      // Wait for up to 60 seconds of SIMULATED time (using TimerArtifact)
      startTimer(AwaitKey, 60000, Me);
-     .wait(inform_start(Station)[source(Station)] | sim_timeout(AwaitKey));
+     .wait(inform_start(Station)[source(Station)] | sim_timeout(AwaitKey) | reject_proposal(Station, _)[source(Station)]);
      if (inform_start(Station)[source(Station)]) {
          cancelTimer(AwaitKey, Me);
+         // Retract so a future await on this same station (very likely —
+         // the same order retries the same winning station, or a later
+         // order picks it again) can't be satisfied instantly by this
+         // stale belief before anything has actually happened this time.
+         -inform_start(Station)[source(Station)];
          .print("Station ", Station, " started processing ", OrderId);
      } else {
-         -sim_timeout(AwaitKey);
-         .print("Failed to get inform_start from ", Station, " (simulated timeout) - retrying CNP for step ", Step);
-         ?dispatched_amr(OrderId, Amr);
-         .send(Amr, tell, abort_transport(OrderId));
-         !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId);
+         if (reject_proposal(Station, _)[source(Station)]) {
+             cancelTimer(AwaitKey, Me);
+             -reject_proposal(Station, _)[source(Station)];
+             .print("Proposal to ", Station, " for ", OrderId, " was superseded before it could start (lock-TTL race) - retrying CNP for step ", Step);
+             ?dispatched_amr(OrderId, Amr);
+             .send(Amr, tell, abort_transport(OrderId));
+             !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId);
+         } else {
+             -sim_timeout(AwaitKey);
+             .print("Failed to get inform_start from ", Station, " (simulated timeout) - retrying CNP for step ", Step);
+             ?dispatched_amr(OrderId, Amr);
+             .send(Amr, tell, abort_transport(OrderId));
+             // ROOT CAUSE FIX (station self-deadlock on retry): Station was
+             // never told to release the provisional_lock it still holds for
+             // this exact OrderId. Every retried CNP for the same order then
+             // reached its own abandoned lock at Station and got refused as
+             // "station_busy" — the retry could only ever succeed on a
+             // different Stage-2 station (or never, if that one was also
+             // legitimately locked). Release the lock before re-issuing the
+             // CFP; resource_holon.asl's abort_current_operation already
+             // handles this safely (no-ops if Station has already moved on).
+             .send(Station, tell, abort_current_operation(OrderId));
+             !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId);
+         }
      }.
 
 +timer_expired(AwaitKey, Me)

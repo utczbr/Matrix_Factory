@@ -14,7 +14,14 @@
 +!register_active_holons
   <- +active_order_holons([order_1, order_2, order_3, order_4, order_5]);
      +active_resource_holons([station_1, station_2, station_3, station_4, station_5]);
-     +active_transport_holons([amr_1, amr_2]).
+     +active_transport_holons([amr_1, amr_2]);
+     // NEW — pairs each transport-holon agent name with the physical AMR id
+     // AMRArtifact knows it by (factory.jcm: amr_1 carries amr_id("AMR-1"),
+     // amr_2 carries amr_id("AMR-2")). order_holon.asl's load-aware AMR
+     // selection needs both halves of this pairing to turn
+     // AMRArtifact.getFleetStatus()'s per-physical-AMR load figures back
+     // into an agent name it can actually .send() an achieve-goal to.
+     +amr_physical_ids([amr(amr_1, "AMR-1"), amr(amr_2, "AMR-2")]).
 
 // ── Energy Price Disturbance — ADACOR Trigger ────────────────────────────
 

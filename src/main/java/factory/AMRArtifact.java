@@ -215,6 +215,48 @@ public class AMRArtifact extends Artifact {
         }
     }
 
+    /**
+     * ROOT CAUSE FIX (blind AMR selection routinely piling multiple orders
+     * onto one physical AMR while a second AMR sits idle at the dock):
+     * order_holon.asl used to pick a transport AMR with a pseudo-random hash
+     * (I = round(R*10000) mod N) that had zero visibility into which AMRs
+     * were actually busy. With 5 concurrent order holons and only 2 AMRs,
+     * that regularly queued several jobs behind one AMR while the other sat
+     * idle — and a long enough queue behind a 2-leg station-to-station
+     * transport can exceed the 60s await_station_start patience even though
+     * the AMR itself is working correctly.
+     *
+     * This reports each AMR's current load — its queued-job count plus
+     * whether it is presently carrying/committed to a job — so the
+     * cognitive layer can dispatch to the least-loaded AMR instead of
+     * guessing. Returned as a Jason-parseable list of
+     * amr_load(PhysicalId, Load) terms, e.g.
+     * [amr_load("AMR-1",2),amr_load("AMR-2",0)] — lower Load is more
+     * available; 0 means genuinely idle.
+     */
+    @OPERATION
+    public void getFleetStatus(OpFeedbackParam<String> result) {
+        StringBuilder sb = new StringBuilder("[");
+        if (fleet != null) {
+            for (AMRSim a : fleet) {
+                int load = a.jobQueue.size() + (isFree(a) ? 0 : 1);
+                sb.append("amr_load(\"").append(a.amrId).append("\",").append(load).append("),");
+            }
+        }
+        if (sb.length() > 1 && sb.charAt(sb.length() - 1) == ',') {
+            sb.deleteCharAt(sb.length() - 1);
+        }
+        sb.append("]");
+        result.set(sb.toString());
+    }
+
+    // NOTE: reserveTrajectory() below is not currently invoked by any .asl
+    // file — it predates the amr_load-based selection above and remains a
+    // stub ("granted" unconditionally). Real occupancy for
+    // getGridUtilization() is now populated by refreshGridOccupancy() (see
+    // updatePositions()) instead of relying on this method, so grid
+    // utilization reporting is accurate even though trajectory reservation
+    // itself is not yet wired into path planning.
     @OPERATION
     public void reserveTrajectory(Object[] trajectory, OpFeedbackParam<String> result) {
         String agentId = getOpUserName();
@@ -257,6 +299,36 @@ public class AMRArtifact extends Artifact {
         }
     }
 
+    /**
+     * ROOT CAUSE FIX (getGridUtilization always reporting 0.0): reservedBy
+     * was declared and read (here and in getGridUtilization()) but never
+     * written anywhere — reserveTrajectory() is a stub nobody calls, so the
+     * grid-saturation deadlock-resolution path in supervisor_agent.asl and
+     * amr_agent.asl's notify_grid_saturation check could never fire under
+     * real load. This rebuilds the instantaneous occupancy slice (index 0)
+     * from each AMR's actual current cell every tick — cheap, always
+     * consistent (no stale-entry bookkeeping needed since it's a full
+     * rebuild), and makes existing utilization-based logic observe reality.
+     * It only records presence for monitoring; it does not gate or block
+     * movement.
+     */
+    private void refreshGridOccupancy() {
+        synchronized (reservedBy) {
+            for (String[][] row : reservedBy) {
+                for (String[] cell : row) {
+                    cell[0] = null;
+                }
+            }
+            for (AMRSim a : fleet) {
+                int gx = (int) a.x;
+                int gy = (int) a.y;
+                if (gx >= 0 && gx < gridCols && gy >= 0 && gy < gridRows) {
+                    reservedBy[gx][gy][0] = a.amrId;
+                }
+            }
+        }
+    }
+
     // ROOT CAUSE FIX (IllegalMonitorStateException from Artifact.signal()):
     // updatePositions() is called directly from MainSimulator's own
     // simulation thread (see MainSimulator.tickLoop), not dispatched
@@ -278,6 +350,7 @@ public class AMRArtifact extends Artifact {
             for (AMRSim a : fleet) {
                 stepAMR(a, dt);
             }
+            refreshGridOccupancy();
             publishSnapshot();
         } finally {
             endExtSession();
@@ -316,6 +389,18 @@ public class AMRArtifact extends Artifact {
             if (!a.destinations.isEmpty()) {
                 String dest = a.destinations.removeFirst();
                 int idx = stationIndex(dest);
+                if (idx < 0) {
+                    // Previously this silently substituted the home dock
+                    // coordinates with no record of what happened — an
+                    // order referencing a misspelled or unknown station id
+                    // would just have its AMR quietly drive home instead of
+                    // to the requested station, with nothing in the logs to
+                    // explain the resulting stuck order. Surface it loudly
+                    // instead; the home-dock fallback still prevents a
+                    // crash or an out-of-bounds path.
+                    log("WARNING: unknown station id '" + dest + "' requested for " + a.amrId
+                            + " — routing to home dock as a safe fallback instead of the intended destination");
+                }
                 int[] cell = idx >= 0 ? STATION_CELLS[idx] : new int[]{a.homeX, a.homeY};
                 targetX = cell[0];
                 targetY = cell[1];
@@ -369,20 +454,44 @@ public class AMRArtifact extends Artifact {
         }
     }
 
-    /** Simple orthogonal (Manhattan) path: horizontal run then vertical run. */
+    /**
+     * Simple orthogonal (Manhattan) path: horizontal run then vertical run.
+     *
+     * Both loops already terminate on their own — Integer.compare gives a
+     * fixed-sign step and each iteration strictly closes the remaining
+     * distance to x1/y1 — so this cannot loop forever for well-formed grid
+     * coordinates. maxSteps below is a defense-in-depth guard, not a fix for
+     * an observed hang: if coordinates were ever corrupted upstream (e.g. a
+     * future bug feeding NaN-derived or out-of-grid values into stationIndex
+     * lookups), this fails loudly with a bounded, logged path instead of
+     * an unbounded loop that would eventually OOM the whole simulation.
+     */
     private java.util.List<int[]> manhattanPath(int x0, int y0, int x1, int y1) {
         java.util.List<int[]> pts = new java.util.ArrayList<>();
+        int maxSteps = 2 * (gridCols + gridRows) + 4;
         int x = x0;
         int stepX = Integer.compare(x1, x0);
+        int guard = 0;
         while (x != x1) {
             x += stepX;
             pts.add(new int[]{x, y0});
+            if (++guard > maxSteps) {
+                log("manhattanPath: exceeded max steps computing (" + x0 + "," + y0 + ")->("
+                        + x1 + "," + y1 + "); truncating path to avoid an unbounded loop");
+                return pts;
+            }
         }
         int y = y0;
         int stepY = Integer.compare(y1, y0);
+        guard = 0;
         while (y != y1) {
             y += stepY;
             pts.add(new int[]{x1, y});
+            if (++guard > maxSteps) {
+                log("manhattanPath: exceeded max steps computing (" + x0 + "," + y0 + ")->("
+                        + x1 + "," + y1 + "); truncating path to avoid an unbounded loop");
+                return pts;
+            }
         }
         if (pts.isEmpty()) pts.add(new int[]{x1, y1});
         return pts;

@@ -51,7 +51,16 @@ public class MainSimulator {
     private final double MIN_DT = 0.01;
     private final double MAX_DT = 1.0;
 
-    private int registeredAgentCount = 8; // order_manager + 5 stations + 2 AMRs
+    // ROOT CAUSE FIX: this was 8, matching a stale "order_manager + 5
+    // stations + 2 AMRs" comment from an earlier single-order-manager phase.
+    // The current roster (factory.jcm) is 5 concurrent order holons + 5
+    // stations + 2 AMRs + 1 supervisor (which also runs startTimer for its
+    // own ADACOR phase timers) = 13. This count only sizes a best-effort
+    // CountDownLatch quorum (a 10ms miss just falls through to "proceed
+    // anyway" and bumps droppedNerCount), so the old value didn't hang
+    // anything — it just meant the tick loop almost never saw a full
+    // quorum and fell back to the timeout path far more than intended.
+    private int registeredAgentCount = 13; // 5 order holons + 5 stations + 2 AMRs + 1 supervisor
 
     private boolean shutdown = false;
 
