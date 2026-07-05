@@ -96,7 +96,7 @@
   : .findall(cost(C,W), propose(W,C)[source(W)], L) & L \== []
   <- .min(L, cost(BestCost,Winner));
      .print("Selected ", Winner, " for ", OrderId, " with cost ", BestCost);
-     if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")]) {
+     if (test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact"), wsp("factory_ws")]) {
          .print("Test Hook: CNP slow accept — waiting to simulate delay");
          +pending_accept_step(OrderId, Step);        // NEW — preserve Step; cnp_state is already gone by the time this timer fires
          startTimer(OrderId, 3000, Me);
@@ -105,7 +105,7 @@
      }.
 
 +timer_expired(OrderId, Me)
-  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact")] & my_name(Me) & pending_accept_step(OrderId, Step)
+  : propose(Winner, Cost)[source(Winner)] & test_hook_cnp_slow_accept(true)[artifact_name("supervisor_artifact"), wsp("factory_ws")] & my_name(Me) & pending_accept_step(OrderId, Step)
   <- -pending_accept_step(OrderId, Step);
      !finish_select_proposal(OrderId, Winner, Step).
 

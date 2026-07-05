@@ -15,7 +15,7 @@
   : my_name(Me) & amr_id(AmrPhysicalId)
   <- .print("AMR ", Me, " transporting ", OrderId, " from ", From, " to ", To);
      !notify_grid_saturation(OrderId);
-     requestTransport(AmrPhysicalId, From, To, OrderId)[artifact_name("amr_artifact")];
+     requestTransport(AmrPhysicalId, From, To, OrderId)[artifact_name("amr_artifact"), wsp("factory_ws")];
      +transporting(OrderId, Sender).
 
 +amr_arrived(AmrPhysicalId, OrderId)
@@ -27,7 +27,7 @@
   : transporting(OrderId, Sender) & my_name(Me) & amr_id(AmrPhysicalId)
   <- .drop_intention(transport(OrderId, _, _));
      cancelTimer(OrderId, Me);
-     cancelTransport(AmrPhysicalId, OrderId)[artifact_name("amr_artifact")];
+     cancelTransport(AmrPhysicalId, OrderId)[artifact_name("amr_artifact"), wsp("factory_ws")];
      -transporting(OrderId, Sender);
      .print("Transport aborted for ", OrderId).
 

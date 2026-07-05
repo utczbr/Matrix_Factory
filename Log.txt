@@ -1,0 +1,1228 @@
+Runtime Services (RTS) is running at 127.0.1.1:36991
+Agent mind inspector is running at http://127.0.1.1:3272
+CArtAgO Http Server running on http://127.0.1.1:3273
+Moise Http Server running on http://127.0.1.1:3271
+[Moise] OrgBoard factory_prosa_org created.
+[Moise] group created: holonic_factory: shop_floor using artifact ora4mas.nopl.GroupBoard
+[Moise] OrgBoard factory_adacor_org created.
+[Moise] group created: adaptive_factory: shop_floor using artifact ora4mas.nopl.GroupBoard
+[Cartago] Workspace factory_ws created.
+[Cartago] artifact amr_artifact: factory.AMRArtifact(20,12,2,0) at factory_ws created.
+[Cartago] artifact test_bench: factory.TestBenchArtifact("S5",0,3,10.0) at factory_ws created.
+[Cartago] artifact utility_system: factory.UtilitySystemArtifact(0) at factory_ws created.
+[Cartago] artifact database: factory.DatabaseArtifact("factory_history.db",0) at factory_ws created.
+[Cartago] artifact energy_price: factory.EnergyPriceArtifact("price_series.csv",0) at factory_ws created.
+[Cartago] artifact timer_artifact: factory.TimerArtifact(0) at factory_ws created.
+[Cartago] artifact telemetry: factory.TelemetryArtifact(8080,0) at factory_ws created.
+[Cartago] artifact base_station_2: factory.BaseStationArtifact("S2",2,12.0,15.0,0.012,0,1,15.0) at factory_ws created.
+[Cartago] artifact base_station_1: factory.BaseStationArtifact("S1",1,5.0,5.0,0.005,0,1,10.0) at factory_ws created.
+[Cartago] artifact supervisor_artifact: factory.SupervisorArtifact(0) at factory_ws created.
+[Cartago] artifact base_station_4: factory.BaseStationArtifact("S4",4,24.0,30.0,0.008,0,2,20.0) at factory_ws created.
+[Cartago] artifact base_station_3: factory.BaseStationArtifact("S3",3,3.0,2.0,0.002,0,2,10.0) at factory_ws created.
+[order_2] join workspace /main/factory_adacor_org: done
+[order_3] join workspace /main/factory_adacor_org: done
+[order_2] join workspace /main/factory_prosa_org: done
+[order_3] join workspace /main/factory_prosa_org: done
+[order_3] join workspace /main/factory_ws: done
+[order_3] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[supervisor] join workspace /main/factory_adacor_org: done
+[supervisor] join workspace /main/factory_prosa_org: done
+[supervisor] join workspace /main/factory_ws: done
+[supervisor] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_3] join workspace /main/factory_adacor_org: done
+[station_3] join workspace /main/factory_prosa_org: done
+[station_3] join workspace /main/factory_ws: done
+[station_3] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[order_4] join workspace /main/factory_adacor_org: done
+[order_4] join workspace /main/factory_prosa_org: done
+[order_4] join workspace /main/factory_ws: done
+[order_4] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[station_5] join workspace /main/factory_adacor_org: done
+[station_5] join workspace /main/factory_prosa_org: done
+[order_2] join workspace /main/factory_ws: done
+[order_2] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_3] focus on base_station_1: done
+[station_5] join workspace /main/factory_ws: done
+[order_3] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[station_5] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_1: done
+[station_4] join workspace /main/factory_adacor_org: done
+[order_3] focus on base_station_2: done
+[order_3] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[station_4] join workspace /main/factory_prosa_org: done
+[amr_2] join workspace /main/factory_adacor_org: done
+[station_4] join workspace /main/factory_ws: done
+[amr_2] join workspace /main/factory_prosa_org: done
+[order_1] join workspace /main/factory_adacor_org: done
+[amr_2] join workspace /main/factory_ws: done
+[amr_2] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[station_4] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[order_1] join workspace /main/factory_prosa_org: done
+[order_5] join workspace /main/factory_adacor_org: done
+[amr_2] focus on amr_artifact: done
+[amr_2] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] join workspace /main/factory_prosa_org: done
+[order_5] join workspace /main/factory_ws: done
+[supervisor] focus on supervisor_artifact: done
+[order_5] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[supervisor] focusing on artifact energy_price (at workspace /main/factory_ws) using namespace default
+[amr_2] focus on supervisor_artifact: done
+[supervisor] focus on energy_price: done
+[amr_2] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[station_4] focus on base_station_4: done
+[station_4] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[station_1] join workspace /main/factory_adacor_org: done
+[station_1] join workspace /main/factory_prosa_org: done
+[station_1] join workspace /main/factory_ws: done
+[station_1] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_1: done
+[order_4] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_2: done
+[order_4] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[amr_1] join workspace /main/factory_adacor_org: done
+[amr_1] join workspace /main/factory_prosa_org: done
+[amr_1] join workspace /main/factory_ws: done
+[amr_1] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[station_2] join workspace /main/factory_adacor_org: done
+[station_2] join workspace /main/factory_prosa_org: done
+[station_2] join workspace /main/factory_ws: done
+[station_2] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[station_2] focus on base_station_2: done
+[station_2] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] join workspace /main/factory_ws: done
+[order_1] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_1: done
+[order_1] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[station_5] focus on test_bench: done
+[order_1] focus on base_station_2: done
+[station_5] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[station_5] focus on timer_artifact: done
+[station_5] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_4] focus on timer_artifact: done
+[order_3] focus on base_station_3: done
+[order_3] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[station_4] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on amr_artifact: done
+[supervisor] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_2: done
+[station_4] focus on supervisor_artifact: done
+[order_2] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[station_4] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on utility_system: done
+[station_5] focus on supervisor_artifact: done
+[order_5] focus on base_station_1: done
+[supervisor] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_3] focus on base_station_4: done
+[order_3] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[station_3] focus on base_station_3: done
+[amr_2] focus on timer_artifact: done
+[station_3] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on timer_artifact: done
+[supervisor] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_5] focus on base_station_2: done
+[order_5] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[station_3] focus on timer_artifact: done
+[station_5] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_3: done
+[station_3] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[station_4] focus on utility_system: done
+[order_5] focus on base_station_3: done
+[amr_2] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_5] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[station_4] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_3] focus on supervisor_artifact: done
+[station_2] focus on timer_artifact: done
+[station_1] focus on base_station_1: done
+[station_2] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[amr_2] focus on holonic_factory: done
+[amr_2] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_1] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_2] focus on supervisor_artifact: done
+[station_2] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_1] focus on timer_artifact: done
+[amr_2] focus on factory_prosa_org: done
+[amr_2] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_1] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_2] focus on utility_system: done
+[station_1] focus on supervisor_artifact: done
+[station_1] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_2] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_3] focus on test_bench: done
+[order_4] focus on base_station_3: done
+[order_4] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[amr_1] focus on amr_artifact: done
+[order_2] focus on base_station_4: done
+[amr_1] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[station_3] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_4: done
+[order_4] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[station_3] focus on utility_system: done
+[amr_1] focus on supervisor_artifact: done
+[order_3] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[amr_1] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_3] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_2] focus on test_bench: done
+[order_2] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_3: done
+[order_1] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[station_3] focus on holonic_factory: done
+[station_3] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_2] focus on amr_artifact: done
+[order_2] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_4: done
+[order_4] focus on test_bench: done
+[order_2] focus on timer_artifact: done
+[order_1] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_4] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[amr_1] focus on timer_artifact: done
+[amr_1] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_3] focus on amr_artifact: done
+[order_3] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on holonic_factory: done
+[supervisor] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_2] focus on supervisor_artifact: done
+[supervisor] focus on factory_prosa_org: done
+[order_2] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[supervisor] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_5] focus on utility_system: done
+[station_5] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_4] focus on holonic_factory: done
+[station_4] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_5] focus on holonic_factory: done
+[station_5] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_5] focus on base_station_4: done
+[order_5] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[station_4] focus on factory_prosa_org: done
+[station_4] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_1] focus on utility_system: done
+[order_5] focus on test_bench: done
+[station_1] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_2] focus on holonic_factory: done
+[station_2] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[amr_2] focus on adaptive_factory: done
+[amr_2] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[station_1] focus on holonic_factory: done
+[station_1] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_2] focus on factory_prosa_org: done
+[amr_2] focus on factory_adacor_org: done
+[station_1] focus on factory_prosa_org: done
+[station_1] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_5] focus on factory_prosa_org: done
+[station_5] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_3] focus on factory_prosa_org: done
+[order_5] focus on amr_artifact: done
+[order_5] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on test_bench: done
+[order_1] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] focus on timer_artifact: done
+[order_3] focus on timer_artifact: done
+[station_2] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_3] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on adaptive_factory: done
+[supervisor] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[EnergyPriceArtifact] Submitting internalUpdatePrice for newPrice=50.0 at simT=0.0
+[station_3] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_3] focus on adaptive_factory: done
+[station_3] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[supervisor] focus on factory_adacor_org: done
+[supervisor] Supervisor agent started
+[EnergyPriceArtifact] Executing internalUpdatePrice for newPrice=50.0
+[station_3] focus on factory_adacor_org: done
+[order_3] focus on supervisor_artifact: done
+[order_5] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_3] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_3] focus on utility_system: done
+[order_3] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_5] focus on supervisor_artifact: done
+[order_5] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_4] focus on adaptive_factory: done
+[station_4] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_1] focus on adaptive_factory: done
+[station_5] focus on adaptive_factory: done
+[station_5] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[amr_1] focus on holonic_factory: done
+[amr_1] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_4] focus on amr_artifact: done
+[order_4] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_1] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_2] focus on utility_system: done
+[order_2] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_4] focus on factory_adacor_org: done
+[station_2] focus on adaptive_factory: done
+[station_2] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_2] focus on factory_adacor_org: done
+[station_1] focus on factory_adacor_org: done
+[order_4] focus on timer_artifact: done
+[order_1] focus on amr_artifact: done
+[order_4] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_5] focus on factory_adacor_org: done
+[order_1] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] focus on utility_system: done
+[order_5] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_1] focus on timer_artifact: done
+[order_4] focus on supervisor_artifact: done
+[order_4] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_1] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on supervisor_artifact: done
+[order_1] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_4] focus on utility_system: done
+[order_1] focus on utility_system: done
+[order_1] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_4] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_4] focus on holonic_factory: done
+[order_4] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_1] focus on holonic_factory: done
+[order_1] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_2] focus on holonic_factory: done
+[order_2] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[amr_1] focus on factory_prosa_org: done
+[amr_1] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focus on holonic_factory: done
+[order_5] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[amr_2] AMR amr_2 starting
+[order_3] focus on holonic_factory: done
+[order_3] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[supervisor] Energy price is now: 0
+[supervisor] Energy price is now: 50
+[order_3] focus on factory_prosa_org: done
+[order_3] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[amr_1] focus on adaptive_factory: done
+[amr_1] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_1] focus on factory_prosa_org: done
+[order_1] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_3] Resource Holon station_3 starting
+[station_2] Resource Holon station_2 starting
+[order_4] focus on factory_prosa_org: done
+[order_4] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_3] focus on adaptive_factory: done
+[order_3] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[amr_1] focus on factory_adacor_org: done
+[station_1] Resource Holon station_1 starting
+[order_4] focus on adaptive_factory: done
+[order_4] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focus on factory_prosa_org: done
+[order_1] focus on adaptive_factory: done
+[order_1] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_5] Resource Holon station_5 starting
+[order_5] focus on adaptive_factory: done
+[order_5] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_4] focus on factory_adacor_org: done
+[order_3] focus on factory_adacor_org: done
+[order_1] focus on factory_adacor_org: done
+[order_2] focus on factory_prosa_org: done
+[order_2] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_2] focus on adaptive_factory: done
+[order_2] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focus on factory_adacor_org: done
+[station_4] Resource Holon station_4 starting
+[amr_1] AMR amr_1 starting
+[order_4] Order Holon order_4 starting
+[order_4] Requesting next batch... Me=order_4
+[TimerArtifact] startTimer called. orderId=batch_wait, ttl=2000, agentId=order_4, fireAt=2.0
+[order_2] focus on factory_adacor_org: done
+[order_1] Order Holon order_1 starting
+[order_1] Requesting next batch... Me=order_1
+[TimerArtifact] startTimer called. orderId=batch_wait, ttl=2000, agentId=order_1, fireAt=2.0
+[order_3] Order Holon order_3 starting
+[order_3] Requesting next batch... Me=order_3
+[TimerArtifact] startTimer called. orderId=batch_wait, ttl=2000, agentId=order_3, fireAt=2.0
+[order_2] Order Holon order_2 starting
+[order_2] Requesting next batch... Me=order_2
+[TimerArtifact] startTimer called. orderId=batch_wait, ttl=2000, agentId=order_2, fireAt=2.0
+[order_5] Order Holon order_5 starting
+[order_5] Requesting next batch... Me=order_5
+[TimerArtifact] startTimer called. orderId=batch_wait, ttl=2000, agentId=order_5, fireAt=2.0
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=batch_wait, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=batch_wait, agentId=order_4
+[order_4] Spawning order: ORD-order_4-0.7563658784206408
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=batch_wait, agentId=order_5
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=batch_wait, agentId=order_2
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=batch_wait, agentId=order_3
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=batch_wait, agentId=order_1
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] signalTimerExpired executed for orderId=batch_wait, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=batch_wait, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=batch_wait, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=batch_wait, agentId=order_1
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=5.0
+[order_5] Spawning order: ORD-order_5-0.5012931395378276
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_1] Spawning order: ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=5.0
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=5.0
+[order_3] Spawning order: ORD-order_3-0.6443926941182038
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=5.0
+[order_2] Spawning order: ORD-order_2-0.3539271505579782
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=5.0
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=5000, agentId=station_2, fireAt=8.0
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=5000, agentId=station_1, fireAt=8.0
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_2] No proposals received for ORD-order_2-0.3539271505579782 - retrying CNP
+[order_4] Selected station_1 for ORD-order_4-0.7563658784206408 with cost 10
+[order_4] Requesting transport for ORD-order_4-0.7563658784206408 to station_1 via amr_1
+[amr_1] AMR amr_1 transporting ORD-order_4-0.7563658784206408 from start to station_1
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408_await, ttl=60000, agentId=order_4, fireAt=66.0
+[base_station_2] Station S2 released for order ORD-order_4-0.7563658784206408 — currentSummary reset to IDLE
+[supervisor_artifact] Registry: registered ORD-order_4-0.7563658784206408 → [station_1, order_4]
+[station_2] Proposal rejected for order ORD-order_4-0.7563658784206408 (CNP lost), reverting to idle
+[station_1] Accepted proposal for ORD-order_4-0.7563658784206408, waiting for item to arrive
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=11.319999999999993
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=11.319999999999993
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=11.319999999999993
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=5000, agentId=station_2, fireAt=13.319999999999993
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=11.319999999999993
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[order_2] Selected station_2 for ORD-order_2-0.3539271505579782 with cost 15
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[supervisor_artifact] Registry: registered ORD-order_2-0.3539271505579782 → [station_2, order_2]
+[station_2] Accepted proposal for ORD-order_2-0.3539271505579782, waiting for item to arrive
+[order_2] Requesting transport for ORD-order_2-0.3539271505579782 to station_2 via amr_2
+[amr_2] AMR amr_2 transporting ORD-order_2-0.3539271505579782 from start to station_2
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782_await, ttl=60000, agentId=order_2, fireAt=71.33999999999993
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=14.809999999999919
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=14.809999999999919
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=14.809999999999919
+[order_4] Transport done for ORD-order_4-0.7563658784206408
+[order_4] Station station_1 started processing ORD-order_4-0.7563658784206408
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=18.349999999999845
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=18.349999999999845
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=18.349999999999845
+[supervisor_artifact] Registry: released ORD-order_4-0.7563658784206408
+[order_4] Step 1 complete for ORD-order_4-0.7563658784206408 at station_1
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=19.58999999999992
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=5000, agentId=station_4, fireAt=21.58999999999992
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=5000, agentId=station_3, fireAt=21.58999999999992
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=21.900000000000283
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=5000, agentId=station_1, fireAt=23.900000000000283
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=21.900000000000283
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=21.900000000000283
+[order_2] Transport done for ORD-order_2-0.3539271505579782
+[order_2] Station station_2 started processing ORD-order_2-0.3539271505579782
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[order_4] Selected station_3 for ORD-order_4-0.7563658784206408 with cost 10
+[supervisor_artifact] Registry: registered ORD-order_4-0.7563658784206408 → [station_3, order_4]
+[station_3] Accepted proposal for ORD-order_4-0.7563658784206408, waiting for item to arrive
+[order_4] Requesting transport for ORD-order_4-0.7563658784206408 to station_3 via amr_1
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408_await, ttl=60000, agentId=order_4, fireAt=79.58999999999992
+[amr_1] AMR amr_1 transporting ORD-order_4-0.7563658784206408 from station_1 to station_3
+[base_station_4] Station S4 released for order ORD-order_4-0.7563658784206408 — currentSummary reset to IDLE
+[station_4] Proposal rejected for order ORD-order_4-0.7563658784206408 (CNP lost), reverting to idle
+[supervisor_artifact] Registry: released ORD-order_2-0.3539271505579782
+[order_2] Step 1 complete for ORD-order_2-0.3539271505579782 at station_2
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=24.004953918977712
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=5000, agentId=station_4, fireAt=26.004953918977712
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_3] Selected station_1 for ORD-order_3-0.6443926941182038 with cost 10
+[supervisor_artifact] Registry: registered ORD-order_3-0.6443926941182038 → [station_1, order_3]
+[station_1] Accepted proposal for ORD-order_3-0.6443926941182038, waiting for item to arrive
+[order_3] Requesting transport for ORD-order_3-0.6443926941182038 to station_1 via amr_1
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038_await, ttl=60000, agentId=order_3, fireAt=81.91999999999997
+[amr_1] AMR amr_1 transporting ORD-order_3-0.6443926941182038 from start to station_1
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=25.460000000000058
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=25.47000000000006
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=5000, agentId=station_2, fireAt=27.47000000000006
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[order_2] Selected station_4 for ORD-order_2-0.3539271505579782 with cost 20
+[supervisor_artifact] Registry: registered ORD-order_2-0.3539271505579782 → [station_4, order_2]
+[station_4] Accepted proposal for ORD-order_2-0.3539271505579782, waiting for item to arrive
+[order_2] Requesting transport for ORD-order_2-0.3539271505579782 to station_4 via amr_2
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782_await, ttl=60000, agentId=order_2, fireAt=84.0200000000003
+[amr_2] AMR amr_2 transporting ORD-order_2-0.3539271505579782 from station_2 to station_4
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] Selected station_2 for ORD-order_5-0.5012931395378276 with cost 15
+[supervisor_artifact] Registry: registered ORD-order_5-0.5012931395378276 → [station_2, order_5]
+[station_2] Accepted proposal for ORD-order_5-0.5012931395378276, waiting for item to arrive
+[order_5] Requesting transport for ORD-order_5-0.5012931395378276 to station_2 via amr_2
+[amr_2] AMR amr_2 transporting ORD-order_5-0.5012931395378276 from start to station_2
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276_await, ttl=60000, agentId=order_5, fireAt=85.46000000000052
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=29.040000000000617
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=32.62000000000118
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=36.2400000000013
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=39.83000000000059
+[order_3] Transport done for ORD-order_3-0.6443926941182038
+[order_3] Station station_1 started processing ORD-order_3-0.6443926941182038
+[order_5] Transport done for ORD-order_5-0.5012931395378276
+[order_5] Station station_2 started processing ORD-order_5-0.5012931395378276
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=43.419999999999874
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=47.06999999999915
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=50.68999999999843
+[supervisor_artifact] Registry: released ORD-order_3-0.6443926941182038
+[order_3] Step 1 complete for ORD-order_3-0.6443926941182038 at station_1
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=50.8399999999984
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=54.3299999999977
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=5000, agentId=station_1, fireAt=56.3299999999977
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=54.45999999999768
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] Selected station_1 for ORD-order_1-0.247031885174401 with cost 10
+[supervisor_artifact] Registry: registered ORD-order_1-0.247031885174401 → [station_1, order_1]
+[order_1] Requesting transport for ORD-order_1-0.247031885174401 to station_1 via amr_1
+[amr_1] AMR amr_1 transporting ORD-order_1-0.247031885174401 from start to station_1
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401_await, ttl=60000, agentId=order_1, fireAt=114.3399999999971
+[station_1] Accepted proposal for ORD-order_1-0.247031885174401, waiting for item to arrive
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=58.07999999999696
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=61.72999999999623
+[order_1] Transport done for ORD-order_1-0.247031885174401
+[order_1] Station station_1 started processing ORD-order_1-0.247031885174401
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=65.3499999999955
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=68.92999999999617
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=72.54999999999802
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=76.2199999999999
+[supervisor_artifact] Registry: released ORD-order_1-0.247031885174401
+[order_1] Step 1 complete for ORD-order_1-0.247031885174401 at station_1
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=76.33999999999996
+[supervisor_artifact] Registry: released ORD-order_5-0.5012931395378276
+[order_5] Step 1 complete for ORD-order_5-0.5012931395378276 at station_2
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=76.6000000000001
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=79.85000000000176
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=79.97000000000182
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=80.22000000000195
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408_await, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408_await, agentId=order_4
+[order_4] Failed to get inform_start from station_3 (simulated timeout) - retrying CNP for step 2
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=82.59000000000316
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=83.47000000000361
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=83.58000000000366
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=83.8400000000038
+
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=94.4000000000092
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=94.51000000000926
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=94.63000000000932
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=94.90000000000946
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[order_4] No proposals received for ORD-order_4-0.7563658784206408 - retrying CNP
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=97.19000000001063
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[order_2] No proposals received for ORD-order_2-0.3539271505579782 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=98.1000000000111
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=98.21000000001115
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=98.33000000001121
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=98.61000000001135
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[order_4] No proposals received for ORD-order_4-0.7563658784206408 - retrying CNP
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=100.89000000001252
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[order_2] No proposals received for ORD-order_2-0.3539271505579782 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=101.75000000001296
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=101.87000000001302
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=102.0100000000131
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=102.30000000001324
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[order_4] No proposals received for ORD-order_4-0.7563658784206408 - retrying CNP
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=104.61000000001442
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[order_2] No proposals received for ORD-order_2-0.3539271505579782 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=105.47000000001486
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=105.58000000001492
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=105.71000000001499
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=106.00000000001513
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_4-0.7563658784206408, agentId=order_4
+[order_4] No proposals received for ORD-order_4-0.7563658784206408 - retrying CNP
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[TimerArtifact] startTimer called. orderId=ORD-order_4-0.7563658784206408, ttl=3000, agentId=order_4, fireAt=108.34000000001633
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_2-0.3539271505579782, agentId=order_2
+[order_2] No proposals received for ORD-order_2-0.3539271505579782 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_3-0.6443926941182038, agentId=order_3
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_1-0.247031885174401, agentId=order_1
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[TimerArtifact] evaluateTTLs queuing signalTimerExpired for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[TimerArtifact] signalTimerExpired executed for orderId=ORD-order_5-0.5012931395378276, agentId=order_5
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[TimerArtifact] startTimer called. orderId=ORD-order_2-0.3539271505579782, ttl=3000, agentId=order_2, fireAt=109.15000000001675
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[TimerArtifact] startTimer called. orderId=ORD-order_3-0.6443926941182038, ttl=3000, agentId=order_3, fireAt=109.27000000001681
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[TimerArtifact] startTimer called. orderId=ORD-order_1-0.247031885174401, ttl=3000, agentId=order_1, fireAt=109.39000000001687
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[TimerArtifact] startTimer called. orderId=ORD-order_5-0.5012931395378276, ttl=3000, agentId=order_5, fireAt=109.70000000001703
+
+
+[order_2] join workspace /main/factory_adacor_org: done
+[order_2] join workspace /main/factory_prosa_org: done
+[order_2] join workspace /main/factory_ws: done
+[order_2] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_1: done
+[order_2] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_2: done
+[order_2] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_3: done
+[order_2] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[order_2] focus on base_station_4: done
+[order_2] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_2] focus on test_bench: done
+[order_2] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focus on amr_artifact: done
+[order_2] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focus on timer_artifact: done
+[order_2] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_2] focus on supervisor_artifact: done
+[order_2] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_2] focus on utility_system: done
+[order_2] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_2] focus on holonic_factory: done
+[order_2] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_2] focus on factory_prosa_org: done
+[order_2] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_2] focus on adaptive_factory: done
+[order_2] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_2] focus on factory_adacor_org: done
+[order_2] Order Holon order_2 starting
+[order_2] Requesting next batch... Me=order_2
+[order_2] Spawning order: ORD-order_2-0.3539271505579782
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[order_2] No proposals received for ORD-order_2-0.3539271505579782 - retrying CNP
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[order_2] Selected station_2 for ORD-order_2-0.3539271505579782 with cost 15
+[order_2] Requesting transport for ORD-order_2-0.3539271505579782 to station_2 via amr_2
+[order_2] Transport done for ORD-order_2-0.3539271505579782
+[order_2] Station station_2 started processing ORD-order_2-0.3539271505579782
+[order_2] Step 1 complete for ORD-order_2-0.3539271505579782 at station_2
+[order_2] Initiating CNP for ORD-order_2-0.3539271505579782
+[order_2] Selected station_4 for ORD-order_2-0.3539271505579782 with cost 20
+[order_2] Requesting transport for ORD-order_2-0.3539271505579782 to station_4 via amr_2
+
+[order_3] join workspace /main/factory_adacor_org: done
+[order_3] join workspace /main/factory_prosa_org: done
+[order_3] join workspace /main/factory_ws: done
+[order_3] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_3] focus on base_station_1: done
+[order_3] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_3] focus on base_station_2: done
+[order_3] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[order_3] focus on base_station_3: done
+[order_3] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[order_3] focus on base_station_4: done
+[order_3] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_3] focus on test_bench: done
+[order_3] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_3] focus on amr_artifact: done
+[order_3] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_3] focus on timer_artifact: done
+[order_3] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_3] focus on supervisor_artifact: done
+[order_3] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_3] focus on utility_system: done
+[order_3] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_3] focus on holonic_factory: done
+[order_3] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_3] focus on factory_prosa_org: done
+[order_3] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_3] focus on adaptive_factory: done
+[order_3] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_3] focus on factory_adacor_org: done
+[order_3] Order Holon order_3 starting
+[order_3] Requesting next batch... Me=order_3
+[order_3] Spawning order: ORD-order_3-0.6443926941182038
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] Selected station_1 for ORD-order_3-0.6443926941182038 with cost 10
+[order_3] Requesting transport for ORD-order_3-0.6443926941182038 to station_1 via amr_1
+[order_3] Transport done for ORD-order_3-0.6443926941182038
+[order_3] Station station_1 started processing ORD-order_3-0.6443926941182038
+[order_3] Step 1 complete for ORD-order_3-0.6443926941182038 at station_1
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+[order_3] No proposals received for ORD-order_3-0.6443926941182038 - retrying CNP
+[order_3] Initiating CNP for ORD-order_3-0.6443926941182038
+
+[supervisor] join workspace /main/factory_adacor_org: done
+[supervisor] join workspace /main/factory_prosa_org: done
+[supervisor] join workspace /main/factory_ws: done
+[supervisor] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on supervisor_artifact: done
+[supervisor] focusing on artifact energy_price (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on energy_price: done
+[supervisor] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on amr_artifact: done
+[supervisor] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on utility_system: done
+[supervisor] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[supervisor] focus on timer_artifact: done
+[supervisor] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[supervisor] focus on holonic_factory: done
+[supervisor] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[supervisor] focus on factory_prosa_org: done
+[supervisor] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[supervisor] focus on adaptive_factory: done
+[supervisor] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[supervisor] focus on factory_adacor_org: done
+[supervisor] Supervisor agent started
+[supervisor] Energy price is now: 0
+[supervisor] Energy price is now: 50
+
+[station_3] join workspace /main/factory_adacor_org: done
+[station_3] join workspace /main/factory_prosa_org: done
+[station_3] join workspace /main/factory_ws: done
+[station_3] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[station_3] focus on base_station_3: done
+[station_3] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_3] focus on timer_artifact: done
+[station_3] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_3] focus on supervisor_artifact: done
+[station_3] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_3] focus on utility_system: done
+[station_3] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_3] focus on holonic_factory: done
+[station_3] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_3] focus on factory_prosa_org: done
+[station_3] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_3] focus on adaptive_factory: done
+[station_3] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_3] focus on factory_adacor_org: done
+[station_3] Resource Holon station_3 starting
+[station_3] Accepted proposal for ORD-order_4-0.7563658784206408, waiting for item to arrive
+
+[order_4] join workspace /main/factory_adacor_org: done
+[order_4] join workspace /main/factory_prosa_org: done
+[order_4] join workspace /main/factory_ws: done
+[order_4] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_1: done
+[order_4] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_2: done
+[order_4] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_3: done
+[order_4] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[order_4] focus on base_station_4: done
+[order_4] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_4] focus on test_bench: done
+[order_4] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_4] focus on amr_artifact: done
+[order_4] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_4] focus on timer_artifact: done
+[order_4] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_4] focus on supervisor_artifact: done
+[order_4] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_4] focus on utility_system: done
+[order_4] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_4] focus on holonic_factory: done
+[order_4] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_4] focus on factory_prosa_org: done
+[order_4] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_4] focus on adaptive_factory: done
+[order_4] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_4] focus on factory_adacor_org: done
+[order_4] Order Holon order_4 starting
+[order_4] Requesting next batch... Me=order_4
+[order_4] Spawning order: ORD-order_4-0.7563658784206408
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[order_4] Selected station_1 for ORD-order_4-0.7563658784206408 with cost 10
+[order_4] Requesting transport for ORD-order_4-0.7563658784206408 to station_1 via amr_1
+[order_4] Transport done for ORD-order_4-0.7563658784206408
+[order_4] Station station_1 started processing ORD-order_4-0.7563658784206408
+[order_4] Step 1 complete for ORD-order_4-0.7563658784206408 at station_1
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+[order_4] Selected station_3 for ORD-order_4-0.7563658784206408 with cost 10
+[order_4] Requesting transport for ORD-order_4-0.7563658784206408 to station_3 via amr_1
+[order_4] Failed to get inform_start from station_3 (simulated timeout) - retrying CNP for step 2
+[order_4] Initiating CNP for ORD-order_4-0.7563658784206408
+
+[station_5] join workspace /main/factory_adacor_org: done
+[station_5] join workspace /main/factory_prosa_org: done
+[station_5] join workspace /main/factory_ws: done
+[station_5] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[station_5] focus on test_bench: done
+[station_5] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_5] focus on timer_artifact: done
+[station_5] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_5] focus on supervisor_artifact: done
+[station_5] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_5] focus on utility_system: done
+[station_5] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_5] focus on holonic_factory: done
+[station_5] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_5] focus on factory_prosa_org: done
+[station_5] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_5] focus on adaptive_factory: done
+[station_5] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_5] focus on factory_adacor_org: done
+[station_5] Resource Holon station_5 starting
+
+[station_4] join workspace /main/factory_adacor_org: done
+[station_4] join workspace /main/factory_prosa_org: done
+[station_4] join workspace /main/factory_ws: done
+[station_4] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[station_4] focus on base_station_4: done
+[station_4] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_4] focus on timer_artifact: done
+[station_4] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_4] focus on supervisor_artifact: done
+[station_4] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_4] focus on utility_system: done
+[station_4] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_4] focus on holonic_factory: done
+[station_4] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_4] focus on factory_prosa_org: done
+[station_4] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_4] focus on adaptive_factory: done
+[station_4] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_4] focus on factory_adacor_org: done
+[station_4] Resource Holon station_4 starting
+[station_4] Proposal rejected for order ORD-order_4-0.7563658784206408 (CNP lost), reverting to idle
+[station_4] Accepted proposal for ORD-order_2-0.3539271505579782, waiting for item to arrive
+
+[amr_2] join workspace /main/factory_adacor_org: done
+[amr_2] join workspace /main/factory_prosa_org: done
+[amr_2] join workspace /main/factory_ws: done
+[amr_2] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[amr_2] focus on amr_artifact: done
+[amr_2] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[amr_2] focus on supervisor_artifact: done
+[amr_2] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[amr_2] focus on timer_artifact: done
+[amr_2] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[amr_2] focus on holonic_factory: done
+[amr_2] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[amr_2] focus on factory_prosa_org: done
+[amr_2] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[amr_2] focus on adaptive_factory: done
+[amr_2] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[amr_2] focus on factory_adacor_org: done
+[amr_2] AMR amr_2 starting
+[amr_2] AMR amr_2 transporting ORD-order_2-0.3539271505579782 from start to station_2
+[amr_2] AMR amr_2 transporting ORD-order_2-0.3539271505579782 from station_2 to station_4
+[amr_2] AMR amr_2 transporting ORD-order_5-0.5012931395378276 from start to station_2
+
+[order_1] join workspace /main/factory_adacor_org: done
+[order_1] join workspace /main/factory_prosa_org: done
+[order_1] join workspace /main/factory_ws: done
+[order_1] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_1: done
+[order_1] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_2: done
+[order_1] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_3: done
+[order_1] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[order_1] focus on base_station_4: done
+[order_1] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_1] focus on test_bench: done
+[order_1] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on amr_artifact: done
+[order_1] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on timer_artifact: done
+[order_1] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_1] focus on supervisor_artifact: done
+[order_1] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_1] focus on utility_system: done
+[order_1] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_1] focus on holonic_factory: done
+[order_1] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_1] focus on factory_prosa_org: done
+[order_1] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_1] focus on adaptive_factory: done
+[order_1] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_1] focus on factory_adacor_org: done
+[order_1] Order Holon order_1 starting
+[order_1] Requesting next batch... Me=order_1
+[order_1] Spawning order: ORD-order_1-0.247031885174401
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] Selected station_1 for ORD-order_1-0.247031885174401 with cost 10
+[order_1] Requesting transport for ORD-order_1-0.247031885174401 to station_1 via amr_1
+[order_1] Transport done for ORD-order_1-0.247031885174401
+[order_1] Station station_1 started processing ORD-order_1-0.247031885174401
+[order_1] Step 1 complete for ORD-order_1-0.247031885174401 at station_1
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+[order_1] No proposals received for ORD-order_1-0.247031885174401 - retrying CNP
+[order_1] Initiating CNP for ORD-order_1-0.247031885174401
+
+[order_5] join workspace /main/factory_adacor_org: done
+[order_5] join workspace /main/factory_prosa_org: done
+[order_5] join workspace /main/factory_ws: done
+[order_5] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[order_5] focus on base_station_1: done
+[order_5] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[order_5] focus on base_station_2: done
+[order_5] focusing on artifact base_station_3 (at workspace /main/factory_ws) using namespace default
+[order_5] focus on base_station_3: done
+[order_5] focusing on artifact base_station_4 (at workspace /main/factory_ws) using namespace default
+[order_5] focus on base_station_4: done
+[order_5] focusing on artifact test_bench (at workspace /main/factory_ws) using namespace default
+[order_5] focus on test_bench: done
+[order_5] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] focus on amr_artifact: done
+[order_5] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] focus on timer_artifact: done
+[order_5] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[order_5] focus on supervisor_artifact: done
+[order_5] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[order_5] focus on utility_system: done
+[order_5] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[order_5] focus on holonic_factory: done
+[order_5] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[order_5] focus on factory_prosa_org: done
+[order_5] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focus on adaptive_factory: done
+[order_5] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[order_5] focus on factory_adacor_org: done
+[order_5] Order Holon order_5 starting
+[order_5] Requesting next batch... Me=order_5
+[order_5] Spawning order: ORD-order_5-0.5012931395378276
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] Selected station_2 for ORD-order_5-0.5012931395378276 with cost 15
+[order_5] Requesting transport for ORD-order_5-0.5012931395378276 to station_2 via amr_2
+[order_5] Transport done for ORD-order_5-0.5012931395378276
+[order_5] Station station_2 started processing ORD-order_5-0.5012931395378276
+[order_5] Step 1 complete for ORD-order_5-0.5012931395378276 at station_2
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+[order_5] No proposals received for ORD-order_5-0.5012931395378276 - retrying CNP
+[order_5] Initiating CNP for ORD-order_5-0.5012931395378276
+
+[station_1] join workspace /main/factory_adacor_org: done
+[station_1] join workspace /main/factory_prosa_org: done
+[station_1] join workspace /main/factory_ws: done
+[station_1] focusing on artifact base_station_1 (at workspace /main/factory_ws) using namespace default
+[station_1] focus on base_station_1: done
+[station_1] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_1] focus on timer_artifact: done
+[station_1] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_1] focus on supervisor_artifact: done
+[station_1] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_1] focus on utility_system: done
+[station_1] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_1] focus on holonic_factory: done
+[station_1] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_1] focus on factory_prosa_org: done
+[station_1] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_1] focus on adaptive_factory: done
+[station_1] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_1] focus on factory_adacor_org: done
+[station_1] Resource Holon station_1 starting
+[station_1] Accepted proposal for ORD-order_4-0.7563658784206408, waiting for item to arrive
+[station_1] Accepted proposal for ORD-order_3-0.6443926941182038, waiting for item to arrive
+[station_1] Accepted proposal for ORD-order_1-0.247031885174401, waiting for item to arrive
+
+[amr_1] join workspace /main/factory_adacor_org: done
+[amr_1] join workspace /main/factory_prosa_org: done
+[amr_1] join workspace /main/factory_ws: done
+[amr_1] focusing on artifact amr_artifact (at workspace /main/factory_ws) using namespace default
+[amr_1] focus on amr_artifact: done
+[amr_1] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[amr_1] focus on supervisor_artifact: done
+[amr_1] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[amr_1] focus on timer_artifact: done
+[amr_1] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[amr_1] focus on holonic_factory: done
+[amr_1] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[amr_1] focus on factory_prosa_org: done
+[amr_1] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[amr_1] focus on adaptive_factory: done
+[amr_1] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[amr_1] focus on factory_adacor_org: done
+[amr_1] AMR amr_1 starting
+[amr_1] AMR amr_1 transporting ORD-order_4-0.7563658784206408 from start to station_1
+[amr_1] AMR amr_1 transporting ORD-order_4-0.7563658784206408 from station_1 to station_3
+[amr_1] AMR amr_1 transporting ORD-order_3-0.6443926941182038 from start to station_1
+[amr_1] AMR amr_1 transporting ORD-order_1-0.247031885174401 from start to station_1
+
+[station_2] join workspace /main/factory_adacor_org: done
+[station_2] join workspace /main/factory_prosa_org: done
+[station_2] join workspace /main/factory_ws: done
+[station_2] focusing on artifact base_station_2 (at workspace /main/factory_ws) using namespace default
+[station_2] focus on base_station_2: done
+[station_2] focusing on artifact timer_artifact (at workspace /main/factory_ws) using namespace default
+[station_2] focus on timer_artifact: done
+[station_2] focusing on artifact supervisor_artifact (at workspace /main/factory_ws) using namespace default
+[station_2] focus on supervisor_artifact: done
+[station_2] focusing on artifact utility_system (at workspace /main/factory_ws) using namespace default
+[station_2] focus on utility_system: done
+[station_2] focusing on artifact holonic_factory (at workspace /main/factory_prosa_org) using namespace default
+[station_2] focus on holonic_factory: done
+[station_2] focusing on artifact factory_prosa_org (at workspace /main/factory_prosa_org) using namespace default
+[station_2] focus on factory_prosa_org: done
+[station_2] focusing on artifact adaptive_factory (at workspace /main/factory_adacor_org) using namespace default
+[station_2] focus on adaptive_factory: done
+[station_2] focusing on artifact factory_adacor_org (at workspace /main/factory_adacor_org) using namespace default
+[station_2] focus on factory_adacor_org: done
+[station_2] Resource Holon station_2 starting
+[station_2] Proposal rejected for order ORD-order_4-0.7563658784206408 (CNP lost), reverting to idle
+[station_2] Accepted proposal for ORD-order_2-0.3539271505579782, waiting for item to arrive
+[station_2] Accepted proposal for ORD-order_5-0.5012931395378276, waiting for item to arrive

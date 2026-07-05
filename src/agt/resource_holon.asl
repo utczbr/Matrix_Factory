@@ -18,11 +18,11 @@
 // Plan: Respond to CFP with transactional reservation
 +!call_for_proposal(Step, Stations, OrderId)[source(Sender)]
    : my_name(Me) & .member(Me, Stations) & station_state(idle) & my_recipe_step(Step)
-   <- -+station_state(provisional_lock(OrderId)); // Update Jason belief synchronously first to prevent race condition
+   <- -+station_state(provisional_lock(OrderId)); 
       ?current_processing_cost(Cost);
       claimStation(OrderId, _);
       .send(Sender, tell, propose(Me, Cost));
-      if (test_hook_ttl(TTL)[artifact_name("supervisor_artifact")]) {
+      if (test_hook_ttl(TTL)[artifact_name("supervisor_artifact"), wsp("factory_ws")]) {
           startTimer(OrderId, TTL, Me);
       } else {
           startTimer(OrderId, 5000, Me);  // Discrete-event NER Timer
@@ -139,8 +139,8 @@
      -+station_state(offline);
      setStationOffline; // Push offline state to the dashboard
      ?my_name(Me);
-     if ((test_hook_block_ack_from(BlockMe)[artifact_name("supervisor_artifact")] & Me == BlockMe) |
-         (test_hook_inject_epoch_mismatch(BlockMe)[artifact_name("supervisor_artifact")] & Me == BlockMe)) {
+     if ((test_hook_block_ack_from(BlockMe)[artifact_name("supervisor_artifact"), wsp("factory_ws")] & Me == BlockMe) |
+         (test_hook_inject_epoch_mismatch(BlockMe)[artifact_name("supervisor_artifact"), wsp("factory_ws")] & Me == BlockMe)) {
          .print("Test Hook: Blocking ACK from ", Me);
      } else {
          .send(supervisor, tell, suspend_ack(Me));
