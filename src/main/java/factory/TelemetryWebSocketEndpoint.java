@@ -10,13 +10,27 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
-@ServerEndpoint("/telemetry")
+@ServerEndpoint(value = "/telemetry", configurator = TicketAuthConfigurator.class)
 public class TelemetryWebSocketEndpoint {
     @OnOpen
     public void onOpen(Session session) {
-        Map<String, List<String>> params = session.getRequestParameterMap();
-        int runId = Integer.parseInt(params.getOrDefault("run_id", List.of("0")).get(0));
-        String clientToken = params.getOrDefault("client", List.of(session.getId())).get(0);
+        // When TicketAuthConfigurator validates a ticket, it stashes run_id
+        // and client_token in session user properties.  Fall back to query
+        // params for backwards compatibility during migration.
+        Map<String, Object> userProps = session.getUserProperties();
+        int runId;
+        String clientToken;
+
+        if (userProps.containsKey("run_id")) {
+            runId = (int) userProps.get("run_id");
+            clientToken = (String) userProps.getOrDefault("client_token", session.getId());
+        } else {
+            // Legacy path: read from query params (no ticket)
+            Map<String, List<String>> params = session.getRequestParameterMap();
+            runId = Integer.parseInt(params.getOrDefault("run_id", List.of("0")).get(0));
+            clientToken = params.getOrDefault("client", List.of(session.getId())).get(0);
+        }
+
         TelemetryHub.register(session, runId, clientToken);
     }
 
@@ -33,3 +47,4 @@ public class TelemetryWebSocketEndpoint {
         TelemetryHub.unregister(session);
     }
 }
+

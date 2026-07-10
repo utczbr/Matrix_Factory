@@ -5,6 +5,9 @@ import java.sql.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.time.Duration;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 public class DatabaseArtifact extends Artifact {
     private static final int QUEUE_CAPACITY = 300_000;
@@ -29,7 +32,14 @@ public class DatabaseArtifact extends Artifact {
     // at the test bench, without waiting on the async SQLite drain loop
     // (which is write-behind on a 500ms cadence and only intended for
     // durable audit history, not the process-order hot path).
-    private final ConcurrentHashMap<String, QualityProfile> qualityProfiles = new ConcurrentHashMap<>();
+    // Caffeine cache replaces ConcurrentHashMap — bounded size + TTL catches
+    // orphaned entries from stacks aborted before reaching Station 5 (the
+    // ADACOR abort path). .asMap() preserves the existing merge/remove
+    // semantics so no call site outside this class needs to change.
+    private final Cache<String, QualityProfile> qualityProfilesCache = Caffeine.newBuilder()
+        .maximumSize(10_000)                       // generous multiple of realistic concurrent in-flight stacks
+        .expireAfterAccess(Duration.ofMinutes(30))  // catches orphans from aborted orders
+        .build();
 
     /**
      * Immutable, additively-mergeable quality accumulator for one stack.
@@ -93,7 +103,7 @@ public class DatabaseArtifact extends Artifact {
                                       boolean defect, double tProcS, double tMeanS, double simTime) {
         double varianceRatio = tMeanS > 0.0 ? Math.abs(tProcS - tMeanS) / tMeanS : 0.0;
         QualityProfile delta = new QualityProfile(defect ? 1 : 0, 1, varianceRatio);
-        qualityProfiles.merge(stackId, delta, QualityProfile::plus);
+        qualityProfilesCache.asMap().merge(stackId, delta, QualityProfile::plus);
 
         QualityRecord rec = new QualityRecord(runId, stackId, stationId, defect, tProcS, tMeanS, simTime);
         if (!qualityQueue.offer(rec)) {
@@ -112,7 +122,12 @@ public class DatabaseArtifact extends Artifact {
     public void getQualityProfile(String stackId, OpFeedbackParam<Integer> defectCount,
                                    OpFeedbackParam<Integer> stationsVisited,
                                    OpFeedbackParam<Double> cumulativeVarianceRatio) {
-        QualityProfile p = qualityProfiles.getOrDefault(stackId, QualityProfile.EMPTY);
+        // Consuming read: once Station 5 reads a stack's profile, that entry
+        // is provably dead — no station downstream of S5 exists to write to
+        // it again. remove() instead of getOrDefault() prevents unbounded
+        // accumulation on the normal (non-abort) path.
+        QualityProfile p = qualityProfilesCache.asMap().remove(stackId);
+        if (p == null) p = QualityProfile.EMPTY;
         defectCount.set(p.defectCount());
         stationsVisited.set(p.stationsVisited());
         cumulativeVarianceRatio.set(p.cumulativeVarianceRatio());
@@ -184,6 +199,14 @@ public class DatabaseArtifact extends Artifact {
 
                 if (queue.size() <= BACKPRESSURE_LOW && backpressureActive.compareAndSet(true, false)) {
                     signal("database_pressure_normal");
+                }
+
+                // Observability: log qualityProfiles cache size periodically so a
+                // future leak (e.g. from a new pipeline stage bypassing S5) shows
+                // up as a metric instead of requiring another manual audit.
+                long cacheSize = qualityProfilesCache.estimatedSize();
+                if (cacheSize > 100) {
+                    System.out.println("[DatabaseArtifact] qualityProfiles cache size: " + cacheSize);
                 }
 
                 int qBatchSize = Math.min(MAX_BATCH, qualityQueue.size());

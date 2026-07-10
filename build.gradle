@@ -45,6 +45,9 @@ dependencies {
     // SQLite JDBC (DatabaseArtifact historian)
     implementation 'org.xerial:sqlite-jdbc:3.45.3.0'
 
+    // Caffeine cache (bounded + TTL safety net for qualityProfiles)
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.12'
     runtimeOnly     'ch.qos.logback:logback-classic:1.5.6'
@@ -64,6 +67,19 @@ protobuf {
 }
 
 // Removed jacamo block since we don't use the plugin
+
+test {
+    useJUnitPlatform()
+    // JaCaMo uses global state — fork each test class in its own JVM to
+    // prevent cross-test contamination.  This slows the suite but is the
+    // only safe way until JaCaMo's infrastructure supports clean resets.
+    forkEvery = 1
+    maxParallelForks = 1
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+}
 
 sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/java'
 sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/grpc'

@@ -25,7 +25,7 @@ public class MainSimulator {
 
     public final int runId;
 
-    private int maxTicks = -1;
+    int maxTicks = -1;  // package-private for test harness access
     private boolean logEpochs = false;
 
     public String forceAbortStation = null;
@@ -63,6 +63,7 @@ public class MainSimulator {
     private int registeredAgentCount = 13; // 5 order holons + 5 stations + 2 AMRs + 1 supervisor
 
     private boolean shutdown = false;
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     // Artifact references (populated when artifacts init)
     public Object timerArtifact; 
@@ -219,9 +220,10 @@ public class MainSimulator {
         int ticks = 0;
         while (!shutdown) {
             if (maxTicks > 0 && ticks >= maxTicks) {
-                logger.info("Max ticks reached. Shutting down.");
-                System.exit(0);
-                break;
+                logger.info("Max ticks reached (" + maxTicks + "). Shutting down cleanly.");
+                shutdown = true;
+                shutdownLatch.countDown();
+                return;
             }
             try {
                 nerLatch = new CountDownLatch(registeredAgentCount);
@@ -399,5 +401,43 @@ public class MainSimulator {
         if (activeTransition != null && activeTransition.phase() == OrgSchemaTransition.TransitionPhase.COMMITTED) {
             activeTransition = null;
         }
+    }
+
+    // ── Test support ─────────────────────────────────────────────────────
+
+    /**
+     * Blocks until the tick loop sets {@code shutdown = true} (e.g. after
+     * maxTicks is reached), or until the timeout elapses.
+     *
+     * @return {@code true} if the simulator shut down within the timeout
+     */
+    public boolean waitForShutdown(long timeout, TimeUnit unit) throws InterruptedException {
+        return shutdownLatch.await(timeout, unit);
+    }
+
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
+    /** Typed accessor — avoids the Object-typed field for test assertions. */
+    public AMRArtifact getAmrArtifact() {
+        return (AMRArtifact) amrArtifact;
+    }
+
+    /** Typed accessor — avoids the Object-typed field for test assertions. */
+    public DatabaseArtifact getDatabaseArtifact() {
+        // DatabaseArtifact is in the stationArtifacts list or the workspace;
+        // for now, return null — test harness obtains it from RunManager.
+        return null;
+    }
+
+    /** Typed accessor — avoids the Object-typed field for test assertions. */
+    public SupervisorArtifact getSupervisorArtifact() {
+        return (SupervisorArtifact) supervisorArtifact;
+    }
+
+    /** Typed accessor for the timer artifact. */
+    public TimerArtifact getTimerArtifact() {
+        return (TimerArtifact) timerArtifact;
     }
 }

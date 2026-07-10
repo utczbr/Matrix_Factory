@@ -29,6 +29,48 @@ final class TelemetryHub {
                 logger.error("Failed to start Global Telemetry WebSocket server", e);
                 isRunning.set(false);
             }
+
+            // Start the HTTP ticket issuance endpoint on port+1 (e.g. 8081).
+            // GET /telemetry/ticket?run_id=N → { "ticket": "<signed-token>" }
+            // Uses JDK-builtin HttpServer — zero new dependency.
+            try {
+                int ticketPort = port + 1;
+                com.sun.net.httpserver.HttpServer httpServer =
+                        com.sun.net.httpserver.HttpServer.create(
+                                new java.net.InetSocketAddress("127.0.0.1", ticketPort), 0);
+                httpServer.createContext("/telemetry/ticket", exchange -> {
+                    if (!"GET".equals(exchange.getRequestMethod())) {
+                        exchange.sendResponseHeaders(405, -1);
+                        exchange.close();
+                        return;
+                    }
+                    String query = exchange.getRequestURI().getQuery();
+                    int runId = 0;
+                    String clientToken = "dashboard-" + System.currentTimeMillis();
+                    if (query != null) {
+                        for (String param : query.split("&")) {
+                            String[] kv = param.split("=", 2);
+                            if (kv.length == 2) {
+                                if ("run_id".equals(kv[0])) runId = Integer.parseInt(kv[1]);
+                                if ("client".equals(kv[0])) clientToken = kv[1];
+                            }
+                        }
+                    }
+                    String ticket = TicketIssuer.issue(clientToken, runId);
+                    String json = "{\"ticket\":\"" + ticket + "\"}";
+                    byte[] body = json.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    exchange.getResponseHeaders().set("Content-Type", "application/json");
+                    exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+                    exchange.sendResponseHeaders(200, body.length);
+                    exchange.getResponseBody().write(body);
+                    exchange.close();
+                });
+                httpServer.setExecutor(null);  // default executor
+                httpServer.start();
+                logger.info("Telemetry ticket endpoint started on http://127.0.0.1:" + ticketPort + "/telemetry/ticket");
+            } catch (Exception e) {
+                logger.error("Failed to start ticket HTTP endpoint", e);
+            }
         }
     }
 

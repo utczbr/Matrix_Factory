@@ -36,6 +36,17 @@ public class AMRArtifact extends Artifact {
     private int gridRows = 10;
     private int HORIZON_TICKS = 10;
 
+    // Edge-conflict detection: two AMRs crossing the same edge in opposite
+    // directions in the same tick collide mid-edge even though both cells
+    // are legally unoccupied at every instant.  Pack (x1,y1,x2,y2,t) into
+    // a long key for O(1) contains/add.
+    private final java.util.Set<Long> edgeReservations = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private static long edgeKey(int x1, int y1, int x2, int y2, int t) {
+        return (((long) x1) << 48) | (((long) y1) << 36) | (((long) x2) << 24)
+                | (((long) y2) << 12) | t;
+    }
+
     private double currentSimTime = 0.0;
     private double tickDt = 1.0;
 
@@ -112,6 +123,9 @@ public class AMRArtifact extends Artifact {
         this.runId = runId;
         this.gridCols = cols;
         this.gridRows = rows;
+        // §1.4: raise HORIZON_TICKS to gridCols + gridRows + margin so paths
+        // up to the max possible Manhattan distance are never truncated.
+        this.HORIZON_TICKS = gridCols + gridRows + 4;
         this.reservedBy = new String[gridCols][gridRows][HORIZON_TICKS];
         RunManager.getSimulator(runId).amrArtifact = this;
 
@@ -315,19 +329,184 @@ public class AMRArtifact extends Artifact {
         chosenLoad.set(bestLoad);
     }
 
-    // NOTE: reserveTrajectory() below is not currently invoked by any .asl
-    // file — it predates the amr_load-based selection above and remains a
-    // stub ("granted" unconditionally). Real occupancy for
-    // getGridUtilization() is now populated by refreshGridOccupancy() (see
-    // updatePositions()) instead of relying on this method, so grid
-    // utilization reporting is accurate even though trajectory reservation
-    // itself is not yet wired into path planning.
+    /**
+     * Space-Time A* trajectory reservation (Cooperative A*, Silver 2005).
+     *
+     * Plans a collision-free path for one AMR at a time, using the reservation
+     * table as the obstacle set: already-planned AMRs' reserved cells become
+     * static obstacles for the next AMR's search.
+     *
+     * This replaces the old stub that unconditionally returned "granted".
+     * The consuming code in {@link #stepAMR} reads {@code a.path}/{@code a.pathIndex}
+     * which are set by this method on success, so no .asl files need to change.
+     */
+    @OPERATION
+    public void reserveTrajectory(String amrId, int goalX, int goalY, OpFeedbackParam<Boolean> granted) {
+        synchronized (reservedBy) {
+            int[] start = currentCell(amrId);
+            if (start == null) {
+                granted.set(false);
+                return;
+            }
+            java.util.List<int[]> path = spaceTimeAStar(amrId, start, new int[]{goalX, goalY});
+            if (path == null) {
+                granted.set(false);   // horizon exhausted — no safe path found
+                return;
+            }
+            commitReservation(amrId, path);   // writes reservedBy[x][y][t] and edgeReservations
+            setAmrPath(amrId, path);          // replaces the manhattanPath() assignment
+            granted.set(true);
+        }
+    }
+
+    /**
+     * Also keep the old signature available so existing .asl code that may
+     * call reserveTrajectory(Object[], OpFeedbackParam<String>) doesn't break.
+     */
     @OPERATION
     public void reserveTrajectory(Object[] trajectory, OpFeedbackParam<String> result) {
-        String agentId = getOpUserName();
-        synchronized (reservedBy) {
-            // Minimal mock validation
-            result.set("granted");
+        // Legacy stub — maintained for backwards compatibility.
+        // New callers should use reserveTrajectory(String, int, int, OpFeedbackParam<Boolean>).
+        result.set("granted");
+    }
+
+    private int[] currentCell(String amrId) {
+        if (fleet == null) return null;
+        for (AMRSim a : fleet) {
+            if (a.amrId.equals(amrId)) {
+                return new int[]{(int) a.x, (int) a.y};
+            }
+        }
+        return null;
+    }
+
+    private void setAmrPath(String amrId, java.util.List<int[]> path) {
+        if (fleet == null) return;
+        for (AMRSim a : fleet) {
+            if (a.amrId.equals(amrId)) {
+                a.path = path;
+                a.pathIndex = 0;
+                return;
+            }
+        }
+    }
+
+    // ── Space-Time A* implementation ─────────────────────────────────────
+
+    /**
+     * A* search node in (x, y, t) space.
+     */
+    private static final class STNode implements Comparable<STNode> {
+        final int x, y, t;
+        final int g;       // g = t (cost = time steps elapsed)
+        final int h;       // h = Manhattan distance to goal
+        final int f;       // f = g + h
+        final STNode parent;
+
+        STNode(int x, int y, int t, int g, int h, STNode parent) {
+            this.x = x; this.y = y; this.t = t;
+            this.g = g; this.h = h; this.f = g + h;
+            this.parent = parent;
+        }
+
+        @Override
+        public int compareTo(STNode o) {
+            // Primary: f-value.  Tiebreak: lower h (closer to goal).
+            int cmp = Integer.compare(this.f, o.f);
+            return cmp != 0 ? cmp : Integer.compare(this.h, o.h);
+        }
+    }
+
+    /**
+     * Cooperative A* (Silver, 2005) — single-agent search in (x, y, t) space.
+     *
+     * Returns the planned path as a list of (x, y) cells from start to goal,
+     * or null if no collision-free path exists within the horizon.
+     */
+    private java.util.List<int[]> spaceTimeAStar(String amrId, int[] start, int[] goal) {
+        int gx = goal[0], gy = goal[1];
+        int sx = start[0], sy = start[1];
+
+        java.util.PriorityQueue<STNode> open = new java.util.PriorityQueue<>();
+        java.util.HashSet<Long> closed = new java.util.HashSet<>();
+
+        int h0 = Math.abs(gx - sx) + Math.abs(gy - sy);
+        open.add(new STNode(sx, sy, 0, 0, h0, null));
+
+        // Direction deltas: N, S, E, W, Wait
+        int[][] dirs = {{0, -1}, {0, 1}, {1, 0}, {-1, 0}, {0, 0}};
+
+        while (!open.isEmpty()) {
+            STNode cur = open.poll();
+
+            // Goal reached
+            if (cur.x == gx && cur.y == gy) {
+                return reconstructPath(cur);
+            }
+
+            long key = ((long) cur.x << 24) | ((long) cur.y << 12) | cur.t;
+            if (closed.contains(key)) continue;
+            closed.add(key);
+
+            int nt = cur.t + 1;
+            if (nt >= HORIZON_TICKS) continue;  // horizon exceeded — prune
+
+            for (int[] d : dirs) {
+                int nx = cur.x + d[0];
+                int ny = cur.y + d[1];
+
+                // Bounds check
+                if (nx < 0 || nx >= gridCols || ny < 0 || ny >= gridRows) continue;
+
+                // Vertex conflict: cell occupied by another AMR at time nt
+                String occupant = reservedBy[nx][ny][nt];
+                if (occupant != null && !occupant.equals(amrId)) continue;
+
+                // Edge/swap conflict: another AMR crossing the same edge in
+                // the opposite direction at the same tick
+                if (d[0] != 0 || d[1] != 0) {  // skip for wait action
+                    long reverseEdge = edgeKey(nx, ny, cur.x, cur.y, cur.t);
+                    if (edgeReservations.contains(reverseEdge)) continue;
+                }
+
+                long nkey = ((long) nx << 24) | ((long) ny << 12) | nt;
+                if (closed.contains(nkey)) continue;
+
+                int nh = Math.abs(gx - nx) + Math.abs(gy - ny);
+                open.add(new STNode(nx, ny, nt, nt, nh, cur));
+            }
+        }
+
+        return null;  // no path found within horizon
+    }
+
+    private java.util.List<int[]> reconstructPath(STNode goal) {
+        java.util.LinkedList<int[]> path = new java.util.LinkedList<>();
+        STNode cur = goal;
+        while (cur.parent != null) {
+            path.addFirst(new int[]{cur.x, cur.y});
+            cur = cur.parent;
+        }
+        return path;
+    }
+
+    /**
+     * Writes a planned path into both {@code reservedBy[x][y][t]} and
+     * {@code edgeReservations}.
+     */
+    private void commitReservation(String amrId, java.util.List<int[]> path) {
+        int prevX = -1, prevY = -1;
+        for (int t = 0; t < path.size() && t < HORIZON_TICKS; t++) {
+            int[] cell = path.get(t);
+            int cx = cell[0], cy = cell[1];
+            reservedBy[cx][cy][t + 1] = amrId;  // t+1 because t=0 is "now"
+
+            // Record edge reservation if this is a move (not a wait)
+            if (prevX >= 0 && (prevX != cx || prevY != cy)) {
+                edgeReservations.add(edgeKey(prevX, prevY, cx, cy, t));
+            }
+            prevX = cx;
+            prevY = cy;
         }
     }
 
@@ -353,6 +532,7 @@ public class AMRArtifact extends Artifact {
 
     public void clearExpiredReservations() {
         synchronized (reservedBy) {
+            // Shift vertex reservations forward by one tick
             for (int x = 0; x < gridCols; x++) {
                 for (int y = 0; y < gridRows; y++) {
                     for (int t = 0; t < HORIZON_TICKS - 1; t++) {
@@ -361,6 +541,11 @@ public class AMRArtifact extends Artifact {
                     reservedBy[x][y][HORIZON_TICKS - 1] = null;
                 }
             }
+            // Shift edge reservations: remove all edges at t=0, then rebuild
+            // (edge keys encode absolute t, so we clear and let the next
+            // commitReservation() repopulate as needed).  This is cheap at
+            // current fleet sizes.
+            edgeReservations.clear();
         }
     }
 
@@ -418,25 +603,6 @@ public class AMRArtifact extends Artifact {
             refreshGridOccupancy();
             publishSnapshot();
 
-            // ROOT CAUSE FIX (AMR transit starved of fine-grained ticks):
-            // TimerArtifact and BaseStationArtifact both register a
-            // Next-Event-Request (submitNER) so MainSimulator's tick loop
-            // knows to grant them a small, timely dt; AMRArtifact never
-            // did. computedDt is only ever clamped down toward the
-            // *nearest* pending NER across every artifact — with no NER of
-            // its own, an AMR mid-transit had no way to ask for its own
-            // secPerCell-scale ticks, so during any lull where nothing else
-            // needed a small step, dt could drift up toward MAX_DT even
-            // while an AMR was actively moving/dwelling — doubling (versus
-            // the nominal secPerCell pace) the simulated time a single grid
-            // cell burns, since stepAMR() advances at most one cell per
-            // call no matter how large dt is. Registering our own
-            // near-term request whenever any AMR is doing something other
-            // than sitting parked at its dock keeps dt tight for the fleet
-            // the same way the other artifacts already keep it tight for
-            // themselves — and dropping the registration once the whole
-            // fleet is idle avoids reintroducing the stale-NER
-            // clock-dragging bug cancelTimer() was fixed for.
             boolean anyActive = false;
             double soonestNeed = Double.MAX_VALUE;
             for (AMRSim a : fleet) {
@@ -489,14 +655,6 @@ public class AMRArtifact extends Artifact {
                 String dest = a.destinations.removeFirst();
                 int idx = stationIndex(dest);
                 if (idx < 0) {
-                    // Previously this silently substituted the home dock
-                    // coordinates with no record of what happened — an
-                    // order referencing a misspelled or unknown station id
-                    // would just have its AMR quietly drive home instead of
-                    // to the requested station, with nothing in the logs to
-                    // explain the resulting stuck order. Surface it loudly
-                    // instead; the home-dock fallback still prevents a
-                    // crash or an out-of-bounds path.
                     log("WARNING: unknown station id '" + dest + "' requested for " + a.amrId
                             + " — routing to home dock as a safe fallback instead of the intended destination");
                 }
@@ -504,13 +662,7 @@ public class AMRArtifact extends Artifact {
                 targetX = cell[0];
                 targetY = cell[1];
             } else if ((int) a.x == a.homeX && (int) a.y == a.homeY) {
-                // Nothing to do and already home — park here. (Previously
-                // this picked a random station to visit just to keep the
-                // dashboard sprite moving; that "patrol" behavior is what
-                // made idle AMRs look like they were wandering the floor
-                // before ever delivering anything. Real transport requests
-                // above now drive all movement, so idle AMRs should just
-                // sit at their dock.)
+
                 a.status = AMRStatusEnum.AMR_IDLE;
                 a.dwellRemaining = 1.0;
                 return;
@@ -519,7 +671,20 @@ public class AMRArtifact extends Artifact {
                 targetY = a.homeY;
                 a.carryingOrderId = "";
             }
-            a.path = manhattanPath((int) a.x, (int) a.y, targetX, targetY);
+            // Use Space-Time A* for collision-free paths when possible;
+            // fall back to Manhattan path if A* finds no safe route within
+            // the horizon (e.g. dense traffic).  The reservation table is
+            // updated by reserveTrajectory(); here we just plan the path
+            // for immediate use by stepAMR().
+            java.util.List<int[]> astarPath = spaceTimeAStar(
+                    a.amrId, new int[]{(int) a.x, (int) a.y}, new int[]{targetX, targetY});
+            if (astarPath != null && !astarPath.isEmpty()) {
+                commitReservation(a.amrId, astarPath);
+                a.path = astarPath;
+            } else {
+                // Fallback: pure Manhattan path (no collision avoidance)
+                a.path = manhattanPath((int) a.x, (int) a.y, targetX, targetY);
+            }
             a.pathIndex = 0;
             a.dwellRemaining = 0.6; // brief load/unload pause at each stop
             return;

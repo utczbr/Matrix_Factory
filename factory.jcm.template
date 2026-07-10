@@ -84,11 +84,11 @@ mas factory_twin {
     }
 
     agent amr_1 : amr_agent.asl {
-        focus: factory_ws.amr_artifact, factory_ws.supervisor_artifact
+        focus: factory_ws.amr_artifact, factory_ws.supervisor_artifact, factory_ws.timer_artifact
         beliefs: amr_id("AMR-1")
     }
     agent amr_2 : amr_agent.asl {
-        focus: factory_ws.amr_artifact, factory_ws.supervisor_artifact
+        focus: factory_ws.amr_artifact, factory_ws.supervisor_artifact, factory_ws.timer_artifact
         beliefs: amr_id("AMR-2")
     }
 
