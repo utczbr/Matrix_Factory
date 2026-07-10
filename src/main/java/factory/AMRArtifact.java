@@ -134,12 +134,22 @@ public class AMRArtifact extends Artifact {
     }
 
     /**
-     * Physical multi-waypoint transport. If the target AMR is idle, starts
-     * the job immediately (queues up the fromStation, if any, then the
-     * toStation, and recalculates the path right away). If the AMR is
-     * already carrying or en route to another order, the job is queued and
-     * started automatically once the AMR becomes free — it is never
-     * dropped or overwritten.
+     * Physical multi-waypoint transport for an AMR already chosen by the
+     * caller. If the target AMR is idle, starts the job immediately (queues
+     * up the fromStation, if any, then the toStation, and recalculates the
+     * path right away). If the AMR is already carrying or en route to
+     * another order, the job is queued and started automatically once the
+     * AMR becomes free — it is never dropped or overwritten.
+     *
+     * No longer called from any .asl file: choosing an AMR (by load) and
+     * committing to it used to be two separate steps across two agents —
+     * this method was the "commit" half, called later by the AMR agent —
+     * which left a race window between the read and this write (see
+     * reserveTransport() below for the full writeup). reserveTransport()
+     * now does the choosing and calls startJob()/queues here in one atomic
+     * operation. Left in place (unused) as the underlying job-start/queue
+     * primitive reserveTransport() itself calls, and in case a future
+     * caller genuinely needs to target a pre-chosen AMR directly.
      */
     @OPERATION
     void requestTransport(String amrId, String fromStation, String toStation, String orderId) {
@@ -250,6 +260,61 @@ public class AMRArtifact extends Artifact {
         result.set(sb.toString());
     }
 
+    /**
+     * ROOT CAUSE FIX (AMR load-balancing still races even with amr_load
+     * reporting in place): getFleetStatus() above tells the cognitive layer
+     * who's least loaded, but that read and the eventual commit are two
+     * separate steps on two separate agents — order_holon.asl calls
+     * getFleetStatus() here, then .send()s an achieve(transport(...)) to
+     * whichever AMR agent looked best, and that AMR agent only calls
+     * requestTransport() (the actual state mutation) later, on its own
+     * reasoning cycle. Nothing serializes those two steps against a second
+     * order holon doing the exact same read in between — and with 5 order
+     * holons whose CNP timers routinely expire in the same evaluateTTLs
+     * batch, that window is hit on essentially every dispatch in practice:
+     * every "via amrX (load=N)" line ever logged reports load=0, even
+     * moments after that same AMR was just committed elsewhere. The result
+     * is exactly the failure mode this fleet was supposed to prevent — one
+     * AMR's jobQueue piles up while the other sits idle at its dock, and a
+     * long enough queue behind 2-leg station-to-station transports
+     * routinely blows through the 60s await_station_start patience even
+     * though every individual AMR is working correctly.
+     *
+     * Folding "pick the least-loaded AMR" and "commit the job to it" into a
+     * single CArtAgO operation closes the window: CArtAgO serializes
+     * operation calls on one artifact instance, so no other agent's call
+     * can be interleaved between the read and the write here. Returns the
+     * PHYSICAL id that was chosen (and its pre-commit load, for the
+     * dispatch log line) so the caller can look up which Jason agent name
+     * to notify.
+     */
+    @OPERATION
+    public void reserveTransport(String fromStation, String toStation, String orderId,
+                                  OpFeedbackParam<String> chosenAmrId, OpFeedbackParam<Integer> chosenLoad) {
+        if (fleet == null || fleet.length == 0) {
+            chosenAmrId.set("");
+            chosenLoad.set(-1);
+            return;
+        }
+        AMRSim best = null;
+        int bestLoad = Integer.MAX_VALUE;
+        for (AMRSim a : fleet) {
+            int load = a.jobQueue.size() + (isFree(a) ? 0 : 1);
+            if (load < bestLoad) {
+                bestLoad = load;
+                best = a;
+            }
+        }
+        TransportJob job = new TransportJob(fromStation, toStation, orderId);
+        if (isFree(best)) {
+            startJob(best, job);
+        } else {
+            best.jobQueue.add(job);
+        }
+        chosenAmrId.set(best.amrId);
+        chosenLoad.set(bestLoad);
+    }
+
     // NOTE: reserveTrajectory() below is not currently invoked by any .asl
     // file — it predates the amr_load-based selection above and remains a
     // stub ("granted" unconditionally). Real occupancy for
@@ -352,6 +417,40 @@ public class AMRArtifact extends Artifact {
             }
             refreshGridOccupancy();
             publishSnapshot();
+
+            // ROOT CAUSE FIX (AMR transit starved of fine-grained ticks):
+            // TimerArtifact and BaseStationArtifact both register a
+            // Next-Event-Request (submitNER) so MainSimulator's tick loop
+            // knows to grant them a small, timely dt; AMRArtifact never
+            // did. computedDt is only ever clamped down toward the
+            // *nearest* pending NER across every artifact — with no NER of
+            // its own, an AMR mid-transit had no way to ask for its own
+            // secPerCell-scale ticks, so during any lull where nothing else
+            // needed a small step, dt could drift up toward MAX_DT even
+            // while an AMR was actively moving/dwelling — doubling (versus
+            // the nominal secPerCell pace) the simulated time a single grid
+            // cell burns, since stepAMR() advances at most one cell per
+            // call no matter how large dt is. Registering our own
+            // near-term request whenever any AMR is doing something other
+            // than sitting parked at its dock keeps dt tight for the fleet
+            // the same way the other artifacts already keep it tight for
+            // themselves — and dropping the registration once the whole
+            // fleet is idle avoids reintroducing the stale-NER
+            // clock-dragging bug cancelTimer() was fixed for.
+            boolean anyActive = false;
+            double soonestNeed = Double.MAX_VALUE;
+            for (AMRSim a : fleet) {
+                if (a.status != AMRStatusEnum.AMR_IDLE) {
+                    anyActive = true;
+                    double need = Math.min(a.secPerCell, Math.max(a.dwellRemaining, 0.05));
+                    if (need < soonestNeed) soonestNeed = need;
+                }
+            }
+            if (anyActive) {
+                RunManager.getSimulator(runId).submitNER("amr_fleet", simTime + soonestNeed);
+            } else {
+                RunManager.getSimulator(runId).removeNER("amr_fleet");
+            }
         } finally {
             endExtSession();
         }

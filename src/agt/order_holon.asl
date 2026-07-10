@@ -28,35 +28,54 @@
      .print("Spawning order: ", OrderId);
      !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
 
-// ROOT CAUSE FIX (blind AMR selection): this used to pick a transport AMR
-// by hashing the order's own random id (I = round(R*10000) mod N) with zero
-// regard for which AMRs were actually busy. With 5 concurrent order holons
-// and only 2 physical AMRs, that routinely piled several jobs onto one
-// AMR's jobQueue while the other sat idle at the dock — and a deep enough
-// queue behind a 2-leg station-to-station transport can exceed the 60s
+// ROOT CAUSE FIX (blind AMR selection, take 2): the previous fix replaced
+// the pseudo-random hash pick with a getFleetStatus()-informed .min(), but
+// that read and the eventual commit were still two separate steps on two
+// separate agents — this plan called getFleetStatus() and then merely
+// .send()'d an achieve(transport(...)) to whichever AMR looked best; the
+// actual state mutation (requestTransport()) only happened later, inside
+// that AMR agent's own reasoning cycle. Nothing prevented a second order
+// holon from calling getFleetStatus() in that gap and seeing the exact same
+// "free" snapshot — and with 5 order holons whose CNP timers routinely
+// expire in the same evaluateTTLs batch, that gap is hit on essentially
+// every dispatch: every "via amrX (load=N)" line ever logged reported
+// load=0, even for an AMR that had just been committed elsewhere. One AMR's
+// jobQueue piled up while the other sat idle at its dock — exactly the
+// failure this was supposed to prevent — and a deep enough queue behind a
+// 2-leg station-to-station transport routinely exceeds the 60s
 // await_station_start patience even though the AMR itself works correctly.
-// Ask AMRArtifact which AMR is least loaded (amr_load: queued jobs + 1 if
-// currently committed/carrying, so 0 == genuinely idle) and dispatch there.
+// reserveTransport() folds the read and the commit into one CArtAgO
+// operation call, so no other agent's call can land in between; it returns
+// the PHYSICAL id it committed to, which we map back to the agent name to
+// notify (bookkeeping only — the job is already running).
 +!request_transport(OrderId, From, To)
   <- .my_name(Me);
      .send(supervisor, askOne, amr_physical_ids(AmrIds), amr_physical_ids(AmrIds));
-     getFleetStatus(StatusStr)[artifact_name("amr_artifact"), wsp("factory_ws")];
-     .term2string(Statuses, StatusStr);
-     .findall(load(Load, AgentName),
-              (.member(amr(AgentName, PhysicalId), AmrIds) & .member(amr_load(PhysicalId, Load), Statuses)),
-              Loads);
-     .min(Loads, load(BestLoad, Amr));
+     reserveTransport(From, To, OrderId, ChosenPhysicalId, BestLoad)[artifact_name("amr_artifact"), wsp("factory_ws")];
+     .member(amr(Amr, ChosenPhysicalId), AmrIds);
      -+dispatched_amr(OrderId, Amr);                        // NEW (overwrite)
      .print("Requesting transport for ", OrderId, " to ", To, " via ", Amr, " (load=", BestLoad, ")");
      .send(Amr, achieve, transport(OrderId, From, To)).
 
+// ROOT CAUSE FIX (repeated tell-messages silently swallowed): same class
+// of bug as resource_holon.asl's accept_proposal/abort_current_operation —
+// transport_done(OrderId)[source(Amr)] is the exact same literal whenever
+// the same physical AMR is dispatched again for this order (routine: the
+// same order needs multiple legs — dock→stage1, stage1→stage2,
+// stage2→stage3 — and reserveTransport's load-balancing frequently picks
+// the same AMR back-to-back). Without retracting it, the second time the
+// same AMR finishes a job for this order, Jason sees "no change" to the
+// belief base and never fires this plan at all — the order holon just
+// silently never learns the transport finished.
 +transport_done(OrderId)[source(Amr)]
-  <- .print("Transport done for ", OrderId);
+  <- -transport_done(OrderId)[source(Amr)];
+     .print("Transport done for ", OrderId);
      ?cnp_winner(OrderId, Winner);
      .send(Winner, tell, item_arrived(OrderId)).
 
 +transport_blocked(OrderId)[source(Amr)]
-  <- .print("Transport blocked for ", OrderId, " - signaling supervisor");
+  <- -transport_blocked(OrderId)[source(Amr)];   // Same class of fix as transport_done above
+     .print("Transport blocked for ", OrderId, " - signaling supervisor");
      .send(supervisor, tell, transport_blocked(OrderId)).
 
 +step_complete(OrderId, Step)[source(Station)]
@@ -88,7 +107,8 @@
      }.
 
 +step_failed(OrderId, Step, Reason)[source(Station)]
-  <- .print("Step ", Step, " failed for ", OrderId, " (", Reason, ") — retrying same step");
+  <- -step_failed(OrderId, Step, Reason)[source(Station)];   // Same class of fix as transport_done above
+     .print("Step ", Step, " failed for ", OrderId, " (", Reason, ") — retrying same step");
      !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId).
 
 +!call_for_proposals(Step, Stations, OrderId)
@@ -196,7 +216,22 @@
              // legitimately locked). Release the lock before re-issuing the
              // CFP; resource_holon.asl's abort_current_operation already
              // handles this safely (no-ops if Station has already moved on).
+             //
+             // ROOT CAUSE FIX (retry CFP raced this same abort): this used to
+             // fire the retry's call_for_proposals immediately after sending
+             // abort_current_operation, with nothing guaranteeing Station
+             // finished processing the abort first. A live trace showed
+             // Station proposing fresh to the retry's CFP *while* its own
+             // abort_current_operation plan was still mid-cleanup — visible
+             // as the retry's new bid-TTL startTimer line landing between
+             // that plan's releaseStation() log line and its own final
+             // print. Waiting for an explicit ack turns this into a real
+             // rendezvous instead of two independently-scheduled messages:
+             // the retry CFP now provably cannot go out until Station has
+             // told us it's actually idle again.
              .send(Station, tell, abort_current_operation(OrderId));
+             .wait(abort_ack(OrderId)[source(Station)]);
+             -abort_ack(OrderId)[source(Station)];
              !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId);
          }
      }.
@@ -209,13 +244,14 @@
 
 +abort_current_operation(OrderId)
   : my_order_id(OrderId)
-  <- .drop_intention(await_station_start(OrderId, _, _));
+  <- -abort_current_operation(OrderId);   // Same class of fix as the tell-message plans above
+     .drop_intention(await_station_start(OrderId, _, _));
      .drop_intention(request_transport(OrderId, _, _));
      .print("ADACOR Phase0 abort: Order Holon dropping intentions for ", OrderId);
      !request_next_batch.
 
-+abort_current_operation(_)   // Different order — ignore
-  <- true.
++abort_current_operation(OrderId)   // Different order — ignore
+  <- -abort_current_operation(OrderId).
 
 // ── ADACOR Phase 1 Suspend / Resume ──────────────────────────────────────
 
