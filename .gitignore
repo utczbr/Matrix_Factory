@@ -22,3 +22,9 @@ factory_history.db
 .idea/
 .vscode/
 .DS_Store
+
+# Scratch and Node
+node_modules/
+scratch/
+*.db-shm
+*.db-wal

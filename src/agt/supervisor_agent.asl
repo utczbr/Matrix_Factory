@@ -94,6 +94,7 @@
      .send(StationName,    tell, abort_current_operation(OrderId));
      // Send to the Order Holon: drops awaiting intentions
      .send(OrderHolonName, tell, abort_current_operation(OrderId));
+     recordEvent(OrderId, "ABORTED")[artifact_name("database"), wsp("factory_ws")];
      !abort_all_locks(Rest).
 
 // ── Two-Phase Commit: Phase 1 (Suspend with Timeout) ────────────────────

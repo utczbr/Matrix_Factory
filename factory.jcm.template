@@ -5,7 +5,8 @@ mas factory_twin {
                factory_ws.energy_price,
                factory_ws.amr_artifact,
                factory_ws.utility_system,
-               factory_ws.timer_artifact
+               factory_ws.timer_artifact,
+               factory_ws.database
     }
 
     // Five concurrent Order Holons for PROSA concurrency testing.
@@ -15,7 +16,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id({{RUN_ID}})
                  order_holon_id("order_1")
     }
@@ -24,7 +25,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id({{RUN_ID}})
                  order_holon_id("order_2")
     }
@@ -33,7 +34,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id({{RUN_ID}})
                  order_holon_id("order_3") 
     }
@@ -42,7 +43,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id({{RUN_ID}})
                  order_holon_id("order_4") 
     }
@@ -51,7 +52,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id({{RUN_ID}})
                  order_holon_id("order_5") 
     }

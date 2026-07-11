@@ -44,6 +44,12 @@ public class TicketAuthConfigurator extends ServerEndpointConfig.Configurator {
         // Allow unauthenticated connections if no ticket system is configured
         // (backwards compatibility for existing dashboard.js during migration)
         if (ticket == null || ticket.isBlank()) {
+            boolean requireTicket = "true".equalsIgnoreCase(System.getenv("TELEMETRY_REQUIRE_TICKET"));
+            if (requireTicket) {
+                logger.warn("No ticket provided, and TELEMETRY_REQUIRE_TICKET is true — rejecting connection.");
+                throw new RuntimeException("401: Unauthorized (Ticket Required)");
+            }
+
             logger.debug("No ticket provided — allowing unauthenticated connection (migration mode)");
             if (runIdStr != null) {
                 sec.getUserProperties().put("run_id", Integer.parseInt(runIdStr));

@@ -73,6 +73,7 @@ public class MainSimulator {
     public final List<Object> stationArtifacts = new CopyOnWriteArrayList<>(); 
     public Object utilitySystemArtifact; 
     public Object supervisorArtifact;
+    public Object databaseArtifact;
 
     public final AtomicReference<TelemetryFrameSnapshot> telemetryRef = new AtomicReference<>();
 
@@ -426,9 +427,7 @@ public class MainSimulator {
 
     /** Typed accessor — avoids the Object-typed field for test assertions. */
     public DatabaseArtifact getDatabaseArtifact() {
-        // DatabaseArtifact is in the stationArtifacts list or the workspace;
-        // for now, return null — test harness obtains it from RunManager.
-        return null;
+        return (DatabaseArtifact) databaseArtifact;
     }
 
     /** Typed accessor — avoids the Object-typed field for test assertions. */

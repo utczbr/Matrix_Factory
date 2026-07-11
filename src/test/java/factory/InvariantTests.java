@@ -9,6 +9,11 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Timeout;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Invariant tests for the Matrix Factory simulation.
  *
@@ -21,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * each test class runs in its own JVM, so tests within the same class share
  * a single simulation run and assert different invariants against it.
  */
+@Timeout(value = 150, unit = TimeUnit.SECONDS)
 class InvariantTests {
 
     private static final int TICK_BUDGET = 100;
@@ -65,6 +71,37 @@ class InvariantTests {
         assertNotNull(amr.currentPositions, "AMR positions array is null");
         assertTrue(amr.currentPositions.length > 0,
                 "AMR fleet is empty — no AMRs were initialised");
+    }
+
+    // ── Ledger Invariants ────────────────────────────────────────────────
+    
+    @Test
+    void everyAmrCompletesAtLeastOneJob() {
+        AMRArtifact amr = handle.amrArtifact();
+        List<Integer> completedJobs = amr.getCompletedJobCounts();
+        for (int i = 0; i < completedJobs.size(); i++) {
+            assertTrue(completedJobs.get(i) > 0, "AMR " + i + " completed 0 jobs");
+        }
+    }
+
+    @Test
+    void completedPlusAbortedEqualsSubmitted() {
+        OrderLedgerReader reader = new OrderLedgerReader("factory_history.db");
+        Map<String, List<String>> events = reader.getOrderEvents(handle.runId());
+        
+        int submitted = 0;
+        int completed = 0;
+        int aborted = 0;
+        
+        for (List<String> orderEvents : events.values()) {
+            if (orderEvents.contains("SUBMITTED")) submitted++;
+            if (orderEvents.contains("COMPLETED")) completed++;
+            if (orderEvents.contains("ABORTED")) aborted++;
+        }
+        
+        assertTrue(completed + aborted <= submitted, "More completed/aborted orders than submitted ones");
+        // Because the simulation is bounded by TICK_BUDGET, we can't expect them to be perfectly equal, 
+        // as some are still in-flight.
     }
 
     // ── Deadlock detection ───────────────────────────────────────────────

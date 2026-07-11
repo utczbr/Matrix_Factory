@@ -51,17 +51,24 @@ public class SimulationTestHarness {
         // Start the TMC tick loop (runs on a daemon thread)
         sim.startTmcThreads();
 
-        // Boot JaCaMo on the main test thread — this blocks until the
-        // JaCaMo infrastructure is up and agents have started.
-        try {
-            jacamo.infra.JaCaMoLauncher.main(new String[]{jcmPath});
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to boot JaCaMo for test", e);
-        }
+        // Boot JaCaMo on a daemon thread so it doesn't block the test thread.
+        java.util.concurrent.atomic.AtomicReference<Throwable> bootFailure = new java.util.concurrent.atomic.AtomicReference<>();
+        Thread jacamoThread = new Thread(() -> {
+            try {
+                jacamo.infra.JaCaMoLauncher.main(new String[]{jcmPath});
+            } catch (Throwable t) {
+                bootFailure.set(t);
+            }
+        }, "JaCaMo-Launcher-" + runId);
+        jacamoThread.setDaemon(true);
+        jacamoThread.start();
 
         // Wait for the tick loop to reach its budget
         try {
-            boolean completed = sim.waitForShutdown(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            boolean completed = sim.waitForShutdown(DEFAULT_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+            if (bootFailure.get() != null) {
+                throw new RuntimeException("JaCaMo failed to boot", bootFailure.get());
+            }
             if (!completed) {
                 System.err.println("[SimulationTestHarness] WARNING: Simulation did not complete within "
                         + DEFAULT_TIMEOUT_SECONDS + "s timeout");

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SeededReplayTests {
 
-    private static final int TICK_BUDGET = 50;  // shorter budget for replay speed
+    private static final int TICK_BUDGET = 100;
 
     /**
      * Core invariant: the simulation must complete cleanly and produce
@@ -46,5 +46,21 @@ class SeededReplayTests {
         // Deadlock check
         long[] ids = ManagementFactory.getThreadMXBean().findDeadlockedThreads();
         assertNull(ids, "Deadlocked threads for seed " + seed + ": " + Arrays.toString(ids));
+
+        // Ledger Invariants
+        OrderLedgerReader reader = new OrderLedgerReader("factory_history.db");
+        java.util.Map<String, java.util.List<String>> events = reader.getOrderEvents(h.runId());
+        
+        int submitted = 0;
+        int completed = 0;
+        int aborted = 0;
+        
+        for (java.util.List<String> orderEvents : events.values()) {
+            if (orderEvents.contains("SUBMITTED")) submitted++;
+            if (orderEvents.contains("COMPLETED")) completed++;
+            if (orderEvents.contains("ABORTED")) aborted++;
+        }
+        
+        assertTrue(completed + aborted <= submitted, "More completed/aborted orders than submitted ones for seed " + seed);
     }
 }

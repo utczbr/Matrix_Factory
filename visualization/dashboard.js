@@ -256,11 +256,15 @@ function stationCellBounds(st) {
 }
 
 // ---- WebSocket telemetry ---------------------------------------------
-function telemetryUrl(runId) {
-    return `ws://127.0.0.1:8080/telemetry?run_id=${runId}&client=${CLIENT_TOKEN}`;
+function telemetryUrl(runId, ticket) {
+    let url = `ws://127.0.0.1:8080/telemetry?run_id=${runId}&client=${CLIENT_TOKEN}`;
+    if (ticket) {
+        url += `&ticket=${ticket}`;
+    }
+    return url;
 }
 
-function connect(runId) {
+async function connect(runId) {
     if (activeWebSocket) {
         const previousSocket = activeWebSocket;
         activeWebSocket = null;
@@ -268,9 +272,27 @@ function connect(runId) {
     }
 
     const myEpoch = ++connectionEpoch;
-    console.log(`[telemetry] connecting to ${telemetryUrl(runId)}`);
     setConnectionStatus('connecting');
-    const ws = new WebSocket(telemetryUrl(runId));
+
+    let ticket = null;
+    try {
+        const response = await fetch(`http://127.0.0.1:8081/telemetry/ticket?run_id=${runId}&client=${CLIENT_TOKEN}`);
+        if (response.ok) {
+            const data = await response.json();
+            ticket = data.ticket;
+            console.log('[telemetry] obtained auth ticket');
+        } else {
+            console.warn('[telemetry] ticket fetch failed', response.status, response.statusText);
+        }
+    } catch (e) {
+        console.warn('[telemetry] could not fetch auth ticket (is ticket server running?)', e);
+    }
+
+    if (myEpoch !== connectionEpoch) return; // connection superseded
+
+    const url = telemetryUrl(runId, ticket);
+    console.log(`[telemetry] connecting to ${url}`);
+    const ws = new WebSocket(url);
     activeWebSocket = ws;
     ws.binaryType = "arraybuffer";
 

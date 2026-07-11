@@ -53,6 +53,11 @@
 +abort_transport(OrderId)[source(Sender)]
   <- -abort_transport(OrderId)[source(Sender)].   // no matching in-flight transport — ignore
 
++amr_transport_blocked(AmrPhysicalId, OrderId)
+  : amr_id(AmrPhysicalId) & transporting(OrderId, Sender)
+  <- .print("AMR ", AmrPhysicalId, " blocked by congestion for ", OrderId);
+     .send(supervisor, tell, transport_blocked(OrderId)).
+
 +!notify_grid_saturation(OrderId)
   <- getGridUtilization(Util);
      if (Util > 0.85) {

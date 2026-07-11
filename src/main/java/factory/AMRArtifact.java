@@ -103,6 +103,9 @@ public class AMRArtifact extends Artifact {
         String carryingOrderId = "";
         String pendingOrderId = "";
         java.util.LinkedList<String> destinations = new java.util.LinkedList<>();
+        int blockedTicks = 0;
+        String pendingDest = null;
+        int completedJobCount = 0;
         // ROOT CAUSE FIX (AMRs "going around and around" / stations stuck on
         // "waiting for item to arrive"): with N AMRs and more than N orders
         // in flight, order_holon.asl's hash-based AMR pick (I = R*10000 mod N)
@@ -597,7 +600,11 @@ public class AMRArtifact extends Artifact {
 
         beginExtSession();
         try {
-            for (AMRSim a : fleet) {
+            // Sort the fleet so that AMRs that have been blocked get priority in planning
+            java.util.List<AMRSim> planningOrder = new java.util.ArrayList<>(java.util.Arrays.asList(fleet));
+            planningOrder.sort(java.util.Comparator.comparingInt((AMRSim a) -> a.blockedTicks).reversed());
+
+            for (AMRSim a : planningOrder) {
                 stepAMR(a, dt);
             }
             refreshGridOccupancy();
@@ -634,6 +641,7 @@ public class AMRArtifact extends Artifact {
                 signal("amr_arrived", a.amrId, a.carryingOrderId);
                 a.carryingOrderId = "";
                 a.pendingOrderId = "";
+                a.completedJobCount++;
                 a.status = AMRStatusEnum.AMR_UNLOADING;
             } else if (!a.pendingOrderId.isEmpty() && a.carryingOrderId.isEmpty() && a.destinations.size() == 1) {
                 // Reached pickup (one destination left, the dropoff)
@@ -650,44 +658,60 @@ public class AMRArtifact extends Artifact {
                 startJob(a, a.jobQueue.poll());
             }
 
-            int targetX, targetY;
-            if (!a.destinations.isEmpty()) {
-                String dest = a.destinations.removeFirst();
-                int idx = stationIndex(dest);
-                if (idx < 0) {
-                    log("WARNING: unknown station id '" + dest + "' requested for " + a.amrId
-                            + " — routing to home dock as a safe fallback instead of the intended destination");
-                }
-                int[] cell = idx >= 0 ? STATION_CELLS[idx] : new int[]{a.homeX, a.homeY};
-                targetX = cell[0];
-                targetY = cell[1];
-            } else if ((int) a.x == a.homeX && (int) a.y == a.homeY) {
+            int targetX = (int) a.x;
+            int targetY = (int) a.y;
 
-                a.status = AMRStatusEnum.AMR_IDLE;
-                a.dwellRemaining = 1.0;
-                return;
+            String poppedDest = null;
+            if (a.pendingDest != null) {
+                poppedDest = a.pendingDest;
+                a.pendingDest = null;
+            } else if (!a.destinations.isEmpty()) {
+                poppedDest = a.destinations.removeFirst();
+            }
+
+            if (poppedDest != null) {
+                int idx = stationIndex(poppedDest);
+                if (idx >= 0) {
+                    targetX = stationLocs[idx][0];
+                    targetY = stationLocs[idx][1];
+                } else {
+                    targetX = a.homeX;
+                    targetY = a.homeY;
+                    a.carryingOrderId = "";
+                }
             } else {
+                // No destination -> go home
                 targetX = a.homeX;
                 targetY = a.homeY;
                 a.carryingOrderId = "";
             }
+
             // Use Space-Time A* for collision-free paths when possible;
-            // fall back to Manhattan path if A* finds no safe route within
-            // the horizon (e.g. dense traffic).  The reservation table is
-            // updated by reserveTrajectory(); here we just plan the path
-            // for immediate use by stepAMR().
+            // The reservation table is updated by commitReservation().
             java.util.List<int[]> astarPath = spaceTimeAStar(
                     a.amrId, new int[]{(int) a.x, (int) a.y}, new int[]{targetX, targetY});
+
             if (astarPath != null && !astarPath.isEmpty()) {
                 commitReservation(a.amrId, astarPath);
                 a.path = astarPath;
+                a.pathIndex = 0;
+                a.dwellRemaining = 0.6; // brief load/unload pause at each stop
+                a.blockedTicks = 0;
+                return;
             } else {
-                // Fallback: pure Manhattan path (no collision avoidance)
-                a.path = manhattanPath((int) a.x, (int) a.y, targetX, targetY);
+                // Congestion denial. Do NOT move, and do NOT drop the destination.
+                a.pendingDest = poppedDest;
+                a.blockedTicks++;
+                a.status = AMRStatusEnum.AMR_BLOCKED;
+                a.path = java.util.Collections.emptyList();
+                a.pathIndex = 0;
+                a.dwellRemaining = 1.0; // BLOCKED_RETRY_COOLDOWN_S
+
+                if (a.blockedTicks == 3) { // BLOCKED_SIGNAL_THRESHOLD
+                    signal("amr_transport_blocked", a.amrId, a.carryingOrderId);
+                }
+                return;
             }
-            a.pathIndex = 0;
-            a.dwellRemaining = 0.6; // brief load/unload pause at each stop
-            return;
         }
 
         // Advance along current path segment.

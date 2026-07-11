@@ -26,6 +26,7 @@
      +recipe_remaining(OrderId, [2,3]);          // NEW — steps left after step 1
      +current_location(OrderId, start);
      .print("Spawning order: ", OrderId);
+     recordEvent(OrderId, "SUBMITTED")[artifact_name("database"), wsp("factory_ws")];
      !call_for_proposals(1, [station_1, station_2, station_3, station_4, station_5], OrderId).
 
 // ROOT CAUSE FIX (blind AMR selection, take 2): the previous fix replaced
@@ -92,6 +93,7 @@
          // base") instead of continuing to work. Clean up this order's
          // beliefs and request the next batch so production continues.
          .print("Order ", OrderId, " fully complete");
+         recordEvent(OrderId, "COMPLETED")[artifact_name("database"), wsp("factory_ws")];
          -recipe_remaining(OrderId, Remaining);
          -my_order_id(OrderId);
          -order_random(OrderId, _);

@@ -67,6 +67,7 @@ public class DatabaseArtifact extends Artifact {
     @OPERATION
     void init(String dbPath, int runId) {
         this.runId = runId;
+        RunManager.getSimulator(runId).databaseArtifact = this;
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             try (Statement s = conn.createStatement()) {
@@ -131,6 +132,12 @@ public class DatabaseArtifact extends Artifact {
         defectCount.set(p.defectCount());
         stationsVisited.set(p.stationsVisited());
         cumulativeVarianceRatio.set(p.cumulativeVarianceRatio());
+    }
+
+    @OPERATION
+    public void recordEvent(String orderId, String eventType) {
+        double simTime = RunManager.getSimulator(runId).getCurrentTime();
+        recordEvent(runId, orderId, eventType, simTime);
     }
 
     @OPERATION
