@@ -29,14 +29,14 @@ import java.util.Map;
 @Timeout(value = 150, unit = TimeUnit.SECONDS)
 class InvariantTests {
 
-    private static final int TICK_BUDGET = 100;
+    private static final int TICK_BUDGET = 300;
     private static final long SEED = 42L;
 
-    private SimulationTestHarness harness;
-    private SimRunHandle handle;
+    private static SimulationTestHarness harness;
+    private static SimRunHandle handle;
 
-    @BeforeEach
-    void setUp() {
+    @org.junit.jupiter.api.BeforeAll
+    static void setUp() {
         harness = new SimulationTestHarness();
         handle = harness.run("factory.jcm", TICK_BUDGET, SEED);
     }

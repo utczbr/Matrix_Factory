@@ -567,9 +567,12 @@ public class AMRArtifact extends Artifact {
      */
     private void refreshGridOccupancy() {
         synchronized (reservedBy) {
-            for (String[][] row : reservedBy) {
-                for (String[] cell : row) {
-                    cell[0] = null;
+            for (int x = 0; x < gridCols; x++) {
+                for (int y = 0; y < gridRows; y++) {
+                    for (int t = 0; t < HORIZON_TICKS - 1; t++) {
+                        reservedBy[x][y][t] = reservedBy[x][y][t + 1];
+                    }
+                    reservedBy[x][y][HORIZON_TICKS - 1] = null;
                 }
             }
             for (AMRSim a : fleet) {
@@ -672,8 +675,8 @@ public class AMRArtifact extends Artifact {
             if (poppedDest != null) {
                 int idx = stationIndex(poppedDest);
                 if (idx >= 0) {
-                    targetX = stationLocs[idx][0];
-                    targetY = stationLocs[idx][1];
+                    targetX = STATION_CELLS[idx][0];
+                    targetY = STATION_CELLS[idx][1];
                 } else {
                     targetX = a.homeX;
                     targetY = a.homeY;
@@ -783,6 +786,16 @@ public class AMRArtifact extends Artifact {
         }
         if (pts.isEmpty()) pts.add(new int[]{x1, y1});
         return pts;
+    }
+
+    public java.util.List<Integer> getCompletedJobCounts() {
+        java.util.List<Integer> counts = new java.util.ArrayList<>();
+        if (fleet != null) {
+            for (AMRSim a : fleet) {
+                counts.add(a.completedJobCount);
+            }
+        }
+        return counts;
     }
 
     private void publishSnapshot() {
