@@ -9,11 +9,12 @@ java {
 }
 
 application {
-    mainClass = 'factory.MainSimulator'
+    mainClass = "factory.MainSimulator"
     applicationDefaultJvmArgs = [
         '--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED',
         '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
-        '-Dio.netty.tryReflectionSetAccessible=true'
+        '-Dio.netty.tryReflectionSetAccessible=true',
+        '-Djava.awt.headless=true'
     ]
 }
 
@@ -83,3 +84,12 @@ test {
 
 sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/java'
 sourceSets.main.java.srcDirs += 'build/generated/source/proto/main/grpc'
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'factory.MainSimulator'
+    }
+    archiveBaseName = 'matrix_factory_twin-all'
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

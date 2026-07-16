@@ -122,25 +122,7 @@ mas factory_twin {
                      station_4   resource_holon,
                      station_5   resource_holon,
                      amr_1       transport_holon,
-                     amr_2       transport_holon;
-        }
-    }
-
-    organisation factory_adacor_org : adacor_org.xml {
-        group adaptive_factory : shop_floor {
-            players: supervisor  supervisor,
-                     order_1     order_holon,
-                     order_2     order_holon,
-                     order_3     order_holon,
-                     order_4     order_holon,
-                     order_5     order_holon,
-                     station_1   resource_holon,
-                     station_2   resource_holon,
-                     station_3   resource_holon,
-                     station_4   resource_holon,
-                     station_5   resource_holon,
-                     amr_1       transport_holon,
-                     amr_2       transport_holon;
+                     amr_2       transport_holon
         }
     }
 }

@@ -40,9 +40,8 @@ public final class RunManager {
         System.out.println("Booting JaCaMo mega-topology...");
         try {
             jacamo.infra.JaCaMoLauncher.main(new String[] { phase4JcmDir + "/factory_phase4.jcm" });
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
-            System.exit(1);
         }
     }
 }

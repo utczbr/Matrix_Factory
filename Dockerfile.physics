@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y gcc g++ && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt cython
+
+# Copy the physics engine code
+COPY physical_engine/ physical_engine/
+COPY scripts/ scripts/
+COPY components_to_implement/ components_to_implement/
+COPY add_includes.py .
+
+# Build Cython extensions
+RUN cythonize -i physical_engine/optimization/_numba_ops_core.pyx
+
+# Prebuild LUTs in the image so the slow fcntl-lock path is avoided
+RUN python -m physical_engine.scripts.prebuild_luts
+
+EXPOSE 50051
+
+ENTRYPOINT ["python", "-m", "physical_engine.sim_bridge_server"]

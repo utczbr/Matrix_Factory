@@ -15,16 +15,16 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "[phase4] starting ${RUN_COUNT} Python daemons"
-python3 -m physical_engine.daemon_launcher --run-count "${RUN_COUNT}" --base-port "${BASE_PORT}" --jvm-reserved-cores 2 &
+.venv/bin/python3 -m physical_engine.daemon_launcher --run-count "${RUN_COUNT}" --base-port "${BASE_PORT}" --jvm-reserved-cores 2 &
 LAUNCHER_PID=$!
 
 echo "[phase4] generating JCM files"
-python3 scripts/generate_factory_jcm.py --run-count "${RUN_COUNT}" --output-dir "${PHASE4_JCM_DIR}"
+.venv/bin/python3 scripts/generate_factory_jcm.py --run-count "${RUN_COUNT}" --output-jcm "${PHASE4_JCM_DIR}/factory_phase4.jcm"
 
 echo "[phase4] waiting for daemon readiness"
 for run_id in $(seq 0 $((RUN_COUNT - 1))); do
   port=$((BASE_PORT + run_id))
-  until python3 - "$port" <<'PY'
+  until .venv/bin/python3 - "$port" <<'PY'
 import sys
 
 import grpc

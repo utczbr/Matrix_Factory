@@ -34,6 +34,10 @@ public class SimulationTestHarness {
      * @return a handle to the completed simulation's live artifacts
      */
     public SimRunHandle run(String jcmPath, int tickBudget, long seed) {
+        return run(jcmPath, tickBudget, seed, null);
+    }
+
+    public SimRunHandle run(String jcmPath, int tickBudget, long seed, java.util.function.Consumer<MainSimulator> config) {
         // Ensure clean ledger state by deleting existing DB files
         try {
             java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get("factory_history.db"));
@@ -76,6 +80,9 @@ public class SimulationTestHarness {
 
         MainSimulator sim = new MainSimulator(runId, port, activeJcmPath);
         sim.maxTicks = tickBudget;
+        if (config != null) {
+            config.accept(sim);
+        }
         // TODO: wire seed into the simulator's RNG sources once the JVM
         // side has a unified seeding mechanism (currently only Python has
         // this via seeding_test.py).

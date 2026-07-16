@@ -103,6 +103,9 @@ from physical_engine.factory_simulation.pemfc_model import (
 from physical_engine.factory_simulation.stack_thermal_model import (
     StackThermalModel,
 )
+from physical_engine.optimization.lut_manager import LUTManager, MATRIX_FACTORY_LUT_CONFIG
+from physical_engine.factory_simulation.h2_tank import TankArray
+from physical_engine.factory_simulation.compressor import CompressorStage
 
 # ---------------------------------------------------------------------------
 # Failure flags bitmask (matches BatchTestResponse.failure_flags in .proto).
@@ -142,6 +145,11 @@ class SimBridgeServicer:
 
         # Thermal model
         self._thermal = StackThermalModel(T_initial=T_initial)
+        
+        self._lut = LUTManager(config=MATRIX_FACTORY_LUT_CONFIG)
+        self._lut.initialize()
+        self._tank = TankArray(self._lut, temp_k=T_initial)
+        self._compressor = CompressorStage()
 
         # State vector
         self._state = np.zeros(ThermoStateIndex._VECTOR_LENGTH, dtype=np.float64)
@@ -253,6 +261,18 @@ class SimBridgeServicer:
                 self._state[ThermoStateIndex.STACK_TEMP_K] = (
                     0.5 * (self._thermal.T_core + self._thermal.T_skin)
                 )
+
+                # Compressor steps
+                m_dot_h2 = (I_total / (2 * 96485.0)) * 2.016e-3  # Faraday -> kg/s
+                p_out_bar = self._tank.pressure_bar
+                comp_kw = self._compressor.power_kw(m_dot_h2, T_coolant, 1.0, p_out_bar)
+
+                # Tank fills
+                self._tank.fill(m_dot_h2 * dt * 3600.0)  # dt is in hours, m_dot is kg/s
+
+                self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR] = self._tank.pressure_bar
+                self._state[ThermoStateIndex.H2_TANK_FILL_FRACTION] = self._tank.fill_fraction
+                self._state[ThermoStateIndex.COMPRESSOR_POWER_KW] = comp_kw
 
                 return sim_bridge_pb2.StepReady(
                     target_time=t + dt,

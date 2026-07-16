@@ -77,3 +77,5 @@ This script will automatically:
 2. Generate the isolated `factory_phase4.jcm` and required ASL files using the namespace-rewriting generator.
 3. Wait for all gRPC endpoints to become ready.
 4. Launch a single, taskset-pinned JVM via Gradle that orchestrates all 30 parallel runs.
+## Known Limitations
+- **gRPC Security**: The communication between the CArtAgO artifacts (Java) and the physical engine daemons (Python) uses plaintext gRPC. In a production cloud environment, this should be upgraded to use TLS/mTLS to secure the telemetry and command streams.

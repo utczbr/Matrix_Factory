@@ -62,6 +62,7 @@ public class MainSimulator {
     // quorum and fell back to the timeout path far more than intended.
     private int registeredAgentCount = 13; // 5 order holons + 5 stations + 2 AMRs + 1 supervisor
 
+    private java.util.concurrent.ScheduledExecutorService metricsScheduler;
     private boolean shutdown = false;
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
@@ -88,6 +89,32 @@ public class MainSimulator {
         this.runId = runId;
         this.jcmPath = jcmPath;
         this.grpcBridge = new GrpcClientBridge(port);
+
+        try {
+            String jcmContent = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(jcmPath)));
+            int count = 0;
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^\\s*agent\\s+\\w+", java.util.regex.Pattern.MULTILINE).matcher(jcmContent);
+            while (m.find()) count++;
+            if (count > 0) {
+                this.registeredAgentCount = count;
+            }
+            System.out.println("[MainSimulator] Parsed registeredAgentCount = " + this.registeredAgentCount + " from " + jcmPath);
+        } catch (Exception e) {
+            System.out.println("[MainSimulator] Warning: Could not parse JCM for agent count. Defaulting to " + this.registeredAgentCount);
+        }
+
+        // Start thread metrics sampler
+        this.metricsScheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ThreadMetricsSampler");
+            t.setDaemon(true);
+            return t;
+        });
+        this.metricsScheduler.scheduleAtFixedRate(() -> {
+            java.lang.management.ThreadMXBean bean = java.lang.management.ManagementFactory.getThreadMXBean();
+            int active = bean.getThreadCount();
+            int peak = bean.getPeakThreadCount();
+            // System.out.println("[Metrics] Active Threads: " + active + " | Peak Threads: " + peak);
+        }, 0, 5, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     public String getJcmPath() {

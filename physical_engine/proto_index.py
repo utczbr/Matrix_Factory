@@ -6,15 +6,15 @@ gRPC StepReady messages. Both the Python physical engine and the
 Java TMC must agree on this mapping.
 
 Vector Layout (9 elements):
-    [0] T_STACK      Stack average temperature (K)
-    [1] P_H2         H2 supply pressure (Pa)
-    [2] P_O2         O2 supply pressure (Pa)
-    [3] T_COOLANT    Coolant temperature (K)
-    [4] M_H2         H2 mass in tank (kg)
-    [5] V_STACK      Stack voltage (V)
-    [6] I_STACK      Stack current (A)
-    [7] T_CORE       Stack core temperature (K)
-    [8] T_SKIN       Stack skin temperature (K)
+    [0] H2_TANK_PRESSURE_BAR   H2 supply pressure (bar)
+    [1] H2_TANK_FILL_FRACTION  H2 tank fill fraction (0.0 to 1.0)
+    [2] CHILLER_TEMP_K         Coolant temperature (K)
+    [3] COMPRESSOR_POWER_KW    Compressor power (kW)
+    [4] STACK_VOLTAGE_V        Stack voltage (V)
+    [5] STACK_CURRENT_A_CM2    Stack current (A/cm^2)
+    [6] STACK_TEMP_K           Stack average temperature (K)
+    [7] STACK_CORE_TEMP_K      Stack core temperature (K)
+    [8] STACK_SKIN_TEMP_K      Stack skin temperature (K)
 
 Reference: doc6 §3.3
 """

@@ -191,21 +191,39 @@ public class TestBenchArtifact extends Artifact {
         call.request(1);
 
         try {
-            boolean completedInTime = latch.await(30, java.util.concurrent.TimeUnit.SECONDS);
-            if (!completedInTime) {
+            boolean[] completedInTime = {false};
+            await(new cartago.IBlockingCmd() {
+                @Override
+                public void exec() {
+                    try {
+                        java.util.concurrent.CountDownLatch l = latches.get(corrId);
+                        if (l != null) {
+                            completedInTime[0] = l.await(30, java.util.concurrent.TimeUnit.SECONDS);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+            boolean completedInTimeVal = completedInTime[0];
+
+            if (!completedInTimeVal) {
                 log("Station " + stationId + ": RunBatchTest timed out after 30s (corrId="
                         + corrId + ") — cancelling RPC instead of abandoning it");
                 ClientCall<BatchTestRequest, BatchTestResponse> pending = activeCalls.get(corrId);
                 if (pending != null) {
                     pending.cancel("client-side 30s timeout", null);
                 }
-                // Give cancellation a short window to land and drive onClose,
-                // which performs its own map cleanup + latch countdown.
-                latch.await(2, java.util.concurrent.TimeUnit.SECONDS);
-                // If onClose still hasn't fired (e.g. cancel() itself was
-                // swallowed), claim completion here so callback threads that
-                // arrive later see the entry as already resolved rather than
-                // finding it removed out from under them.
+                // Give cancellation a short window to land
+                long cancelWaitStart = System.currentTimeMillis();
+                while (System.currentTimeMillis() - cancelWaitStart < 2000) {
+                    AtomicBoolean flag = completedCalls.get(corrId);
+                    if (flag != null && flag.get()) {
+                        break;
+                    }
+                    await_time(50);
+                }
+                
                 AtomicBoolean completedFlag = completedCalls.get(corrId);
                 if (completedFlag != null && completedFlag.compareAndSet(false, true)) {
                     currentSummary = new StationSummary(StationStateEnum.STATION_OFFLINE, stackId, 0.0f);
@@ -215,10 +233,9 @@ public class TestBenchArtifact extends Artifact {
                     lastTestedStackId = stackId;
                 }
             }
-        } catch (InterruptedException e) {
-            log("ADACOR drop_intention received — cancelling pending gRPC call (Interrupted)");
+        } catch (Exception e) {
+            log("ADACOR drop_intention received — cancelling pending gRPC call (Exception)");
             cancelPendingRpc();
-            Thread.currentThread().interrupt();
         }
 
         activeCalls.remove(corrId);

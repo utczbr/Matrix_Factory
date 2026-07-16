@@ -1,0 +1,2 @@
+class ComponentInitializationError(Exception):
+    pass

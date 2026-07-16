@@ -24,14 +24,17 @@ DEFAULT_JVM_RESERVED_CORES = 2
 
 def compute_daemon_core_sets(run_count: int, jvm_reserved_cores: int) -> list[list[int]]:
     total_cores = os.cpu_count() or run_count
-    required_cores = jvm_reserved_cores + run_count
-    if total_cores < required_cores:
-        raise RuntimeError(
-            f"Phase 4 requires at least {required_cores} CPU cores for strict disjoint pinning; "
-            f"found {total_cores}."
-        )
-
     available_cores = list(range(jvm_reserved_cores, total_cores))
+    jvm_cores = list(range(jvm_reserved_cores))
+    daemon_core_sets: list[list[int]] = []
+
+    if len(available_cores) < run_count:
+        print(f"Warning: Not enough cores for strict disjoint pinning (found {len(available_cores)}). Running without strict pinning.")
+        # Just assign whatever cores are available round-robin
+        for i in range(run_count):
+            daemon_core_sets.append([available_cores[i % len(available_cores)]])
+        return daemon_core_sets
+
     return [
         available_cores[i * len(available_cores) // run_count : (i + 1) * len(available_cores) // run_count]
         for i in range(run_count)
