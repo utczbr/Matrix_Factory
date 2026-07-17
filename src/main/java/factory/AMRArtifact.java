@@ -734,7 +734,19 @@ public class AMRArtifact extends Artifact {
 
     private int stationIndex(String stationId) {
         if (stationId == null) return -1;
-        String norm = stationId.replace("station_", "S").toUpperCase();
+        
+        // Handle station_X_Y formats by extracting the core station number.
+        // e.g. "station_1_4" -> "S1"
+        String norm = stationId;
+        if (norm.startsWith("station_")) {
+            String[] parts = norm.split("_");
+            if (parts.length >= 2) {
+                norm = "S" + parts[1];
+            }
+        } else {
+            norm = norm.replace("station_", "S").toUpperCase();
+        }
+
         switch (norm) {
             case "S1": return 0;
             case "S2": return 1;
