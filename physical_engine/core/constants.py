@@ -3,3 +3,5 @@ class StandardConditions:
 
 class GasConstants:
     R_H2 = 4124.2  # J/(kg*K) specific gas constant for Hydrogen
+    GAMMA_H2 = 1.41 # Specific heat ratio for Hydrogen
+    R_UNIVERSAL_J_PER_MOL_K = 8.314462618 # Universal gas constant J/(mol*K)
