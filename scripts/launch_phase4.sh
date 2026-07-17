@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+RUN_START_ID="${RUN_START_ID:-0}"
 RUN_COUNT="${RUN_COUNT:-30}"
 BASE_PORT="${BASE_PORT:-50051}"
 JVM_CORES="${JVM_CORES:-0,1}"
@@ -15,15 +16,15 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "[phase4] starting ${RUN_COUNT} Python daemons"
-.venv/bin/python3 -m physical_engine.daemon_launcher --run-count "${RUN_COUNT}" --base-port "${BASE_PORT}" --jvm-reserved-cores 2 &
+.venv/bin/python3 -m physical_engine.daemon_launcher --run-start-id "${RUN_START_ID}" --run-count "${RUN_COUNT}" --base-port "${BASE_PORT}" --jvm-reserved-cores 2 &
 LAUNCHER_PID=$!
 
 echo "[phase4] generating JCM files"
-.venv/bin/python3 scripts/generate_factory_jcm.py --run-count "${RUN_COUNT}" --output-jcm "${PHASE4_JCM_DIR}/factory_phase4.jcm"
+.venv/bin/python3 scripts/generate_factory_jcm.py --run-start-id "${RUN_START_ID}" --run-count "${RUN_COUNT}" --output-jcm "${PHASE4_JCM_DIR}/factory_phase4.jcm"
 
 echo "[phase4] waiting for daemon readiness"
-for run_id in $(seq 0 $((RUN_COUNT - 1))); do
-  port=$((BASE_PORT + run_id))
+for run_id in $(seq ${RUN_START_ID} $((RUN_START_ID + RUN_COUNT - 1))); do
+  port=$((BASE_PORT + (run_id - RUN_START_ID)))
   until .venv/bin/python3 - "$port" <<'PY'
 import sys
 
@@ -44,4 +45,4 @@ PY
 done
 
 echo "[phase4] launching JVM pinned to cores ${JVM_CORES}"
-taskset -c "${JVM_CORES}" ./gradlew run --args="--phase4 --run-count=${RUN_COUNT} --base-port=${BASE_PORT} --phase4-jcm-dir=${PHASE4_JCM_DIR}"
+taskset -c "${JVM_CORES}" ./gradlew run --args="--phase4 --run-start-id=${RUN_START_ID} --run-count=${RUN_COUNT} --base-port=${BASE_PORT} --phase4-jcm-dir=${PHASE4_JCM_DIR} --max-sim-time=3369600"

@@ -1,50 +1,131 @@
+#!/usr/bin/env python3
 import subprocess
-import os
-import shutil
 import sqlite3
 import pandas as pd
-import scipy.stats as stats
+from pathlib import Path
+import os
+import sys
 
-def modify_template(remove_org):
-    with open("factory.jcm.template", "r") as f:
-        content = f.read()
-    
-    # Strip the target organisation out
+RUN_COUNT = int(os.environ.get("RUN_COUNT", "30"))
+DB_PATH = Path("factory_history.db")
+SUPERVISOR_ASL = Path("src/agt/supervisor_agent.asl")
+JCM_TEMPLATE = Path("factory.jcm.template")
+
+def set_jcm_csv(csv_name: str):
     import re
-    # We find the organisation block and remove it. The block starts with "organisation {remove_org} :" and ends with "    }"
-    pattern = r"\s*organisation\s+" + remove_org + r"\s*:.*?\}\s*\n    \}"
-    new_content = re.sub(pattern, "", content, flags=re.DOTALL)
-    
-    with open("factory.jcm.template.tmp", "w") as f:
-        f.write(new_content)
-    return "factory.jcm.template.tmp"
+    content = JCM_TEMPLATE.read_text(encoding="utf-8")
+    content = re.sub(
+        r'artifact\s+energy_price\s*:\s*factory\.EnergyPriceArtifact\("[^"]+"\s*,',
+        f'artifact energy_price    : factory.EnergyPriceArtifact("{csv_name}",',
+        content
+    )
+    JCM_TEMPLATE.write_text(content, encoding="utf-8")
 
-def run_experiment(schema):
-    print(f"Running Monte Carlo for {schema}...")
-    if os.path.exists("factory_history.db"):
-        os.remove("factory_history.db")
+def disable_adacor_transition():
+    content = SUPERVISOR_ASL.read_text(encoding="utf-8")
+    content = content.replace("+energy_price_spike(Price)", "+disabled_energy_price_spike(Price)")
+    SUPERVISOR_ASL.write_text(content, encoding="utf-8")
+
+def extract_metrics(schema_name: str) -> pd.DataFrame:
+    conn = sqlite3.connect(DB_PATH)
+    orders = pd.read_sql_query("SELECT * FROM Orders", conn)
     
-    remove_org = "factory_adacor_org" if schema == "PROSA" else "factory_prosa_org"
-    tmp_template = modify_template(remove_org)
+    results = []
+    
+    for run_id in range(RUN_COUNT):
+        run_orders = orders[orders['run_id'] == run_id]
+        
+        submitted = run_orders[run_orders['event_type'] == 'SUBMITTED']
+        completed = run_orders[run_orders['event_type'] == 'COMPLETED']
+        
+        merged = pd.merge(submitted, completed, on='order_id', suffixes=('_sub', '_comp'))
+        
+        if len(merged) == 0:
+            results.append({
+                'schema': schema_name,
+                'run_id': run_id,
+                'throughput': 0,
+                'tardiness_mean': 0,
+                'wip_mean': 0
+            })
+            continue
+            
+        merged['cycle_time'] = merged['sim_time_comp'] - merged['sim_time_sub']
+        
+        max_time = run_orders['sim_time'].max()
+        throughput = len(merged) / max_time if max_time > 0 else 0
+        tardiness_mean = merged['cycle_time'].mean()
+        wip_mean = merged['cycle_time'].sum() / max_time if max_time > 0 else 0
+        
+        results.append({
+            'schema': schema_name,
+            'run_id': run_id,
+            'throughput': throughput,
+            'tardiness_mean': tardiness_mean,
+            'wip_mean': wip_mean
+        })
+        
+    conn.close()
+    return pd.DataFrame(results)
+
+def main():
+    if not SUPERVISOR_ASL.exists():
+        print(f"Error: {SUPERVISOR_ASL} not found.")
+        sys.exit(1)
+        
+    original_asl = SUPERVISOR_ASL.read_text(encoding="utf-8")
+    original_jcm = JCM_TEMPLATE.read_text(encoding="utf-8")
+    all_results = pd.DataFrame()
     
     env = os.environ.copy()
-    env["RUN_COUNT"] = "30"
-    
-    # In generate_factory_jcm.py, it reads args.template which defaults to factory.jcm.template.
-    # We must modify generate_factory_jcm.py to accept template from env or pass it, but since it's hardcoded in launch_phase4.sh, 
-    # let's just temporarily replace factory.jcm.template
-    
-    shutil.copy("factory.jcm.template", "factory.jcm.template.bak")
-    shutil.move("factory.jcm.template.tmp", "factory.jcm.template")
+    env["RUN_COUNT"] = str(RUN_COUNT)
+    env["TELEMETRY_HMAC_SECRET"] = "phase4_monte_carlo_secure_key_9912"
     
     try:
-        subprocess.run(["bash", "scripts/launch_phase4.sh"], env=env, check=True)
+        set_jcm_csv("price_series_spike_test.csv")
+        
+        print(f"=== Running PROSA Baseline ({RUN_COUNT} runs) ===")
+        disable_adacor_transition()
+        for suffix in ["", "-wal", "-shm"]:
+            f = DB_PATH.with_name(DB_PATH.name + suffix)
+            if f.exists():
+                f.unlink()
+        
+        batch_size = 5
+        for start_id in range(0, RUN_COUNT, batch_size):
+            env_batch = env.copy()
+            env_batch["RUN_START_ID"] = str(start_id)
+            env_batch["RUN_COUNT"] = str(min(batch_size, RUN_COUNT - start_id))
+            print(f"  [PROSA] Batch starting at {start_id} (count: {env_batch['RUN_COUNT']})")
+            subprocess.run(["bash", "scripts/launch_phase4.sh"], env=env_batch, check=True)
+        
+        df_prosa = extract_metrics("PROSA")
+        all_results = pd.concat([all_results, df_prosa], ignore_index=True)
+        
+        print(f"\n=== Running ADACOR ({RUN_COUNT} runs) ===")
+        SUPERVISOR_ASL.write_text(original_asl, encoding="utf-8")
+        for suffix in ["", "-wal", "-shm"]:
+            f = DB_PATH.with_name(DB_PATH.name + suffix)
+            if f.exists():
+                f.unlink()
+            
+        for start_id in range(0, RUN_COUNT, batch_size):
+            env_batch = env.copy()
+            env_batch["RUN_START_ID"] = str(start_id)
+            env_batch["RUN_COUNT"] = str(min(batch_size, RUN_COUNT - start_id))
+            print(f"  [ADACOR] Batch starting at {start_id} (count: {env_batch['RUN_COUNT']})")
+            subprocess.run(["bash", "scripts/launch_phase4.sh"], env=env_batch, check=True)
+        
+        df_adacor = extract_metrics("ADACOR")
+        all_results = pd.concat([all_results, df_adacor], ignore_index=True)
+        
+        os.makedirs("analysis", exist_ok=True)
+        all_results.to_csv("analysis/results.csv", index=False)
+        print("\nExperiment finished. Results saved to analysis/results.csv")
+        
     finally:
-        shutil.move("factory.jcm.template.bak", "factory.jcm.template")
-    
-    shutil.copy("factory_history.db", f"factory_history_{schema.lower()}.db")
+        SUPERVISOR_ASL.write_text(original_asl, encoding="utf-8")
+        JCM_TEMPLATE.write_text(original_jcm, encoding="utf-8")
 
 if __name__ == "__main__":
-    run_experiment("PROSA")
-    run_experiment("ADACOR")
-    print("Done! Data collected in factory_history_prosa.db and factory_history_adacor.db")
+    main()

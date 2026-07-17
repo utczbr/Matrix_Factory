@@ -102,7 +102,7 @@ mas factory_twin {
         artifact amr_artifact    : factory.AMRArtifact(20, 12, 2, {{RUN_ID}})
         artifact utility_system  : factory.UtilitySystemArtifact({{RUN_ID}})
         artifact timer_artifact  : factory.TimerArtifact({{RUN_ID}})
-        artifact energy_price    : factory.EnergyPriceArtifact("price_series.csv", {{RUN_ID}})
+        artifact energy_price    : factory.EnergyPriceArtifact("price_series_spike_test.csv", {{RUN_ID}})
         artifact database        : factory.DatabaseArtifact("factory_history.db", {{RUN_ID}})
         artifact telemetry       : factory.TelemetryArtifact(8080, {{RUN_ID}})
         artifact supervisor_artifact : factory.SupervisorArtifact({{RUN_ID}})   // Phase 3 addition
@@ -122,7 +122,7 @@ mas factory_twin {
                      station_4   resource_holon,
                      station_5   resource_holon,
                      amr_1       transport_holon,
-                     amr_2       transport_holon;
+                     amr_2       transport_holon
         }
     }
 
@@ -140,7 +140,7 @@ mas factory_twin {
                      station_4   resource_holon,
                      station_5   resource_holon,
                      amr_1       transport_holon,
-                     amr_2       transport_holon;
+                     amr_2       transport_holon
         }
     }
 }

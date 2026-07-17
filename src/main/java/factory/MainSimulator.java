@@ -26,6 +26,7 @@ public class MainSimulator {
     public final int runId;
 
     int maxTicks = -1;  // package-private for test harness access
+    double maxSimTime = -1.0;
     private boolean logEpochs = false;
 
     public String forceAbortStation = null;
@@ -51,7 +52,7 @@ public class MainSimulator {
     private final double MIN_DT = 0.01;
     private final double MAX_DT = 1.0;
 
-    // ROOT CAUSE FIX: this was 8, matching a stale "order_manager + 5
+
     // stations + 2 AMRs" comment from an earlier single-order-manager phase.
     // The current roster (factory.jcm) is 5 concurrent order holons + 5
     // stations + 2 AMRs + 1 supervisor (which also runs startTimer for its
@@ -93,10 +94,12 @@ public class MainSimulator {
         try {
             String jcmContent = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(jcmPath)));
             int count = 0;
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^\\s*agent\\s+\\w+", java.util.regex.Pattern.MULTILINE).matcher(jcmContent);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^\\s*agent\\s+\\w+_" + runId + "\\s*:", java.util.regex.Pattern.MULTILINE).matcher(jcmContent);
             while (m.find()) count++;
             if (count > 0) {
                 this.registeredAgentCount = count;
+            } else {
+                System.out.println("[MainSimulator] Warning: Could not find agents for run " + runId + ". Defaulting to " + this.registeredAgentCount);
             }
             System.out.println("[MainSimulator] Parsed registeredAgentCount = " + this.registeredAgentCount + " from " + jcmPath);
         } catch (Exception e) {
@@ -124,9 +127,12 @@ public class MainSimulator {
     public static void main(String[] args) {
         java.util.List<String> posArgs = new java.util.ArrayList<>();
         boolean phase4 = false;
+        int runStartId = 0;
         int runCount = 30;
         int basePort = 50051;
         String phase4JcmDir = null;
+        int maxTicks = -1;
+        double maxSimTime = -1.0;
         for (String arg : args) {
             if ("--phase4".equals(arg)) {
                 phase4 = true;
@@ -136,13 +142,19 @@ public class MainSimulator {
                 basePort = Integer.parseInt(arg.substring("--base-port=".length()));
             } else if (arg.startsWith("--phase4-jcm-dir=")) {
                 phase4JcmDir = arg.substring("--phase4-jcm-dir=".length());
+            } else if (arg.startsWith("--run-start-id=")) {
+                runStartId = Integer.parseInt(arg.substring("--run-start-id=".length()));
+            } else if (arg.startsWith("--max-ticks=")) {
+                maxTicks = Integer.parseInt(arg.substring("--max-ticks=".length()));
+            } else if (arg.startsWith("--max-sim-time=")) {
+                maxSimTime = Double.parseDouble(arg.substring("--max-sim-time=".length()));
             } else if (!arg.startsWith("--")) {
                 posArgs.add(arg);
             }
         }
 
         if (phase4) {
-            RunManager.launchPhase4(runCount, basePort, phase4JcmDir);
+            RunManager.launchPhase4(runStartId, runCount, basePort, phase4JcmDir, maxTicks, maxSimTime);
             return;
         }
 
@@ -198,7 +210,7 @@ public class MainSimulator {
 
         try {
             sim.startTmcThreads();
-            jacamo.infra.JaCaMoLauncher.main(new String[] { sim.getJcmPath() });
+            jacamo.infra.JaCaMoLauncher.main(new String[] { sim.getJcmPath(), "--log-conf", "src/main/resources/logging.properties" });
         } catch (Exception e) {
             logger.error("Simulation failed", e);
         }
@@ -234,10 +246,16 @@ public class MainSimulator {
         try {
             grpcBridge.pollUntilReady();
             logger.info("Waiting for all artifacts to register in run " + runId + "...");
+            int waitLoops = 0;
             while (timerArtifact == null || energyPriceArtifact == null || telemetryArtifact == null ||
                     amrArtifact == null || stationArtifacts.size() < 5 || utilitySystemArtifact == null ||
                     supervisorArtifact == null) {
                 Thread.sleep(500);
+                waitLoops++;
+                if (waitLoops > 60) { // 30 seconds timeout
+                    logger.error("Timeout waiting for artifacts to register for run " + runId + ". JaCaMo failed to boot.");
+                    System.exit(1);
+                }
             }
 
             ((SupervisorArtifact) supervisorArtifact).setMainSimulator(this);
@@ -252,8 +270,8 @@ public class MainSimulator {
 
         int ticks = 0;
         while (!shutdown) {
-            if (maxTicks > 0 && ticks >= maxTicks) {
-                logger.info("Max ticks reached (" + maxTicks + "). Shutting down cleanly.");
+            if ((maxTicks > 0 && ticks >= maxTicks) || (maxSimTime > 0 && currentTime >= maxSimTime)) {
+                logger.info("Max limits reached. Shutting down cleanly.");
                 shutdown = true;
                 shutdownLatch.countDown();
                 return;

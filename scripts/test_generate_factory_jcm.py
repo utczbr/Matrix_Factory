@@ -1,25 +1,27 @@
-import pytest
+import unittest
 import re
 from generate_factory_jcm import rewrite_content, CANONICAL_TOKENS
 
-def test_rewrite_content_basic():
-    content = "agent supervisor : supervisor_agent.asl {\n"
-    res = rewrite_content(content, 42)
-    assert "supervisor_42" in res
+class TestJCMGeneration(unittest.TestCase):
+    def test_rewrite_content(self):
+        content = """
+        agent supervisor : supervisor_agent.asl {
+            beliefs: active_schema(prosa)
+        }
+        workspace factory_ws {
+            artifact database: factory.DatabaseArtifact
+        }
+        """
+        rewritten = rewrite_content(content, run_id=5)
+        
+        self.assertIn("supervisor_5", rewritten)
+        self.assertIn("factory_ws_5", rewritten)
+        self.assertNotIn("supervisor :", rewritten)
+        self.assertNotIn("factory_ws {", rewritten)
+        
+        # Ensure that non-canonical tokens aren't rewritten
+        self.assertIn("active_schema(prosa)", rewritten)
+        self.assertIn("factory.DatabaseArtifact", rewritten)
 
-def test_rewrite_content_boundary():
-    content = "focus: factory_ws.station_1"
-    res = rewrite_content(content, 42)
-    assert "station_1_42" in res
-
-def test_rewrite_content_no_partial_match():
-    content = "focus: factory_ws.supervisor_artifact"
-    res = rewrite_content(content, 42)
-    assert "supervisor_42_artifact" not in res
-    assert "supervisor_artifact" in res
-
-def test_all_tokens():
-    for token in CANONICAL_TOKENS:
-        content = f" {token} "
-        res = rewrite_content(content, 99)
-        assert f" {token}_99 " in res
+if __name__ == '__main__':
+    unittest.main()

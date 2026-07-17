@@ -60,6 +60,7 @@ def _daemon_entry(port: int, run_id: int, num_threads: int, core_set: Sequence[i
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch Phase 4 Python daemons.")
+    parser.add_argument("--run-start-id", type=int, default=0)
     parser.add_argument("--run-count", type=int, default=DEFAULT_RUN_COUNT)
     parser.add_argument("--base-port", type=int, default=DEFAULT_BASE_PORT)
     parser.add_argument("--jvm-reserved-cores", type=int, default=DEFAULT_JVM_RESERVED_CORES)
@@ -91,11 +92,13 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
-    for run_id in range(args.run_count):
-        port = args.base_port + run_id
+    for run_id in range(args.run_start_id, args.run_start_id + args.run_count):
+        port = args.base_port + (run_id - args.run_start_id)
+        # Use an index 0..run_count-1 for core_sets
+        core_index = run_id - args.run_start_id
         process = ctx.Process(
             target=_daemon_entry,
-            args=(port, run_id, num_threads, core_sets[run_id]),
+            args=(port, run_id, num_threads, core_sets[core_index]),
             name=f"simbridge-daemon-{run_id}",
             daemon=False,
         )
@@ -110,10 +113,11 @@ def main() -> None:
                 if process.is_alive():
                     continue
                 logger.error("[run=%s] daemon exited unexpectedly (exitcode=%s); restarting", run_id, process.exitcode)
-                port = args.base_port + run_id
+                port = args.base_port + (run_id - args.run_start_id)
+                core_index = run_id - args.run_start_id
                 replacement = ctx.Process(
                     target=_daemon_entry,
-                    args=(port, run_id, num_threads, core_sets[run_id]),
+                    args=(port, run_id, num_threads, core_sets[core_index]),
                     name=f"simbridge-daemon-{run_id}",
                     daemon=False,
                 )

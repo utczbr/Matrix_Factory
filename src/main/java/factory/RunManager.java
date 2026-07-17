@@ -20,10 +20,12 @@ public final class RunManager {
         SIMULATORS.put(runId, sim);
     }
 
-    public static void launchPhase4(int runCount, int basePort, String phase4JcmDir) {
+    public static void launchPhase4(int runStartId, int runCount, int basePort, String phase4JcmDir, int maxTicks, double maxSimTime) {
         List<MainSimulator> simulators = new ArrayList<>(runCount);
-        for (int i = 0; i < runCount; i++) {
-            MainSimulator sim = new MainSimulator(i, basePort + i, phase4JcmDir + "/factory_phase4.jcm");
+        for (int i = runStartId; i < runStartId + runCount; i++) {
+            MainSimulator sim = new MainSimulator(i, basePort + (i - runStartId), phase4JcmDir + "/factory_phase4.jcm");
+            sim.maxTicks = maxTicks;
+            sim.maxSimTime = maxSimTime;
             SIMULATORS.put(i, sim);
             simulators.add(sim);
         }
@@ -36,12 +38,30 @@ public final class RunManager {
             sim.startTmcThreads();
         }
 
-        // Boot JaCaMo exactly once
+        // Boot JaCaMo in a background thread or wait after boot
         System.out.println("Booting JaCaMo mega-topology...");
-        try {
-            jacamo.infra.JaCaMoLauncher.main(new String[] { phase4JcmDir + "/factory_phase4.jcm" });
-        } catch (Throwable e) {
-            e.printStackTrace();
+        Thread jacamoThread = new Thread(() -> {
+            try {
+                jacamo.infra.JaCaMoLauncher.main(new String[] { 
+                    phase4JcmDir + "/factory_phase4.jcm", 
+                    "--log-conf", "src/main/resources/logging.properties" 
+                });
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        });
+        jacamoThread.start();
+        
+        // Wait for all simulators to complete
+        for (MainSimulator sim : simulators) {
+            try {
+                sim.waitForShutdown(1, java.util.concurrent.TimeUnit.DAYS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        
+        System.out.println("[phase4] All simulators finished. Exiting JVM.");
+        System.exit(0);
     }
 }

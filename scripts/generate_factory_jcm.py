@@ -25,6 +25,7 @@ CANONICAL_TOKENS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate Phase 4 JCM and ASL.")
+    parser.add_argument("--run-start-id", type=int, default=0)
     parser.add_argument("--run-count", type=int, default=30)
     parser.add_argument("--template", default="factory.jcm.template")
     parser.add_argument("--output-jcm", default="build/phase4_jcm/factory_phase4.jcm")
@@ -81,10 +82,11 @@ def main() -> None:
         shutil.rmtree(output_asl_dir)
     output_asl_dir.mkdir(parents=True, exist_ok=True)
 
-    mega_jcm_blocks = []
-    mega_jcm_blocks.append("mas factory_twin_phase4 {")
+    mega_agents = []
+    mega_workspaces = []
+    mega_organisations = []
 
-    for run_id in range(args.run_count):
+    for run_id in range(args.run_start_id, args.run_start_id + args.run_count):
         run_asl_dir = output_asl_dir / f"run_{run_id}"
         run_asl_dir.mkdir(parents=True, exist_ok=True)
         for asl_file in source_asl_dir.glob("*.asl"):
@@ -99,17 +101,28 @@ def main() -> None:
         # Restore the role name 'supervisor' which got incorrectly rewritten because it matches the agent name
         rendered_jcm = rendered_jcm.replace(f"supervisor_{run_id}  supervisor_{run_id}", f"supervisor_{run_id}  supervisor")
         
-        def inject_asl_path(match):
-            agent_name = match.group(1)
-            asl_file = match.group(2)
-            return f"agent {agent_name} : {run_asl_dir.absolute()}/{asl_file} {{"
-            
-        rendered_jcm = re.sub(r'agent\s+([a-zA-Z0-9_]+)\s*:\s*([a-zA-Z0-9_.]+\.asl)\s*\{', inject_asl_path, rendered_jcm)
-        mega_jcm_blocks.append(rendered_jcm)
+        # Split the rendered block into agents, workspaces, and organisations
+        agent_blocks = re.findall(r"(agent\s+[a-zA-Z0-9_]+\s*:\s*[a-zA-Z0-9_.]+\.asl\s*\{[^}]+\})", rendered_jcm)
+        workspace_blocks = re.findall(r"(workspace\s+[a-zA-Z0-9_]+\s*\{[^}]+\})", rendered_jcm)
+        org_blocks = re.findall(r"(organisation\s+[a-zA-Z0-9_]+\s*:\s*[a-zA-Z0-9_.]+\.xml\s*\{.*?\n    \})", rendered_jcm, flags=re.DOTALL)
 
-    mega_jcm_blocks.append("}")
-    
-    full_jcm_content = "\n".join(mega_jcm_blocks)
+        for ab in agent_blocks:
+            # Use relative unquoted path from project root (build/phase4_asl/run_X)
+            rel_path = f"build/phase4_asl/run_{run_id}"
+            ab_fixed = re.sub(r'(agent\s+[a-zA-Z0-9_]+\s*:\s*)([a-zA-Z0-9_.]+\.asl)', rf'\1{rel_path}/\2', ab)
+            mega_agents.append(ab_fixed)
+
+        for wb in workspace_blocks:
+            mega_workspaces.append(wb)
+            
+        for ob in org_blocks:
+            mega_organisations.append(ob)
+
+    full_jcm_content = "mas factory_twin_phase4 {\n\n"
+    full_jcm_content += "\n\n".join(mega_agents) + "\n\n"
+    full_jcm_content += "\n\n".join(mega_workspaces) + "\n\n"
+    full_jcm_content += "\n\n".join(mega_organisations) + "\n\n"
+    full_jcm_content += "}\n"
     output_jcm_path.write_text(full_jcm_content, encoding="utf-8")
 
     validate_structural(full_jcm_content, output_asl_dir)

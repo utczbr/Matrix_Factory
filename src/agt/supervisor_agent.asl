@@ -28,7 +28,7 @@
 +energy_price(P)
   <- .print("Energy price is now: ", P).
 
-+energy_price_spike(Price)
++disabled_energy_price_spike(Price)
   : active_schema(prosa) & not pending_transition(_, _)
   <- .print("Energy spike: ", Price, " EUR/MWh — initiating ADACOR transition");
      getSimTime(SimT);                                   // Synchronous @OPERATION query
