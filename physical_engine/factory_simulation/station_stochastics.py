@@ -35,25 +35,25 @@ class StationParameters:
 STATION_PARAMS: Dict[int, StationParameters] = {
     1: StationParameters(
         name="MEA Preparation",
-        t_mean_s=45.0,
+        t_mean_s=5.0,
         t_std_s=5.0,
         defect_rate=0.005,
     ),
     2: StationParameters(
         name="Catalytic Deposition",
-        t_mean_s=120.0,
+        t_mean_s=12.0,
         t_std_s=15.0,
         defect_rate=0.012,
     ),
     3: StationParameters(
         name="Bipolar Plate Stamping",
-        t_mean_s=30.0,
+        t_mean_s=3.0,
         t_std_s=2.0,
         defect_rate=0.002,
     ),
     4: StationParameters(
         name="Robotic Stack Assembly",
-        t_mean_s=240.0,
+        t_mean_s=24.0,
         t_std_s=30.0,
         defect_rate=0.008,
     ),

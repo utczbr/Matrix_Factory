@@ -14,10 +14,11 @@ public class UtilitySystemArtifact extends Artifact {
         defineObsProperty("h2_fill_fraction", 0.0);
         defineObsProperty("chiller_temp_k", 0.0);
         defineObsProperty("compressor_power_kw", 0.0);
+        defineObsProperty("schema_epoch", 0);
         RunManager.getSimulator(runId).utilitySystemArtifact = this;
     }
 
-    public void updateFromStateVector(StepReady ready, double simTimeS) {
+    public void updateFromStateVector(StepReady ready, double simTimeS, int currentEpoch) {
         this.currentSimTimeS = simTimeS;
         java.util.List<Double> sv = ready.getStateVectorList();
         if (sv.size() >= ProtoIndex.VECTOR_LENGTH) {
@@ -28,6 +29,7 @@ public class UtilitySystemArtifact extends Artifact {
                     updateObsProperty("h2_fill_fraction", sv.get(ProtoIndex.H2_TANK_FILL_FRACTION));
                     updateObsProperty("chiller_temp_k", sv.get(ProtoIndex.CHILLER_TEMP_K));
                     updateObsProperty("compressor_power_kw", sv.get(ProtoIndex.COMPRESSOR_POWER_KW));
+                    updateObsProperty("schema_epoch", currentEpoch);
                 }
             } finally {
                 endExtSession();

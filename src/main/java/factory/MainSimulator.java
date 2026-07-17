@@ -223,7 +223,11 @@ public class MainSimulator {
     }
 
     public void submitNER(String agentId, double requestedNextTime) {
-        nerRegistry.put(agentId, new NEREntry(agentId, requestedNextTime));
+        submitNER(agentId, requestedNextTime, null);
+    }
+
+    public void submitNER(String agentId, double requestedNextTime, CountDownLatch tagLatch) {
+        nerRegistry.put(agentId, new NEREntry(agentId, requestedNextTime, tagLatch));
         if (nerLatch != null) {
             nerLatch.countDown();
         }
@@ -302,8 +306,9 @@ public class MainSimulator {
                 ((TimerArtifact) timerArtifact).evaluateTTLs(currentTime);
                 ((EnergyPriceArtifact) energyPriceArtifact).updatePrice(currentTime);
                 ((AMRArtifact) amrArtifact).updatePositions(currentTime, computedDt);
-                ((UtilitySystemArtifact) utilitySystemArtifact).updateFromStateVector(ready, currentTime);
-
+                if (utilitySystemArtifact != null) {
+                    ((UtilitySystemArtifact) utilitySystemArtifact).updateFromStateVector(ready, currentTime, currentEpoch);
+                }
                 TelemetryFrameSnapshot snap = assembleTelemetryFrame(ready, currentEpoch);
                 telemetryRef.set(snap);
 
@@ -433,6 +438,11 @@ public class MainSimulator {
 
     private void issueTimeAdvanceGrant(double time, int epoch) {
         // Wake up agents waiting on NER
+        for (NEREntry entry : nerRegistry.values()) {
+            if (time >= entry.requestedNextTime() && entry.tagLatch() != null) {
+                entry.tagLatch().countDown();
+            }
+        }
     }
 
     public synchronized OrgSchemaTransition beginTransition(String targetSchema, double currentSimTimeS) {

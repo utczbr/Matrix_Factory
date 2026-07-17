@@ -30,3 +30,4 @@ scratch/
 *.db-wal
 components_to_implement/
 #.physical_engine/
+report (1).tex

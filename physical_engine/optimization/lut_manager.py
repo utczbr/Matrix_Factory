@@ -626,7 +626,7 @@ class LUTManager(Component):
             # Outside the table's upper bound — fall back to ideal gas rather
             # than silently clamping to p_hi.
             from physical_engine.core.constants import GasConstants
-            return rho_target_kg_m3 * GasConstants.R_H2 * temperature_k / 1e5  # bar... adjust units at call site
+            return rho_target_kg_m3 * GasConstants.R_H2 * temperature_k  # returns Pa
         for _ in range(max_iter):
             p_mid = 0.5 * (p_lo + p_hi)
             d_mid = self.lookup(fluid, 'D', p_mid, temperature_k)

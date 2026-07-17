@@ -35,8 +35,11 @@ from physical_engine.protos import sim_bridge_pb2, sim_bridge_pb2_grpc
 port = sys.argv[1]
 channel = grpc.insecure_channel(f"127.0.0.1:{port}")
 stub = sim_bridge_pb2_grpc.SimBridgeStub(channel)
-response = stub.HealthCheck(sim_bridge_pb2.Empty(), timeout=1)
-raise SystemExit(0 if response.ready else 1)
+try:
+    response = stub.HealthCheck(sim_bridge_pb2.Empty(), timeout=1)
+    raise SystemExit(0 if response.ready else 1)
+except grpc.RpcError:
+    raise SystemExit(1)
 PY
   do
     sleep 0.5

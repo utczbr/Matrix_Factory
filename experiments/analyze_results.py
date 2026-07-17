@@ -1,35 +1,9 @@
-import sqlite3
 import pandas as pd
 import scipy.stats as stats
 
-def get_metrics(db_path):
-    conn = sqlite3.connect(db_path)
-    
-    # Throughput: completed orders per run_id
-    query = """
-    SELECT run_id, count(order_id) as throughput 
-    FROM Orders 
-    WHERE event_type = 'COMPLETED' 
-    GROUP BY run_id
-    """
-    throughput_df = pd.read_sql_query(query, conn)
-    
-    # If a run completed 0 orders, it might not be in the result.
-    # Assuming run_ids 0 to 29
-    all_runs = pd.DataFrame({'run_id': range(30)})
-    throughput_df = pd.merge(all_runs, throughput_df, on='run_id', how='left').fillna(0)
-    
-    conn.close()
-    return throughput_df
-
-prosa = get_metrics("factory_history_prosa.db")
-adacor = get_metrics("factory_history_adacor.db")
-
-prosa['schema'] = 'PROSA'
-adacor['schema'] = 'ADACOR'
-
-df = pd.concat([prosa, adacor])
-df.to_csv("results.csv", index=False)
+df = pd.read_csv("analysis/results.csv")
+prosa = df[df['schema'] == 'PROSA']
+adacor = df[df['schema'] == 'ADACOR']
 
 # Test for normality
 prosa_tp = prosa['throughput'].values

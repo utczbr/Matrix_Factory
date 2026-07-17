@@ -268,7 +268,7 @@ class SimBridgeServicer:
                 comp_kw = self._compressor.power_kw(m_dot_h2, T_coolant, 1.0, p_out_bar)
 
                 # Tank fills
-                self._tank.fill(m_dot_h2 * dt * 3600.0)  # dt is in hours, m_dot is kg/s
+                self._tank.fill(m_dot_h2 * dt)  # dt is in seconds, m_dot is kg/s
 
                 self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR] = self._tank.pressure_bar
                 self._state[ThermoStateIndex.H2_TANK_FILL_FRACTION] = self._tank.fill_fraction

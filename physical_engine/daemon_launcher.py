@@ -87,7 +87,6 @@ def main() -> None:
     def _handle_signal(signum, frame) -> None:  # noqa: ANN001
         nonlocal shutdown_requested
         shutdown_requested = True
-        logger.info("Received signal %s, beginning shutdown.", signum)
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)

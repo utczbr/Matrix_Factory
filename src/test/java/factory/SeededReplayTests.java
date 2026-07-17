@@ -29,9 +29,9 @@ class SeededReplayTests {
      * Core invariant: the simulation must complete cleanly and produce
      * no deadlocked threads across a spread of seeds.
      */
-    @org.junit.jupiter.api.Test
-    void invariantsHoldForSeed() {
-        long seed = 1;
+    @ParameterizedTest
+    @ValueSource(longs = {1L, 2L, 3L, 4L, 5L})
+    void invariantsHoldForSeed(long seed) {
         SimulationTestHarness harness = new SimulationTestHarness();
         SimRunHandle h = harness.run("factory.jcm", TICK_BUDGET, seed);
 

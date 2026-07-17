@@ -12,9 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt cython
 # Copy the physics engine code
 COPY physical_engine/ physical_engine/
 COPY scripts/ scripts/
-COPY components_to_implement/ components_to_implement/
-COPY add_includes.py .
-
 # Build Cython extensions
 RUN cythonize -i physical_engine/optimization/_numba_ops_core.pyx
 
