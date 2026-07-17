@@ -172,8 +172,9 @@ class StackThermalModel:
         self.T_skin += dt * dT_skin_dt
 
         # --- Yonkist validation ---
-        # Volume approximation: A_internal × L_char
-        volume = self.A_internal * self.L_char
+        # Volume approximation: A_external × L_char
+        # L_char is standardly defined as V / A_external for lumped capacitance
+        volume = self.A_external * self.L_char
         q_gen_volumetric = Q_gen / volume if volume > 0 else 0.0
         delta_T = max(self.T_core - T_coolant, 1e-6)
 
