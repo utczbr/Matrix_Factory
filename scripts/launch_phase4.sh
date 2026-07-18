@@ -48,4 +48,4 @@ PY
 done
 
 echo "[phase4] launching JVM pinned to cores ${JVM_CORES}"
-taskset -c "${JVM_CORES}" ./gradlew run --args="--phase4 --run-start-id=${RUN_START_ID} --run-count=${RUN_COUNT} --base-port=${BASE_PORT} --phase4-jcm-dir=${PHASE4_JCM_DIR} --max-sim-time=3369600"
+taskset -c "${JVM_CORES}" ./gradlew run --args="--phase4 --run-start-id=${RUN_START_ID} --run-count=${RUN_COUNT} --base-port=${BASE_PORT} --phase4-jcm-dir=${PHASE4_JCM_DIR} --max-sim-time=3600"

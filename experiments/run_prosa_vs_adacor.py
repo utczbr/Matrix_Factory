@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 import sys
 
-RUN_COUNT = int(os.environ.get("RUN_COUNT", "30"))
+RUN_COUNT = int(os.environ.get("RUN_COUNT", "15"))
 DB_PATH = Path("factory_history.db")
 SUPERVISOR_ASL = Path("src/agt/supervisor_agent.asl")
 JCM_TEMPLATE = Path("factory.jcm.template")
@@ -30,13 +30,25 @@ def extract_metrics(schema_name: str) -> pd.DataFrame:
     conn = sqlite3.connect(DB_PATH)
     orders = pd.read_sql_query("SELECT * FROM Orders", conn)
     
+    # Try reading StationQuality if it exists
+    try:
+        quality = pd.read_sql_query("SELECT * FROM StationQuality", conn)
+    except:
+        quality = pd.DataFrame(columns=['run_id', 'defect'])
+    
     results = []
     
     for run_id in range(RUN_COUNT):
         run_orders = orders[orders['run_id'] == run_id]
+        run_quality = quality[quality['run_id'] == run_id]
         
         submitted = run_orders[run_orders['event_type'] == 'SUBMITTED']
         completed = run_orders[run_orders['event_type'] == 'COMPLETED']
+        
+        submitted_count = len(submitted)
+        completed_count = len(completed)
+        
+        defect_rate = run_quality['defect'].mean() if len(run_quality) > 0 else 0
         
         merged = pd.merge(submitted, completed, on='order_id', suffixes=('_sub', '_comp'))
         
@@ -46,7 +58,12 @@ def extract_metrics(schema_name: str) -> pd.DataFrame:
                 'run_id': run_id,
                 'throughput': 0,
                 'tardiness_mean': 0,
-                'wip_mean': 0
+                'tardiness_max': 0,
+                'tardiness_std': 0,
+                'wip_mean': 0,
+                'submitted_count': submitted_count,
+                'completed_count': completed_count,
+                'defect_rate': defect_rate
             })
             continue
             
@@ -55,6 +72,8 @@ def extract_metrics(schema_name: str) -> pd.DataFrame:
         max_time = run_orders['sim_time'].max()
         throughput = len(merged) / max_time if max_time > 0 else 0
         tardiness_mean = merged['cycle_time'].mean()
+        tardiness_max = merged['cycle_time'].max()
+        tardiness_std = merged['cycle_time'].std(ddof=0)
         wip_mean = merged['cycle_time'].sum() / max_time if max_time > 0 else 0
         
         results.append({
@@ -62,7 +81,12 @@ def extract_metrics(schema_name: str) -> pd.DataFrame:
             'run_id': run_id,
             'throughput': throughput,
             'tardiness_mean': tardiness_mean,
-            'wip_mean': wip_mean
+            'tardiness_max': tardiness_max,
+            'tardiness_std': tardiness_std,
+            'wip_mean': wip_mean,
+            'submitted_count': submitted_count,
+            'completed_count': completed_count,
+            'defect_rate': defect_rate
         })
         
     conn.close()
