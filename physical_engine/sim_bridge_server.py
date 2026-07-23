@@ -57,7 +57,6 @@ def _derive_numba_threads() -> int:
         return max(1, int(env_value))
 
     derived = max(1, (os.cpu_count() or 1) // 30)
-    os.environ["NUMBA_NUM_THREADS"] = str(derived)
     logger.warning(
         "NUMBA_NUM_THREADS was unset; defaulting to %s for standalone runs.",
         derived,

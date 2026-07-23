@@ -31,3 +31,5 @@ scratch/
 components_to_implement/
 #.physical_engine/
 report (1).tex
+factory_*.jcm
+factory.jcm.template.tmp

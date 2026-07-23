@@ -812,7 +812,8 @@ class LUTManager(Component):
                 p_sat[i] = CP.PropsSI('P', 'T', T, 'Q', 0, 'Water')
                 h_liq[i] = CP.PropsSI('H', 'T', T, 'Q', 0, 'Water')
                 h_vap[i] = CP.PropsSI('H', 'T', T, 'Q', 1, 'Water')
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Water saturation lookup failed for T={T}K: {e}")
                 p_sat[i] = np.nan
                 h_liq[i] = np.nan
                 h_vap[i] = np.nan
@@ -916,7 +917,8 @@ class LUTManager(Component):
                     h_liq = CP.PropsSI('H', 'P', pressure_pa, 'Q', 0, 'Water')
                     h_vap = CP.PropsSI('H', 'P', pressure_pa, 'Q', 1, 'Water')
                     return {'T_sat_K': t_sat, 'h_f_Jkg': h_liq, 'h_g_Jkg': h_vap}
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"CoolProp fallback saturation lookup failed for P={pressure_pa}Pa: {e}")
                     return default
             return default
 

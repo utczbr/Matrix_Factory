@@ -664,7 +664,7 @@ ADACOR & $0.0134 \pm 0.0013$ & $314.1 \pm 23.5$ & $981.7$ (max obs.\ $1326.9$) &
 \label{tab:mc-long}
 \end{table*}
 
-\paragraph{Full-horizon batch.} At a full 60-minute simulated horizon, the recovery effects of ADACOR's spike-handling are fully realised. Table~\ref{tab:mc-very-long} shows the results for 15 runs per schema.
+\paragraph{Full-horizon batch.} At a full 60-minute simulated horizon ($3600$-tick budget, $n=15$ runs per schema), the 2-phase commit and resume mechanisms allow both schemas to process orders over the extended disturbance window. Table~\ref{tab:mc-very-long} shows the empirical results from the full Monte Carlo run.
 
 \begin{table*}[t]
 \centering
@@ -673,15 +673,15 @@ ADACOR & $0.0134 \pm 0.0013$ & $314.1 \pm 23.5$ & $981.7$ (max obs.\ $1326.9$) &
 \toprule
 \textbf{Schema} & \textbf{Throughput (orders/s)} & \textbf{Tardiness mean (s)} & \textbf{Tardiness max (s)} & \textbf{WIP mean} & \textbf{Defect rate} & \textbf{Completed (of submitted)} \\
 \midrule
-PROSA & $0.0109 \pm 0.0045$ & $262.6 \pm 157.3$ & $1944.7$ & $3.26 \pm 1.91$ & $0.0028$ & $450$ of $523$ \\
-ADACOR & $0.0131 \pm 0.0019$ & $288.6 \pm 140.6$ & $2340.3$ & $3.57 \pm 1.61$ & $0.0028$ & $448$ of $519$ \\
+PROSA & $0.0083 \pm 0.0064$ & $200.8 \pm 205.0$ & $698.3$ & $2.31 \pm 2.20$ & $0.0023$ & $228$ of $326$ \\
+ADACOR & $0.0070 \pm 0.0048$ & $358.8 \pm 221.3$ & $1071.0$ & $2.96 \pm 1.92$ & $0.0040$ & $297$ of $426$ \\
 \bottomrule
 \end{tabular}
 \caption{Full-horizon batch (3600-tick budget, $n=15$ runs/schema). Values are mean $\pm$ sample standard deviation across runs, except where noted.}
 \label{tab:mc-very-long}
 \end{table*}
 
-Figure~\ref{fig:mc-bars} visualises the two headline metrics across all three horizons, making the directional reversal between short- and long-horizon behaviour immediately visible.
+Figure~\ref{fig:mc-bars} visualises the two headline metrics across the batch horizons.
 
 \begin{figure*}[t]
 \centering
@@ -705,8 +705,8 @@ Figure~\ref{fig:mc-bars} visualises the two headline metrics across all three ho
   title style={font=\small\bfseries},
   title={(a) Throughput},
 ]
-\addplot[fill=black!25, draw=black!70] coordinates {(Short,0.0139) (Long,0.0123) (Full,0.0109)};
-\addplot[fill=black!60, draw=black!90] coordinates {(Short,0.0116) (Long,0.0134) (Full,0.0131)};
+\addplot[fill=black!25, draw=black!70] coordinates {(Short,0.0139) (Long,0.0123) (Full,0.0083)};
+\addplot[fill=black!60, draw=black!90] coordinates {(Short,0.0116) (Long,0.0134) (Full,0.0070)};
 \legend{PROSA,ADACOR}
 \end{axis}
 \end{tikzpicture}%
@@ -731,16 +731,16 @@ Figure~\ref{fig:mc-bars} visualises the two headline metrics across all three ho
   title style={font=\small\bfseries},
   title={(b) Mean tardiness},
 ]
-\addplot[fill=black!25, draw=black!70] coordinates {(Short,145.0) (Long,298.7) (Full,262.6)};
-\addplot[fill=black!60, draw=black!90] coordinates {(Short,169.0) (Long,314.1) (Full,288.6)};
+\addplot[fill=black!25, draw=black!70] coordinates {(Short,145.0) (Long,298.7) (Full,200.8)};
+\addplot[fill=black!60, draw=black!90] coordinates {(Short,169.0) (Long,314.1) (Full,358.8)};
 \legend{PROSA,ADACOR}
 \end{axis}
 \end{tikzpicture}
-\caption{Grouped bar comparison of throughput and mean tardiness for PROSA and ADACOR across the three batch horizons. ADACOR's throughput disadvantage in the short batch reverses in the longer batches, while its mean tardiness remains comparable despite holding orders back during the spike.}
+\caption{Grouped bar comparison of throughput and mean tardiness for PROSA and ADACOR across the three batch horizons.}
 \label{fig:mc-bars}
 \end{figure*}
 
-\paragraph{Statistical tests.} Per-metric group comparisons (Shapiro--Wilk normality check, then Welch's $t$-test where both groups pass at $\alpha=0.05$, otherwise Mann--Whitney $U$) are summarised in Table~\ref{tab:mc-sig}; at these sample sizes none of the three headline metrics reach conventional significance in either batch.
+\paragraph{Statistical tests.} Per-metric group comparisons (Shapiro--Wilk normality check, followed by Welch's $t$-test or Mann--Whitney $U$) are summarised in Table~\ref{tab:mc-sig}.
 
 \begin{table*}[t]
 \centering
@@ -755,14 +755,16 @@ Figure~\ref{fig:mc-bars} visualises the two headline metrics across all three ho
 1440-tick ($n{=}5$) & Throughput & Welch's $t$-test & $0.572$ & Not significant \\
 1440-tick ($n{=}5$) & Tardiness mean & Welch's $t$-test & $0.774$ & Not significant \\
 1440-tick ($n{=}5$) & WIP mean & Welch's $t$-test & $0.136$ & Not significant \\
-3600-tick ($n{=}15$) & Throughput & Mann--Whitney $U$ & $0.507$ & Not significant \\
-3600-tick ($n{=}15$) & Tardiness mean & Mann--Whitney $U$ & $0.619$ & Not significant \\
-3600-tick ($n{=}15$) & WIP mean & Mann--Whitney $U$ & $0.455$ & Not significant \\
+3600-tick ($n{=}15$) & Throughput & Mann--Whitney $U$ & $0.211$ & Not significant \\
+3600-tick ($n{=}15$) & Tardiness mean & Mann--Whitney $U$ & $0.030$ & Statistically significant ($p<0.05$) \\
+3600-tick ($n{=}15$) & WIP mean & Mann--Whitney $U$ & $0.900$ & Not significant \\
 \bottomrule
 \end{tabular}
 \caption{Group-difference tests (PROSA vs.\ ADACOR) per batch and metric, following the methodology in \file{experiments/analyze\_results.py} / \file{analysis/prosa\_vs\_adacor.ipynb}.}
 \label{tab:mc-sig}
 \end{table*}
+
+In the full 3600-tick horizon batch, ADACOR successfully completed orders across 13 of 15 runs (297 total completed orders vs 228 in PROSA). While throughput differences between PROSA ($0.0083$\,orders/s) and ADACOR ($0.0070$\,orders/s) do not reach statistical significance ($p=0.211$), mean tardiness exhibits a statistically significant difference ($p=0.030$, Mann--Whitney $U$), reflecting the dwell-time cost of holding orders suspended during the energy price spike before releasing them post-commit.
 
 The two batches nonetheless tell a directionally consistent and mechanistically legible story. In the short-horizon batch, ADACOR admits and completes fewer orders than PROSA (31/79 vs.\ 42/88) and runs a slightly lower mean WIP --- consistent with the supervisor throttling new-order admission for the duration of the price spike, at the direct cost of raw throughput, exactly as \S\ref{sec:2pc} and \S\ref{sec:org-duality} describe the mechanism working. In the long-horizon batch this reverses: ADACOR completes more orders than PROSA (93/115 vs.\ 66/90) and edges out PROSA on mean throughput, at the cost of a much heavier tardiness tail (max observed tardiness $1326.9$\,s vs.\ $855.5$\,s, and a higher mean WIP) --- consistent with orders held in a suspended/queued state during the spike being released in a burst once the price clears, inflating their individual dwell time while the factory's aggregate output over the full run benefits from not having saturated its AMR and buffer capacity mid-spike the way the unthrottled PROSA runs did. The 1440-tick batch is also the first to register a non-zero defect rate (0.0043, identical in both schemas since both share the per-run seed), confirming that the Bernoulli defect roll in \code{BaseStationArtifact} does fire under a long enough observation window.
 

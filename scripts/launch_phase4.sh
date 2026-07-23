@@ -13,7 +13,8 @@ cleanup() {
   fi
 }
 
-trap cleanup EXIT INT TERM
+pkill -f "physical_engine.sim_bridge_server" 2>/dev/null || true
+pkill -f "physical_engine.daemon_launcher" 2>/dev/null || true
 
 echo "[phase4] starting ${RUN_COUNT} Python daemons"
 .venv/bin/python3 -m physical_engine.daemon_launcher --run-start-id "${RUN_START_ID}" --run-count "${RUN_COUNT}" --base-port "${BASE_PORT}" --jvm-reserved-cores 2 &

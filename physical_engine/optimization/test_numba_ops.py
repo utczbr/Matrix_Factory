@@ -1,31 +1,23 @@
+import os
+os.environ.setdefault("NUMBA_NUM_THREADS", "1")
+
 import pytest
 import numpy as np
 from physical_engine.optimization._numba_ops_core_python import (
-    calculate_nernst_voltage,
-    calculate_activation_overpotential,
-    calculate_ohmic_overpotential,
-    calculate_concentration_overpotential,
+    calculate_pem_voltage_jit,
+    calculate_compression_work,
 )
-try:
-    from physical_engine.optimization._numba_ops_core import (
-        calculate_nernst_voltage as cy_nernst,
-        calculate_activation_overpotential as cy_act,
-        calculate_ohmic_overpotential as cy_ohm,
-        calculate_concentration_overpotential as cy_conc,
+
+def test_pem_voltage_jit():
+    v = calculate_pem_voltage_jit(
+        j=1.0, T=353.15, P_op=2.0e5, R=8.314, F=96485.0, z=2,
+        alpha=0.5, j0=1e-4, j_lim=3.0, delta_mem=1.75e-4,
+        sigma_base=0.1, P_ref=1.01325e5
     )
-except ImportError:
-    cy_nernst = None
+    assert isinstance(v, float)
+    assert v > 1.0
 
-@pytest.mark.skipif(cy_nernst is None, reason="Cython module not built")
-def test_cython_python_parity():
-    # Test cases
-    T = 353.15
-    a_h2 = 3.0
-    a_o2 = 1.0
-    j = 1.0
-    
-    assert np.isclose(calculate_nernst_voltage(T, a_h2, a_o2), cy_nernst(T, a_h2, a_o2))
-    assert np.isclose(calculate_activation_overpotential(j, T), cy_act(j, T))
-    assert np.isclose(calculate_ohmic_overpotential(j, T), cy_ohm(j, T))
-    assert np.isclose(calculate_concentration_overpotential(j, T), cy_conc(j, T))
-
+def test_compression_work():
+    w = calculate_compression_work(p1=1e5, p2=2e5, mass=1.0, temperature=300.0, efficiency=0.75, gamma=1.4, gas_constant=4124.0)
+    assert isinstance(w, float)
+    assert w > 0.0

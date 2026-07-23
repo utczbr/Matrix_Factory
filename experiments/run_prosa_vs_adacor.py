@@ -4,6 +4,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 import os
+import sys
 
 RUN_COUNT = int(os.environ.get("RUN_COUNT", "15"))
 DB_PATH = Path("factory_history.db")
@@ -124,7 +125,7 @@ def main():
 
     env = os.environ.copy()
     env["RUN_COUNT"] = str(RUN_COUNT)
-    env["TELEMETRY_HMAC_SECRET"] = "phase4_monte_carlo_secure_key_9912"
+    env["TELEMETRY_HMAC_SECRET"] = os.environ.get("TELEMETRY_HMAC_SECRET", "phase4_monte_carlo_secure_key_9912")
 
     original_jcm = JCM_TEMPLATE.read_text(encoding="utf-8")
 
@@ -177,6 +178,8 @@ def main():
         os.makedirs("analysis", exist_ok=True)
         all_results.to_csv("analysis/results.csv", index=False)
         print("\nExperiment finished. Results saved to analysis/results.csv")
+        print("Running statistical analysis (analyze_results.py)...")
+        subprocess.run([sys.executable, "experiments/analyze_results.py", "analysis/results.csv"], check=True)
         
     finally:
         JCM_TEMPLATE.write_text(original_jcm, encoding="utf-8")
