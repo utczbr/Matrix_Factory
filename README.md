@@ -77,5 +77,13 @@ This script will automatically:
 2. Generate the isolated `factory_phase4.jcm` and required ASL files using the namespace-rewriting generator.
 3. Wait for all gRPC endpoints to become ready.
 4. Launch a single, taskset-pinned JVM via Gradle that orchestrates all 30 parallel runs.
+### The PROSA vs ADACOR Experiment
+The central experiment of this repository compares the PROSA baseline against the ADACOR transition logic during an energy price spike. The full 3600-tick Monte Carlo simulation (`experiments/run_prosa_vs_adacor.py`) is designed to evaluate:
+- **PROSA**: Maintains steady order admission, leading to AMR fleet saturation, high work-in-process (WIP), and extremely high maximum cycle times (tardiness) during the energy spike.
+- **ADACOR**: The supervisor safely triggers a Two-Phase Commit to transition to an agile schema, temporarily throttling order admission. This sacrifices short-term throughput but aims to avoid buffer saturation, yielding better aggregate throughput and more controlled maximum tardiness over a long horizon.
+
+> [!WARNING]
+> **Defective Baseline Data:** Analysis of the headline dataset (`analysis/results.csv`) reveals that the ADACOR arm failed to complete orders in **15 out of 15 runs** (0 throughput) due to a suspend/resume deadlock bug in the order holons. The original claims that ADACOR "yields better aggregate throughput" are unsupported by this data. The recent patch fixes this deadlock; a new dataset must be generated to evaluate the true efficacy of the ADACOR schema.
+
 ## Known Limitations
 - **gRPC Security**: The communication between the CArtAgO artifacts (Java) and the physical engine daemons (Python) uses plaintext gRPC. In a production cloud environment, this should be upgraded to use TLS/mTLS to secure the telemetry and command streams.

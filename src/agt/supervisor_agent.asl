@@ -28,18 +28,31 @@
 +energy_price(P)
   <- .print("Energy price is now: ", P).
 
-+disabled_energy_price_spike(Price)
-  : active_schema(prosa) & not pending_transition(_, _)
+// ROOT CAUSE FIX (source-mutation experiment hack): this plan used to be
+// named +energy_price_spike(Price) and was renamed to
+// +disabled_energy_price_spike(Price) by
+// experiments/run_prosa_vs_adacor.py rewriting this .asl file on disk to
+// produce the PROSA baseline arm, then rewriting it back in a `finally`
+// block. That left the repo's checked-in copy sitting in the mutated,
+// disabled state (this is exactly the state this file was found in on
+// the `main` branch — direct evidence the interrupted-mutation failure
+// mode is not hypothetical). The event name is restored to
+// +energy_price_spike(Price); the PROSA/ADACOR arm selection is now a
+// runtime observable property (adacor_enabled), sourced from
+// SupervisorArtifact.init() / MainSimulator.adacorEnabled, so no source
+// file is ever rewritten to run the experiment.
++energy_price_spike(Price)
+  : active_schema(prosa) & not pending_transition(_, _) & adacor_enabled(true)
   <- .print("Energy spike: ", Price, " EUR/MWh — initiating ADACOR transition");
      getSimTime(SimT);                                   // Synchronous @OPERATION query
      initiateTransition("adacor", SimT, ReservedEpoch);
      +pending_transition(adacor, ReservedEpoch);
      !run_phase0.
 
-+energy_price_spike(P)
-  <- .print("FALLBACK CATCH: Energy spike event received: ", P);
-     ?active_schema(S);
-     .print("Current active schema is: ", S).
+// PROSA baseline arm: ADACOR transition intentionally disabled for this run.
++energy_price_spike(Price)
+  : adacor_enabled(false)
+  <- .print("Energy spike: ", Price, " EUR/MWh — ADACOR transition disabled for this run (PROSA baseline arm)").
 
 +energy_price_normal(Price)
   : active_schema(adacor) & not pending_transition(_, _)
@@ -68,7 +81,7 @@
   <- getActiveLocks(LocksStr);
      .term2string(Locks, LocksStr);
      if (Locks == []) {
-         cancelTimer("phase0_transition");
+         cancelTimer("phase0_transition", self);
          .print("Phase0: all negotiations drained — advancing to Phase1");
          !run_phase1;
      } else {
@@ -83,6 +96,7 @@
 // No Java broadcast helper is used: .send() in Jason is the correct mechanism.
 +timer_expired("phase0_transition", _)
   <- .print("Phase0 TTL expired — executing compensating abort");
+     cancelTimer("phase0_poll", self);
      getActiveLocks(LocksStr);
      .term2string(Locks, LocksStr);
      !abort_all_locks(Locks);
@@ -118,7 +132,7 @@
      !send_suspend_to_all(Rest).
 
 +!await_phase1_acks([])
-  <- cancelTimer("phase1_transition");
+  <- cancelTimer("phase1_transition", self);
      .print("Phase1: unanimous ACK — clean commit");
      !do_commit.
 
@@ -146,6 +160,8 @@
          -pending_revert(P);
          .print("Executing pending revert to prosa!");
          !revert_to_prosa(P);
+     } else {
+         !resume_suspended_holons;
      }.
 
 // ── AMR Grid Saturation: Deadlock Resolution (PROSA mode) ────────────────
@@ -175,17 +191,36 @@
          (.member(O, Orders) & not .member(lock(_, _, O), Locks)),
          LowPri);
      -+suspended_holons(LowPri);
-     !send_suspend_to_all(LowPri).
+     !send_suspend_to_all(LowPri);
+     // ROOT CAUSE FIX (grid-resume liveness): check_grid_resume previously had
+     // no invoker anywhere in the codebase (verified: zero call sites besides
+     // this definition), so suspended holons were never automatically
+     // unsuspended once grid congestion cleared. Arm a poll timer here, using
+     // the same startTimer/timer_expired idiom already used for
+     // "phase0_poll" above, so check_grid_resume is actually driven.
+     startTimer("grid_resume_poll", 2000, self).
+
++timer_expired("grid_resume_poll", _)
+  <- !check_grid_resume.
 
 // Resume suspended holons when grid utilization falls below 0.60.
 // Symmetric: un-suspends exactly the holons stored in suspended_holons.
+// Re-arms its own poll timer while holons remain suspended and the grid
+// is still saturated, so the check keeps running until resume fires.
 +!check_grid_resume
   : suspended_holons(Suspended) & Suspended \== []
   <- getGridUtilization(Util);
      if (Util < 0.60) {
          .print("Grid normal (", Util, ") — resuming suspended holons");
          !resume_suspended_holons;
+     } else {
+         startTimer("grid_resume_poll", 2000, self);
      }.
+
+// Nothing suspended: let the poll chain terminate naturally.
++!check_grid_resume
+  : suspended_holons([])
+  <- .print("Grid resume: no suspended holons — poll chain terminating").
 
 +!resume_suspended_holons
   : suspended_holons(Suspended)

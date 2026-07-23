@@ -10,6 +10,22 @@
      .my_name(Me);
      +my_name(Me); .print("Order Holon ", Me, " starting");
      +current_epoch(0);
+     // Fix for Defect D follow-up: !start runs both at initial boot (no-op,
+     // nothing to clean up yet) and at resume from ADACOR Phase1 suspend
+     // (real cleanup). Any order this holon had in flight when suspended was
+     // abandoned — its beliefs (my_order_id, recipe_remaining, etc.) are left
+     // as-is for now (a separate, broader cleanup than this fix's scope —
+     // see the near-zero-completion writeup), but the watchdog specifically
+     // must be cleared here: otherwise a stale timer for that abandoned
+     // order can still fire later, after resume, once is_suspended is gone,
+     // and would incorrectly retry CNP for an order nobody is tracking
+     // anymore.
+     -is_suspended;
+     .findall(step_watchdog(O,S,St,K), step_watchdog(O,S,St,K), StaleWatchdogs);
+     for ( .member(step_watchdog(O,S,St,K), StaleWatchdogs) ) {
+         cancelTimer(K, Me);
+         -step_watchdog(O,S,St,K);
+     }
      !request_next_batch.
 
 +!request_next_batch
@@ -18,7 +34,11 @@
      startTimer("batch_wait", 2000, Me).
 
 +timer_expired("batch_wait", Me)
-  : my_name(Me)
+  : my_name(Me) & is_suspended
+  <- true.
+
++timer_expired("batch_wait", Me)
+  : my_name(Me) & not is_suspended
   <- .random(R);
      .concat("ORD-", Me, "-", R, OrderId);
      +my_order_id(OrderId);
@@ -80,8 +100,11 @@
      .send(supervisor, tell, transport_blocked(OrderId)).
 
 +step_complete(OrderId, Step)[source(Station)]
-  : recipe_remaining(OrderId, Remaining)
-  <- .print("Step ", Step, " complete for ", OrderId, " at ", Station);
+  : recipe_remaining(OrderId, Remaining) & step_watchdog(OrderId, Step, Station, WatchdogKey)
+  <- .my_name(Me);
+     cancelTimer(WatchdogKey, Me);
+     -step_watchdog(OrderId, Step, Station, WatchdogKey);
+     .print("Step ", Step, " complete for ", OrderId, " at ", Station);
      -+current_location(OrderId, Station);
      if (Remaining == []) {
          // FIX: this branch previously just printed and stopped — no new
@@ -108,10 +131,62 @@
          !call_for_proposals(NextStep, [station_1,station_2,station_3,station_4,station_5], OrderId);
      }.
 
+// Fallback: recipe_remaining or the watchdog belief is already gone (e.g. the
+// watchdog already fired and this step_complete arrived just after the retry
+// was issued). Same-class fix as the tell-message plans above: still cancel
+// whatever's left so nothing lingers.
++step_complete(OrderId, Step)[source(Station)]
+  <- .print("Step ", Step, " complete for ", OrderId, " at ", Station, " (stale — watchdog or retry already superseded it)").
+
 +step_failed(OrderId, Step, Reason)[source(Station)]
-  <- -step_failed(OrderId, Step, Reason)[source(Station)];   // Same class of fix as transport_done above
+  : step_watchdog(OrderId, Step, Station, WatchdogKey)
+  <- .my_name(Me);
+     cancelTimer(WatchdogKey, Me);
+     -step_watchdog(OrderId, Step, Station, WatchdogKey);
+     -step_failed(OrderId, Step, Reason)[source(Station)];   // Same class of fix as transport_done above
      .print("Step ", Step, " failed for ", OrderId, " (", Reason, ") — retrying same step");
      !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId).
+
++step_failed(OrderId, Step, Reason)[source(Station)]
+  <- -step_failed(OrderId, Step, Reason)[source(Station)];
+     .print("Step ", Step, " failed for ", OrderId, " (", Reason, ") — retrying same step (stale watchdog)");
+     !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId).
+
+// ROOT CAUSE FIX (near-zero-completion investigation, continued): fires only
+// if 120s of simulated time pass after inform_start with neither
+// step_complete nor step_failed arriving — the station-side intention that
+// was supposed to send one of those was dropped (ADACOR Phase1 suspend
+// landing mid-processing being the confirmed mechanism; any other silent
+// station-side failure would hit the same gap). Recovery mirrors
+// await_station_start's own timeout branch exactly: release whatever lock
+// the station still holds, wait for its ack so the retry can't race the
+// cleanup, then re-issue CFP for the same step.
+//
+// Suspend-aware guard added on review: an earlier version of this fix had
+// no guard at all, so a watchdog firing while THIS order holon is itself
+// suspended (ADACOR Phase1) would start a fresh CNP round while it's
+// supposed to be quiescent. `station_state` was suggested as the guard, but
+// that belief belongs to resource_holon.asl, not this file — order holons
+// never hold it, so that guard would silently never match anything. The
+// actual mechanism here is `is_suspended`, set by +suspend_intention below
+// and cleared by !start on resume.
++timer_expired(WatchdogKey, Me)
+  : step_watchdog(OrderId, Step, Station, WatchdogKey) & my_name(Me) & not is_suspended
+  <- -step_watchdog(OrderId, Step, Station, WatchdogKey);
+     .print("No step_complete/step_failed from ", Station, " for ", OrderId,
+            " after 120s (watchdog) — station-side intention likely dropped; retrying CNP for step ", Step);
+     .send(Station, tell, abort_current_operation(OrderId));
+     .wait(abort_ack(OrderId)[source(Station)]);
+     -abort_ack(OrderId)[source(Station)];
+     !call_for_proposals(Step, [station_1,station_2,station_3,station_4,station_5], OrderId).
+
+// Suspended: don't retry CNP while quiescent. The belief is left in place —
+// !start's cleanup on resume (see below) retracts it and cancels the timer
+// explicitly, rather than letting a stale watchdog silently re-fire later
+// against an order this holon has already abandoned.
++timer_expired(WatchdogKey, Me)
+  : step_watchdog(OrderId, Step, Station, WatchdogKey) & my_name(Me) & is_suspended
+  <- .print("Watchdog for ", OrderId, " at ", Station, " expired while suspended — deferring to resume cleanup").
 
 +!call_for_proposals(Step, Stations, OrderId)
   : my_name(Me)
@@ -161,6 +236,12 @@
      !await_station_start(OrderId, Winner, Step).
 
 +!select_proposal(Step, Stations, OrderId)
+  : is_suspended
+  <- .print("No proposals received for ", OrderId, ", but suspended — aborting CNP");
+     .abolish(propose(_, _));
+     .abolish(refuse(_)).
+
++!select_proposal(Step, Stations, OrderId)
   <- .print("No proposals received for ", OrderId, " - retrying CNP");
      .abolish(propose(_, _));
      .abolish(refuse(_));
@@ -196,6 +277,26 @@
          // stale belief before anything has actually happened this time.
          -inform_start(Station)[source(Station)];
          .print("Station ", Station, " started processing ", OrderId);
+         // ROOT CAUSE FIX (near-zero-completion investigation): every other
+         // phase of the order lifecycle has a timeout — the 3s CNP window,
+         // the 20s/60s bid-TTL and await_station_start guards above — but
+         // once inform_start arrives, the order holon has NO active wait at
+         // all for step_complete/step_failed; it just sits as a passive
+         // listener with no recovery path if that message never comes. It
+         // can legitimately never come: resource_holon.asl's
+         // execute_physical_operation intention is unconditionally dropped
+         // by ADACOR Phase1's suspend_intentions, and if that lands while
+         // processOrder() is still blocked waiting for simulated time to
+         // elapse (a wide window — up to 72s at station S4's 3x-mean clip),
+         // the plan's final step_complete/step_failed send never executes.
+         // This order holon would then never call !request_next_batch again
+         // for the rest of the run (recipe_remaining never reaches []) —
+         // exactly the low-submitted/low-completed signature seen in
+         // results_360_10.csv. 120s clears S4's 72s worst case with margin
+         // for AMR transport + CNP overhead already spent getting here.
+         .concat(OrderId, "_stepwatch", WatchdogKey);
+         +step_watchdog(OrderId, Step, Station, WatchdogKey);
+         startTimer(WatchdogKey, 120000, Me);
      } else {
          if (reject_proposal(Station, _)[source(Station)]) {
              cancelTimer(AwaitKey, Me);
@@ -258,9 +359,11 @@
 // ── ADACOR Phase 1 Suspend / Resume ──────────────────────────────────────
 
 // Correct placement: Order Holons DO initiate call_for_proposals.
-+suspend_intention[source(supervisor)]
++suspend_intentions[source(supervisor)]
   : my_name(Me)
-  <- .drop_intention(request_next_batch);
+  <- +is_suspended;
+     cancelTimer("batch_wait", Me);
+     .drop_intention(request_next_batch);
      .drop_intention(call_for_proposals(_, _, _));     // Order Holons initiate CFPs
      .drop_intention(await_station_start(_, _, _));
      .drop_intention(request_transport(_, _, _));

@@ -18,6 +18,7 @@ public class DatabaseArtifact extends Artifact {
 
     private final ArrayBlockingQueue<TelemetryRecord> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final ArrayBlockingQueue<QualityRecord> qualityQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+    private final ArrayBlockingQueue<EnergyRecord> energyQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final AtomicBoolean backpressureActive = new AtomicBoolean(false);
     private Connection conn;
     private int runId;
@@ -79,6 +80,14 @@ public class DatabaseArtifact extends Artifact {
                 s.execute("CREATE TABLE IF NOT EXISTS StationQuality(" +
                           "run_id INTEGER, stack_id TEXT, station_id TEXT, " +
                           "defect INTEGER, t_proc_s REAL, t_mean_s REAL, sim_time REAL)");
+                // Necessary Correction #5: no metric previously measured the
+                // cost consequence of the energy-price-triggered ADACOR
+                // transition — only throughput/tardiness were recorded. This
+                // table gives extract_metrics() the raw series needed to
+                // compute energy_cost = Σ(power_kw × price × dt) per run.
+                s.execute("CREATE TABLE IF NOT EXISTS EnergyTelemetry(" +
+                          "run_id INTEGER, sim_time REAL, energy_price_eur_mwh REAL, " +
+                          "compressor_power_kw REAL)");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("DatabaseArtifact init failed", e);
@@ -132,6 +141,27 @@ public class DatabaseArtifact extends Artifact {
         defectCount.set(p.defectCount());
         stationsVisited.set(p.stationsVisited());
         cumulativeVarianceRatio.set(p.cumulativeVarianceRatio());
+    }
+
+    /**
+     * Called once per telemetry frame from MainSimulator.assembleTelemetryFrame
+     * (same cadence as the WebSocket broadcast — no extra timer needed).
+     * Durable, async write-behind like recordStationQuality; not on any
+     * agent-facing hot path.
+     *
+     * Deliberately NOT @OPERATION (fixed on review): this is called directly
+     * as a plain Java method from the TMC thread, not through CArtAgO's
+     * operation dispatcher — matching updatePrice/evaluateTTLs/updatePositions,
+     * which are all called the same way and all correctly omit the
+     * annotation. (TelemetryArtifact.broadcast is called identically but
+     * still carries @OPERATION — a pre-existing inconsistency in the
+     * original codebase, not something to replicate here.)
+     */
+    public void recordEnergyTelemetry(int runId, double simTime, double energyPriceEurMwh, double compressorPowerKw) {
+        EnergyRecord rec = new EnergyRecord(runId, simTime, energyPriceEurMwh, compressorPowerKw);
+        if (!energyQueue.offer(rec)) {
+            signal("database_write_dropped", "energy_telemetry");
+        }
     }
 
     @OPERATION
@@ -247,6 +277,34 @@ public class DatabaseArtifact extends Artifact {
                         }
                     }
                 }
+                int eBatchSize = Math.min(MAX_BATCH, energyQueue.size());
+                if (eBatchSize > 0) {
+                    java.util.ArrayList<EnergyRecord> eBatch = new java.util.ArrayList<>(eBatchSize);
+                    for (int i = 0; i < eBatchSize; i++) {
+                        EnergyRecord rec = energyQueue.poll();
+                        if (rec == null) break;
+                        eBatch.add(rec);
+                    }
+                    if (!eBatch.isEmpty()) {
+                        try (PreparedStatement ps = conn.prepareStatement(
+                                "INSERT INTO EnergyTelemetry(run_id, sim_time, energy_price_eur_mwh, compressor_power_kw) " +
+                                "VALUES (?,?,?,?)")) {
+                            conn.setAutoCommit(false);
+                            for (EnergyRecord rec : eBatch) {
+                                ps.setInt(1, rec.runId());
+                                ps.setDouble(2, rec.simTime());
+                                ps.setDouble(3, rec.energyPriceEurMwh());
+                                ps.setDouble(4, rec.compressorPowerKw());
+                                ps.addBatch();
+                            }
+                            ps.executeBatch();
+                            conn.commit();
+                            conn.setAutoCommit(true);
+                        } catch (SQLException e) {
+                            signal("database_batch_commit_failed", eBatch.size());
+                        }
+                    }
+                }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -257,4 +315,6 @@ public class DatabaseArtifact extends Artifact {
 
     private record QualityRecord(int runId, String stackId, String stationId,
                                   boolean defect, double tProcS, double tMeanS, double simTime) {}
+
+    private record EnergyRecord(int runId, double simTime, double energyPriceEurMwh, double compressorPowerKw) {}
 }

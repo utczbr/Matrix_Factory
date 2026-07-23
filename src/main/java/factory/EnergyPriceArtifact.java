@@ -53,6 +53,20 @@ public class EnergyPriceArtifact extends Artifact {
         RunManager.getSimulator(runId).energyPriceArtifact = this;
     }
 
+    /**
+     * Package-private accessor added for the energy-cost telemetry channel
+     * (MainSimulator.assembleTelemetryFrame persists this alongside
+     * compressor_power_kw so experiments/run_prosa_vs_adacor.py can compute
+     * energy_cost = Σ(power_kw × price × dt) per run — previously no metric
+     * measured the cost consequence of the energy-triggered ADACOR
+     * transition at all).
+     */
+    double getCurrentPrice() {
+        synchronized (priceLock) {
+            return currentPrice;
+        }
+    }
+
     public void updatePrice(double simTime) {
         var entry = priceAtSimTime.floorEntry(simTime);
         if (entry != null) {

@@ -44,6 +44,12 @@ public class MainSimulator {
     public String injectEpochMismatchOn = null;
     public String logBrfAgent = null;
     public boolean traceMessages = false;
+    // Runtime flag replacing the old "rewrite supervisor_agent.asl on disk"
+    // trick used by experiments/run_prosa_vs_adacor.py to produce the PROSA
+    // baseline arm (see supervisor_agent.asl's energy_price_spike guard).
+    // Defaults to true (ADACOR behaves normally); set false to force the
+    // PROSA-only baseline without touching source files.
+    public boolean adacorEnabled = true;
 
     // NER Quorum
     private final ConcurrentHashMap<String, NEREntry> nerRegistry = new ConcurrentHashMap<>();
@@ -196,6 +202,8 @@ public class MainSimulator {
                 sim.logBrfAgent = arg.substring("--log-brf=".length());
             } else if (arg.equals("--trace-message") || arg.equals("--trace-messages")) {
                 sim.traceMessages = true;
+            } else if (arg.equals("--disable-adacor")) {
+                sim.adacorEnabled = false;
             }
         }
         
@@ -256,7 +264,7 @@ public class MainSimulator {
                     supervisorArtifact == null) {
                 Thread.sleep(500);
                 waitLoops++;
-                if (waitLoops > 60) { // 30 seconds timeout
+                if (waitLoops > 300) { // 150 seconds timeout
                     logger.error("Timeout waiting for artifacts to register for run " + runId + ". JaCaMo failed to boot.");
                     System.exit(1);
                 }
@@ -391,6 +399,20 @@ public class MainSimulator {
         b.addAllThermoStateVector(ready.getStateVectorList());
 
         List<Double> sv = ready.getStateVectorList();
+
+        // Fix #5: persist the raw series needed to compute energy_cost per
+        // run. Same cadence as this telemetry frame (no extra timer), reusing
+        // the compressor-power reading already parsed below and the current
+        // price already held by EnergyPriceArtifact. Guarded because both
+        // artifacts are only wired up after MainSimulator's artifact-ready
+        // wait loop clears (see the while() check earlier in startup).
+        if (energyPriceArtifact != null && databaseArtifact != null
+                && sv.size() > ProtoIndex.COMPRESSOR_POWER_KW) {
+            double priceNow = ((EnergyPriceArtifact) energyPriceArtifact).getCurrentPrice();
+            double compressorPowerKwNow = sv.get(ProtoIndex.COMPRESSOR_POWER_KW);
+            ((DatabaseArtifact) databaseArtifact).recordEnergyTelemetry(
+                    runId, currentTime, priceNow, compressorPowerKwNow);
+        }
         if (sv.size() >= ProtoIndex.VECTOR_LENGTH) {
             b.setStation5StackVoltageV(sv.get(ProtoIndex.STACK_VOLTAGE_V))
                     .setStation5CurrentDensityACm2(sv.get(ProtoIndex.STACK_CURRENT_A_CM2))
@@ -427,9 +449,16 @@ public class MainSimulator {
             }
         }
 
-        // b.setDroppedTelemetryFrameCount(((TelemetryArtifact)
-        // telemetryArtifact).droppedTelemetryFrameCount.intValue())
-        b.setDroppedTelemetryFrameCount(0)
+        // ROOT CAUSE FIX (telemetry blind spot): this field was hardcoded to 0
+        // with the real counter commented out above, so dropped-frame
+        // monitoring was advertised in the proto/dashboard but never actually
+        // measured. TelemetryArtifact already exposes a package-private
+        // getDroppedTelemetryFrameCount() accumulating real drops (see
+        // TelemetryArtifact.java); wire it through here.
+        int droppedTelemetryFrames = (telemetryArtifact != null)
+                ? (int) ((TelemetryArtifact) telemetryArtifact).getDroppedTelemetryFrameCount()
+                : 0;
+        b.setDroppedTelemetryFrameCount(droppedTelemetryFrames)
                 .setDroppedNerCount((int) droppedNerCount.get())
                 .setRunId(runId);
 

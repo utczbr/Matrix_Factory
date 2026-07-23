@@ -11,7 +11,8 @@
      +my_name(Me); .print("Resource Holon ", Me, " starting");
      -+station_state(idle);
      +current_epoch(0);
-     +my_station(Me).
+     +my_station(Me);
+     releaseStation("").
 
 // ── CNP Reservation State-Machine (Phase 2) ──────────────────────────────
 
@@ -228,6 +229,12 @@
 // respond to CFPs — they never initiate them. That intention belongs to order_holon.asl.
 +suspend_intentions[source(supervisor)]
   <- .drop_intention(execute_physical_operation(_));
+     ?my_name(Me);
+     if (station_state(busy_processing(OrderId)) | station_state(provisional_lock(OrderId))) {
+         cancelTimer(OrderId, Me);
+         releaseLock(OrderId);
+         releaseStation(OrderId);
+     }
      -+station_state(offline);
      setStationOffline; // Push offline state to the dashboard
      ?my_name(Me);

@@ -21,11 +21,21 @@ public final class RunManager {
     }
 
     public static void launchPhase4(int runStartId, int runCount, int basePort, String phase4JcmDir, int maxTicks, double maxSimTime) {
+        // ROOT CAUSE FIX (source-mutation experiment hack, phase4 half): Phase 4
+        // constructs MainSimulator instances programmatically rather than via
+        // per-run CLI args, so the --disable-adacor flag (see MainSimulator.main)
+        // can't reach them. Read the same intent from an env var once per batch
+        // and propagate it to every simulator in this fan-out. Experiment
+        // runners (e.g. experiments/run_prosa_vs_adacor.py) set this instead of
+        // rewriting supervisor_agent.asl on disk.
+        boolean adacorEnabled = !"false".equalsIgnoreCase(System.getenv("ADACOR_ENABLED"));
+
         List<MainSimulator> simulators = new ArrayList<>(runCount);
         for (int i = runStartId; i < runStartId + runCount; i++) {
             MainSimulator sim = new MainSimulator(i, basePort + (i - runStartId), phase4JcmDir + "/factory_phase4.jcm");
             sim.maxTicks = maxTicks;
             sim.maxSimTime = maxSimTime;
+            sim.adacorEnabled = adacorEnabled;
             SIMULATORS.put(i, sim);
             simulators.add(sim);
         }

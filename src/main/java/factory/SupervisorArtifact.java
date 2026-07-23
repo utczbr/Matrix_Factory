@@ -32,6 +32,12 @@ public class SupervisorArtifact extends Artifact {
         this.runId = runId;
         RunManager.getSimulator(runId).supervisorArtifact = this;
 
+        // Always defined (not conditional like the test_hook_* properties
+        // below) because supervisor_agent.asl's energy_price_spike plans
+        // pattern-match on both adacor_enabled(true) and adacor_enabled(false)
+        // — the guard must always resolve one way or the other.
+        defineObsProperty("adacor_enabled", RunManager.getSimulator(runId).adacorEnabled);
+
         if (RunManager.getSimulator(runId).cnpSlowAccept) {
             defineObsProperty("test_hook_cnp_slow_accept", true);
         }

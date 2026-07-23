@@ -1,0 +1,182 @@
+{
+  "source_csv": "analysis/results.csv",
+  "near_zero_completion_diagnostic": {
+    "PROSA": {
+      "total_runs": 15,
+      "near_zero_completion_runs": 2,
+      "near_zero_fraction": 0.13333333333333333,
+      "near_zero_run_ids": [
+        2,
+        4
+      ]
+    },
+    "ADACOR": {
+      "total_runs": 15,
+      "near_zero_completion_runs": 15,
+      "near_zero_fraction": 1.0,
+      "near_zero_run_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ]
+    }
+  },
+  "metrics": [
+    {
+      "metric": "throughput",
+      "prosa_n": 15,
+      "adacor_n": 15,
+      "prosa_mean": 0.01004130603056296,
+      "adacor_mean": 0.0,
+      "prosa_std": 0.0032795357118717105,
+      "adacor_std": 0.0,
+      "prosa_ci95": [
+        0.008252890478388742,
+        0.011411592213100834
+      ],
+      "adacor_ci95": [
+        0.0,
+        0.0
+      ],
+      "shapiro_p_prosa": 0.001903864908934274,
+      "shapiro_p_adacor": 1.0,
+      "test": "Mann-Whitney U",
+      "test_statistic": 217.5,
+      "p_value": 2.53963619290885e-06,
+      "effect_size_name": "rank-biserial r",
+      "effect_size": -0.9333333333333333
+    },
+    {
+      "metric": "tardiness_mean",
+      "prosa_n": 15,
+      "adacor_n": 15,
+      "prosa_mean": 332.9628242954678,
+      "adacor_mean": 0.0,
+      "prosa_std": 165.4471342298502,
+      "adacor_std": 0.0,
+      "prosa_ci95": [
+        247.51283667247552,
+        407.36657802937106
+      ],
+      "adacor_ci95": [
+        0.0,
+        0.0
+      ],
+      "shapiro_p_prosa": 0.00039090001805773864,
+      "shapiro_p_adacor": 1.0,
+      "test": "Mann-Whitney U",
+      "test_statistic": 217.5,
+      "p_value": 2.53963619290885e-06,
+      "effect_size_name": "rank-biserial r",
+      "effect_size": -0.9333333333333333
+    },
+    {
+      "metric": "tardiness_max",
+      "prosa_n": 15,
+      "adacor_n": 15,
+      "prosa_mean": 1082.1426740600486,
+      "adacor_mean": 0.0,
+      "prosa_std": 744.8854293168979,
+      "adacor_std": 0.0,
+      "prosa_ci95": [
+        726.3104652752394,
+        1444.346124298503
+      ],
+      "adacor_ci95": [
+        0.0,
+        0.0
+      ],
+      "shapiro_p_prosa": 0.15997443473098927,
+      "shapiro_p_adacor": 1.0,
+      "test": "Welch's t-test",
+      "test_statistic": 5.626530456768934,
+      "p_value": 6.245695913655726e-05,
+      "effect_size_name": "Cohen's d",
+      "effect_size": 2.054518434441461
+    },
+    {
+      "metric": "wip_mean",
+      "prosa_n": 15,
+      "adacor_n": 15,
+      "prosa_mean": 3.4123717998509635,
+      "adacor_mean": 0.0,
+      "prosa_std": 1.6321791301054414,
+      "adacor_std": 0.0,
+      "prosa_ci95": [
+        2.5617520015001687,
+        4.168749220216999
+      ],
+      "adacor_ci95": [
+        0.0,
+        0.0
+      ],
+      "shapiro_p_prosa": 0.0012108221638749352,
+      "shapiro_p_adacor": 1.0,
+      "test": "Mann-Whitney U",
+      "test_statistic": 217.5,
+      "p_value": 2.53963619290885e-06,
+      "effect_size_name": "rank-biserial r",
+      "effect_size": -0.9333333333333333
+    },
+    {
+      "metric": "energy_cost_eur",
+      "prosa_n": 15,
+      "adacor_n": 15,
+      "prosa_mean": 1.0546490153497052e-05,
+      "adacor_mean": 2.5672894383731465e-08,
+      "prosa_std": 6.384708197286761e-06,
+      "adacor_std": 6.776328915441633e-08,
+      "prosa_ci95": [
+        7.6139833130495025e-06,
+        1.3370528338611163e-05
+      ],
+      "adacor_ci95": [
+        0.0,
+        6.395091050498136e-08
+      ],
+      "shapiro_p_prosa": 2.3742845480469464e-05,
+      "shapiro_p_adacor": 7.928089488944297e-07,
+      "test": "Mann-Whitney U",
+      "test_statistic": 216.5,
+      "p_value": 5.946645635868262e-06,
+      "effect_size_name": "rank-biserial r",
+      "effect_size": -0.9244444444444444
+    },
+    {
+      "metric": "defect_rate",
+      "prosa_n": 15,
+      "adacor_n": 15,
+      "prosa_mean": 0.00187720990035358,
+      "adacor_mean": 0.0,
+      "prosa_std": 0.00503058155101991,
+      "adacor_std": 0.0,
+      "prosa_ci95": [
+        0.0,
+        0.004538733526197353
+      ],
+      "adacor_ci95": [
+        0.0,
+        0.0
+      ],
+      "shapiro_p_prosa": 9.990622730536525e-07,
+      "shapiro_p_adacor": 1.0,
+      "test": "Mann-Whitney U",
+      "test_statistic": 127.5,
+      "p_value": 0.16439422239165813,
+      "effect_size_name": "rank-biserial r",
+      "effect_size": -0.1333333333333333
+    }
+  ]
+}
