@@ -15,21 +15,21 @@
 ```mermaid
 graph TD
     subgraph MAS ["Java Multi-Agent System (JaCaMo / Jason BDI)"]
-        SA["supervisor_agent.asl"] -->|2-Phase Commit (Drain/Suspend)| OH["order_holon.asl (1..5)"]
+        SA["supervisor_agent.asl"] -->|"2-Phase Commit (Drain/Suspend)"| OH["order_holon.asl (1..5)"]
         SA --> RH["resource_holon.asl (1..5)"]
-        OH -->|Contract-Net Bidding| RH
-        OH -->|Dispatch| AMR["amr_agent.asl (1..2)"]
-        RH -->|Execute Step| CA["CArtAgO Artifacts"]
+        OH -->|"Contract-Net Bidding"| RH
+        OH -->|"Dispatch"| AMR["amr_agent.asl (1..2)"]
+        RH -->|"Execute Step"| CA["CArtAgO Artifacts"]
     end
 
     subgraph Sync ["Tick Engine & Interfaces"]
-        MS["MainSimulator.java"] -->|Lock-Stepped Tick Loop| CA
-        DB["DatabaseArtifact.java"] -->|Async Queue + WAL| SQLite[("factory_history.db")]
-        WS["TelemetryHub.java"] -->|HMAC WebSocket :8080| Client["Live Dashboard"]
+        MS["MainSimulator.java"] -->|"Lock-Stepped Tick Loop"| CA
+        DB["DatabaseArtifact.java"] -->|"Async Queue + WAL"| SQLite[("factory_history.db")]
+        WS["TelemetryHub.java"] -->|"HMAC WebSocket :8080"| Client["Live Dashboard"]
     end
 
     subgraph Physics ["Python Physical Engine"]
-        gRPC["SimBridge gRPC (:50051..50080)"] <-->|StepReady / Telemetry| MS
+        gRPC["SimBridge gRPC (:50051..50080)"] <-->|"StepReady / Telemetry"| MS
         PEMFC["Stack Thermal & PEMFC Model"] --> LUT["Numba JIT & CoolProp EOS"]
     end
 ```
