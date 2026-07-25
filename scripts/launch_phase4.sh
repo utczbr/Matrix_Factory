@@ -27,6 +27,7 @@ echo "[phase4] waiting for daemon readiness"
 for run_id in $(seq ${RUN_START_ID} $((RUN_START_ID + RUN_COUNT - 1))); do
   port=$((BASE_PORT + (run_id - RUN_START_ID)))
   until .venv/bin/python3 - "$port" <<'PY'
+import os
 import sys
 
 import grpc
@@ -34,7 +35,20 @@ import grpc
 from physical_engine.protos import sim_bridge_pb2, sim_bridge_pb2_grpc
 
 port = sys.argv[1]
-channel = grpc.insecure_channel(f"127.0.0.1:{port}")
+secure_mode = os.environ.get("GRPC_SECURE_MODE", "false").lower() == "true"
+if secure_mode:
+    cert_dir = os.environ.get("GRPC_CERT_DIR", "certs")
+    with open(f"{cert_dir}/ca.crt", "rb") as f:
+        ca_crt = f.read()
+    with open(f"{cert_dir}/client.crt", "rb") as f:
+        client_crt = f.read()
+    with open(f"{cert_dir}/client.key", "rb") as f:
+        client_key = f.read()
+    creds = grpc.ssl_channel_credentials(root_certificates=ca_crt, private_key=client_key, certificate_chain=client_crt)
+    channel = grpc.secure_channel(f"127.0.0.1:{port}", creds)
+else:
+    channel = grpc.insecure_channel(f"127.0.0.1:{port}")
+
 stub = sim_bridge_pb2_grpc.SimBridgeStub(channel)
 try:
     response = stub.HealthCheck(sim_bridge_pb2.Empty(), timeout=1)

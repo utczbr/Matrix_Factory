@@ -461,9 +461,32 @@ def serve(
     sim_bridge_pb2_grpc.add_SimBridgeServicer_to_server(servicer, server)
 
     bind_addr = f"127.0.0.1:{port}"
-    server.add_insecure_port(bind_addr)
+    secure_mode = os.environ.get("GRPC_SECURE_MODE", "false").lower() == "true"
+    if secure_mode:
+        cert_dir = os.environ.get("GRPC_CERT_DIR", "certs")
+        ca_cert_path = os.path.join(cert_dir, "ca.crt")
+        server_cert_path = os.path.join(cert_dir, "server.crt")
+        server_key_path = os.path.join(cert_dir, "server.key")
+
+        with open(ca_cert_path, "rb") as f:
+            ca_cert = f.read()
+        with open(server_cert_path, "rb") as f:
+            server_cert = f.read()
+        with open(server_key_path, "rb") as f:
+            server_key = f.read()
+
+        server_credentials = grpc.ssl_server_credentials(
+            [(server_key, server_cert)],
+            root_certificates=ca_cert,
+            require_client_auth=True,
+        )
+        server.add_secure_port(bind_addr, server_credentials)
+        logger.info(f"SimBridge server listening on {bind_addr} with mTLS (secure mode)")
+    else:
+        server.add_insecure_port(bind_addr)
+        logger.info(f"SimBridge server listening on {bind_addr} (insecure mode)")
+
     server.start()
-    logger.info(f"SimBridge server listening on {bind_addr}")
 
     # Graceful shutdown on SIGTERM / SIGINT
     shutdown_event = threading.Event()

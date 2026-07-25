@@ -33,3 +33,5 @@ components_to_implement/
 report (1).tex
 factory_*.jcm
 factory.jcm.template.tmp
+certs/
+*.key

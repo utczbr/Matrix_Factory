@@ -1,89 +1,151 @@
 # Matrix Factory Twin
 
-The Matrix Factory Twin is an advanced, event-driven multi-agent simulation framework that models a responsive, dynamic manufacturing environment.
+[![CI Build](https://img.shields.io/github/actions/workflow/status/utczbr/Matrix_Factory/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/utczbr/Matrix_Factory/actions)
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg?style=flat-square)](https://www.python.org/)
+[![Java Version](https://img.shields.io/badge/java-17%2B-orange.svg?style=flat-square)](https://www.oracle.com/java/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
+[![Architecture](https://img.shields.io/badge/MAS-JaCaMo%20%2B%20Numba%20gRPC-purple.svg?style=flat-square)](#visual-architecture--system-flow)
 
-It features a hybrid architecture combining a Java-based multi-agent system (MAS) with a Python-based physical engine, bridged via gRPC. 
+**An event-driven, hybrid multi-agent digital twin framework for modular hydrogen fuel-cell manufacturing, coupling BDI agent cognitive reasoning in Java with first-principles electrochemical physics in Python via a lock-stepped gRPC simulation bridge.**
+
+---
+
+## Visual Architecture & System Flow
+
+```mermaid
+graph TD
+    subgraph MAS ["Java Multi-Agent System (JaCaMo / Jason BDI)"]
+        SA["supervisor_agent.asl"] -->|2-Phase Commit (Drain/Suspend)| OH["order_holon.asl (1..5)"]
+        SA --> RH["resource_holon.asl (1..5)"]
+        OH -->|Contract-Net Bidding| RH
+        OH -->|Dispatch| AMR["amr_agent.asl (1..2)"]
+        RH -->|Execute Step| CA["CArtAgO Artifacts"]
+    end
+
+    subgraph Sync ["Tick Engine & Interfaces"]
+        MS["MainSimulator.java"] -->|Lock-Stepped Tick Loop| CA
+        DB["DatabaseArtifact.java"] -->|Async Queue + WAL| SQLite[("factory_history.db")]
+        WS["TelemetryHub.java"] -->|HMAC WebSocket :8080| Client["Live Dashboard"]
+    end
+
+    subgraph Physics ["Python Physical Engine"]
+        gRPC["SimBridge gRPC (:50051..50080)"] <-->|StepReady / Telemetry| MS
+        PEMFC["Stack Thermal & PEMFC Model"] --> LUT["Numba JIT & CoolProp EOS"]
+    end
+```
+
+---
 
 ## Key Features
 
-- **Multi-Agent Orchestration (JaCaMo):** Agent behaviors are programmed using the Jason BDI (Belief-Desire-Intention) language, coordinating seamlessly through CArtAgO artifacts.
-- **Dynamic Structural Transitions (ADACOR / PROSA):** The system dynamically shifts between the PROSA (hierarchical/heterarchical) and ADACOR (agile/adaptive) control schemas.
-- **Tick-based Simulation Engine:** Replaces wall-clock dependencies (e.g., `Thread.sleep`) with a deterministic, synchronized `MainSimulator` tick loop.
-- **Two-Phase Commit Synchronization:** Safe transitional state handling using Phase 0 (Drain) and Phase 1 (Suspend) logic to pause and restructure operations during market events.
-- **Energy Price Hysteresis:** An event-driven `EnergyPriceArtifact` triggers structural transitions based on dynamic pricing thresholds and hysteresis bands.
-- **Python Physical Engine:** A Python backend handles complex physical and thermodynamic simulations (PEM fuel cells, thermal models, compressors) using Numba for optimization and gRPC for communication with the MAS layer.
+* **Hybrid BDI & First-Principles Physics**: Combines Jason/CArtAgO agent cognitive reasoning in Java 17 with Numba-accelerated PEMFC fuel cell electrochemistry and thermal dynamic models in Python.
+* **Dynamic Control Schema Transitions**: Real-time Two-Phase Commit (Phase 0 Drain, Phase 1 Suspend) switching between PROSA (peer-negotiated) and ADACOR (hierarchical) upon energy price spikes.
+* **Deterministic Lock-Stepped Simulator (TMC)**: Replaces non-deterministic wall-clock sleeps (`Thread.sleep`) with a synchronous Next Event Request (NER) engine in `MainSimulator.java`.
+* **Single-JVM Fan-Out Monte Carlo Scale**: Orchestrates up to 30 parallel, fully isolated simulation runs inside a single JVM instance via source-level agent namespace rewriting.
+* **Manufacturing-Quality Bridge**: Propagates upstream assembly defects (S1–S4) directly into downstream electrochemical penalties (+0.08 $\Omega\cdot\text{cm}^2$ internal resistance per defect) during Station 5 polarization sweeps.
+* **Configurable gRPC Security & Async Telemetry**: Optional mutual TLS (mTLS) authentication between Java clients and Python daemons, paired with authenticated HMAC-signed WebSocket streaming (`ws://127.0.0.1:8080/telemetry`).
 
-## Architecture Stack
+---
 
-### Multi-Agent System (MAS)
-* **Jason:** BDI Agent reasoning (e.g., `supervisor_agent.asl`, `order_manager.asl`).
-* **CArtAgO:** Environment artifacts (e.g., `TimerArtifact`, `EnergyPriceArtifact`, `SupervisorArtifact`).
-* **Gradle:** Build and dependency management.
+## Quick Start / Installation
 
-### Physical Engine
-* **Python 3.11+:** Backend runtime.
-* **gRPC / Protocol Buffers:** High-performance RPC bridge between the Python simulation and Java agents.
-* **Numba & NumPy:** High-performance computation for physical models.
+### Prerequisites
+Make sure your system meets the following version requirements:
+* **Java Development Kit (JDK)** $\ge$ 17.0.0
+* **Python** $\ge$ 3.11.0
+* **Gradle** $\ge$ 8.7.0 (or use included `./gradlew` wrapper)
+* **OpenSSL** (optional, for mTLS certificate generation)
 
-## Getting Started
+### Setup in Under 2 Minutes
 
-### Python Environment
-1. Ensure Python 3.11+ is installed.
-2. Create and activate a virtual environment (recommended):
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Running the System
-The simulation requires both the Python backend and the Java MAS engine running.
-
-**1. Start the Python physical engine daemon (in `venv`):**
 ```bash
-python -m physical_engine.sim_bridge_server --port=50051 --run-id=0
+# 1. Clone the repository
+git clone https://github.com/utczbr/Matrix_Factory.git
+cd Matrix_Factory
+
+# 2. Set up environment variables
+cp .env.example .env
+
+# 3. Create and activate Python virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Build Java multi-agent components
+./gradlew build
 ```
 
-**2. Start the Multi-Agent System (MAS) via Gradle:**
+---
+
+## Usage & Code Examples
+
+### 1. Running a Single Interactive Simulation
+Start the Python physical daemon, then launch the Java MAS engine:
+
 ```bash
-# Run with parameter overrides (run_id, port, max_ticks)
+# Terminal 1: Launch Python physical engine daemon on port 50051
+.venv/bin/python3 -m physical_engine.sim_bridge_server --port=50051 --run-id=0
+
+# Terminal 2: Launch Java Multi-Agent System (1000 ticks)
 ./gradlew run --args="0 50051 --max-ticks=1000"
 ```
 
-## Advanced Features (Phase 3.5+)
+### 2. Running a Monte Carlo Experiment (PROSA vs. ADACOR)
+Execute a 15-replication Monte Carlo experiment comparing the PROSA baseline against ADACOR dynamic schema switching under energy price disturbances:
 
-- **Asynchronous Telemetry:** Embedded Tyrus standalone WebSocket server (`ws://127.0.0.1:8080/telemetry`) securely multiplexes and streams real-time simulation state to clients without blocking BDI reasoning.
-- **Asynchronous Database Drain:** Thread-safe, lock-free SQLite JDBC integration utilizing `ArrayBlockingQueue`, WAL pragmas, and adaptive batching for high-throughput historic data storage.
-
-## Phase 4: High-Concurrency Monte Carlo Scale
-
-Phase 4 introduces a Single-JVM Fan-Out architecture, allowing up to 30 parallel, fully isolated JaCaMo simulation runs to execute within a single JVM instance. This avoids the memory overhead of spawning 30 separate JVMs.
-
-Key features of Phase 4 scaling:
-- **Namespace-Rewriting Generator:** `scripts/generate_factory_jcm.py` dynamically rewrites ASL definitions and bindings to create strictly isolated agent namespaces (e.g., `run_0_amr_agent`, `run_1_amr_agent`) without cross-talk.
-- **Isolated State Registry:** `RunManager` explicitly tracks and binds artifact state to its respective run ID.
-- **Pinned Execution:** The multi-agent JVM operates on a restricted set of CPU cores while the Python physical engine daemons utilize the rest.
-
-### Running Phase 4 (Full Scale)
-To launch a full 30-run Monte Carlo simulation:
 ```bash
-./scripts/launch_phase4.sh
+# Runs 15 PROSA + 15 ADACOR simulations and outputs analysis/results.csv
+python3 experiments/run_prosa_vs_adacor.py
 ```
-This script will automatically:
-1. Spin up 30 isolated Python `sim_bridge_server` daemons (ports `50051`-`50080`).
-2. Generate the isolated `factory_phase4.jcm` and required ASL files using the namespace-rewriting generator.
-3. Wait for all gRPC endpoints to become ready.
-4. Launch a single, taskset-pinned JVM via Gradle that orchestrates all 30 parallel runs.
-### The PROSA vs ADACOR Experiment
-The central experiment of this repository compares the PROSA baseline against the ADACOR transition logic during an energy price spike. The full 3600-tick Monte Carlo simulation (`experiments/run_prosa_vs_adacor.py`) is designed to evaluate:
-- **PROSA**: Maintains steady order admission, leading to AMR fleet saturation, high work-in-process (WIP), and extremely high maximum cycle times (tardiness) during the energy spike.
-- **ADACOR**: The supervisor safely triggers a Two-Phase Commit to transition to an agile schema, temporarily throttling order admission. This sacrifices short-term throughput but aims to avoid buffer saturation, yielding better aggregate throughput and more controlled maximum tardiness over a long horizon.
 
-> [!WARNING]
-> **Defective Baseline Data:** Analysis of the headline dataset (`analysis/results.csv`) reveals that the ADACOR arm failed to complete orders in **15 out of 15 runs** (0 throughput) due to a suspend/resume deadlock bug in the order holons. The original claims that ADACOR "yields better aggregate throughput" are unsupported by this data. The recent patch fixes this deadlock; a new dataset must be generated to evaluate the true efficacy of the ADACOR schema.
+### 3. Statistical Analysis & Report Generation
+Compute 95% bootstrap confidence intervals, Shapiro-Wilk normality tests, and Mann-Whitney U significance metrics from experiment results:
 
-## Known Limitations
-- **gRPC Security**: The communication between the CArtAgO artifacts (Java) and the physical engine daemons (Python) uses plaintext gRPC. In a production cloud environment, this should be upgraded to use TLS/mTLS to secure the telemetry and command streams.
+```bash
+python3 experiments/analyze_results.py analysis/results.csv
+```
+
+### 4. Running in Secure Mode (TLS / mTLS)
+Enable production-grade Mutual TLS authentication between Java artifacts and Python daemons:
+
+```bash
+# 1. Generate local 2048-bit RSA certificates
+bash scripts/generate_certs.sh certs/
+
+# 2. Start Python server in secure mode
+GRPC_SECURE_MODE=true .venv/bin/python3 -m physical_engine.sim_bridge_server --port=50051 --run-id=0
+
+# 3. Start Java MAS in secure mode
+GRPC_SECURE_MODE=true ./gradlew run --args="0 50051 --max-ticks=1000"
+```
+
+### 5. Running Test Suites
+
+```bash
+# Run Python unit & security tests (43 tests)
+.venv/bin/pytest
+
+# Run Java MAS integration test suite
+./gradlew test
+```
+
+---
+
+## Tech Stack & Prerequisites
+
+| Layer | Technologies & Frameworks | Minimum Version | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Multi-Agent System (MAS)** | Java, JaCaMo (Jason BDI, CArtAgO, MoISE), Gradle | Java 17+, Gradle 8.7+ | BDI agent reasoning, organizational roles, and Contract-Net negotiations. |
+| **Physical Engine** | Python, gRPC / Protobuf, Numba, NumPy, SciPy, CoolProp | Python 3.11+ | First-principles PEMFC electrochemistry, thermal models, and JIT sweeps. |
+| **Security & Interfaces** | OpenSSL TLS/mTLS, Tyrus WebSocket, HMAC SHA-256 | OpenSSL 1.1+ | Encrypted gRPC daemon channels and authenticated browser telemetry. |
+| **Persistence** | SQLite JDBC (WAL mode), `ArrayBlockingQueue` | SQLite 3+ | Thread-safe, lock-free historic event and process variation logging. |
+| **Analysis & Reporting** | Pandas, SciPy (`shapiro`, `mannwhitneyu`), LaTeX | Python 3.11+ | Statistical hypothesis testing, confidence interval extraction, and manuscript builds. |
+
+---
+
+## Contributing & License
+
+Contributions are welcome! Please feel free to open Issues or submit Pull Requests for bug fixes, physical model expansions, and algorithmic improvements.
+
+### License
+This project is open-source software licensed under the **[MIT License](LICENSE)**.

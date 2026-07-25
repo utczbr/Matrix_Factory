@@ -45,10 +45,33 @@ public class GrpcClientBridge {
                 threads, threads, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(256),
                 new ThreadPoolExecutor.CallerRunsPolicy());
-        this.channel = NettyChannelBuilder.forAddress("127.0.0.1", port)
-                .usePlaintext()
-                .executor(this.executor)
-                .build();
+
+        NettyChannelBuilder builder = NettyChannelBuilder.forAddress("127.0.0.1", port)
+                .executor(this.executor);
+
+        boolean secureMode = "true".equalsIgnoreCase(System.getenv("GRPC_SECURE_MODE"));
+        if (secureMode) {
+            String certDir = System.getenv().getOrDefault("GRPC_CERT_DIR", "certs");
+            java.io.File caCert = new java.io.File(certDir, "ca.crt");
+            java.io.File clientCert = new java.io.File(certDir, "client.crt");
+            java.io.File clientKey = new java.io.File(certDir, "client.key");
+            try {
+                io.grpc.netty.shaded.io.netty.handler.ssl.SslContext sslContext =
+                    io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts.forClient()
+                        .trustManager(caCert)
+                        .keyManager(clientCert, clientKey)
+                        .build();
+                builder.sslContext(sslContext);
+                logger.info("GrpcClientBridge port {} initialized with mTLS (secure mode)", port);
+            } catch (Exception e) {
+                logger.error("Failed to load mTLS certificates from {}: {}", certDir, e.getMessage(), e);
+                throw new RuntimeException("Failed to initialize secure gRPC client context", e);
+            }
+        } else {
+            builder.usePlaintext();
+        }
+
+        this.channel = builder.build();
         this.blockingStub = SimBridgeGrpc.newBlockingStub(channel);
         this.asyncStub = SimBridgeGrpc.newStub(channel);
     }
