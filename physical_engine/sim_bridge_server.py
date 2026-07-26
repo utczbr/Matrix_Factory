@@ -102,7 +102,7 @@ from physical_engine.factory_simulation.pemfc_model import (
 from physical_engine.factory_simulation.stack_thermal_model import (
     StackThermalModel,
 )
-from physical_engine.optimization.lut_manager import LUTManager, MATRIX_FACTORY_LUT_CONFIG
+from physical_engine.optimization.lut_manager import LUTManager, MATRIX_FACTORY_LUT_CONFIG, real_gas_activity
 from physical_engine.factory_simulation.h2_tank import TankArray
 from physical_engine.factory_simulation.compressor import CompressorStage
 
@@ -220,12 +220,11 @@ class SimBridgeServicer:
                 T = self._state[ThermoStateIndex.STACK_CORE_TEMP_K]
                 T_coolant = self._state[ThermoStateIndex.CHILLER_TEMP_K]
 
-                # --- Activities from pressures ---
-                # H2_TANK_PRESSURE_BAR is in bar. 1 bar = 1e5 Pa. P_ref is 1e5 Pa.
-                a_h2 = np.clip(
-                    self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR], 0.5, 10.0
-                )
-                a_o2 = 1.0  # Constant 1 bar (O2 supply from atmosphere)
+                # --- Activities from pressures & real-gas fugacity ---
+                P_h2_pa = self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR] * 1e5
+                a_h2_raw, _ = real_gas_activity(P_h2_pa, T, fluid="H2", rh=0.0, lut_manager=self._lut)
+                a_h2 = float(np.clip(a_h2_raw, 0.5, 10.0))
+                a_o2 = 1.0  # Constant 1 bar (O2 supply from atmosphere; cathode RH=0 baseline until R7)
 
                 # --- Current density from state ---
                 j = self._state[ThermoStateIndex.STACK_CURRENT_A_CM2]
@@ -310,10 +309,17 @@ class SimBridgeServicer:
             T = request.operating_temp_k or 353.15
             N_cells = request.num_cells or self._num_cells
 
-            # Convert bar → activity
+            # Convert bar → real-gas fugacity activity (with anode RH subtraction)
             P_ref = 1e5
-            a_h2 = np.clip(request.inlet_pressure_h2_bar * 1e5 / P_ref, 0.5, 10.0)
-            a_o2 = np.clip(request.inlet_pressure_o2_bar * 1e5 / P_ref, 0.5, 10.0)
+            rh_anode = getattr(request, "rh_anode", 0.0)
+            a_h2_raw, _ = real_gas_activity(
+                request.inlet_pressure_h2_bar * P_ref, T, fluid="H2", rh=rh_anode, lut_manager=self._lut
+            )
+            a_o2_raw, _ = real_gas_activity(
+                request.inlet_pressure_o2_bar * P_ref, T, fluid="O2", rh=0.0, lut_manager=self._lut
+            )
+            a_h2 = float(np.clip(a_h2_raw, 0.5, 10.0))
+            a_o2 = float(np.clip(a_o2_raw, 0.5, 10.0))
 
             # --- Manufacturing-quality bridge -----------------------------
             # Stations 1-4 log defect/variance events to the DatabaseArtifact
@@ -358,22 +364,33 @@ class SimBridgeServicer:
                 # Default 12-point diagnostic sweep
                 j_values = np.linspace(0.05, 2.4, 12)
 
-            # Vectorized computation
+            ecsa_ratio = getattr(request, "ecsa_ratio", 1.0)
+            if ecsa_ratio <= 0.0:
+                ecsa_ratio = 1.0
+
+            # Vectorized computation with ECSA kinetics
             voltages, failure_flags = batch_polarization_sweep(
                 j_values, T, a_h2, a_o2,
                 R_internal_effective, N_cells, _NUMBA_THREADS,
+                ecsa_ratio=ecsa_ratio,
             )
 
             # Simulate physical time passing so the background telemetry
             # reflects the test cycle drawing current and generating heat.
-            # Writes are taken under `_physics_step_lock` so AdvanceTime
-            # (running concurrently now that the gRPC threadpool has more
-            # than one worker — see the max_workers fix in `serve()`) never
-            # reads a torn/half-updated state vector mid-sweep.
+            T_coolant = self._state[ThermoStateIndex.CHILLER_TEMP_K]
             for j_val, v_val in zip(j_values, voltages):
+                # Calculate heat generation at test point
+                eta_ohm = j_val * R_internal_effective
+                eta_act = (8.314 * T) / (0.5 * 4 * 96485.0) * np.log(max(j_val, 1e-10) / (1e-9 * ecsa_ratio))
+                Q_gen = (j_val * N_cells) * (eta_act + eta_ohm)
+                self._thermal.step(0.5, Q_gen, T_coolant)
+
                 with self._physics_step_lock:
                     self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j_val
                     self._state[ThermoStateIndex.STACK_VOLTAGE_V] = v_val
+                    self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = self._thermal.T_core
+                    self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = self._thermal.T_skin
+                    self._state[ThermoStateIndex.STACK_TEMP_K] = 0.5 * (self._thermal.T_core + self._thermal.T_skin)
                 time.sleep(0.5)
             with self._physics_step_lock:
                 self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = 0.0

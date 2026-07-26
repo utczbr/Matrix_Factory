@@ -65,6 +65,14 @@ message BatchTestRequest {
   // reactant-starvation failures (LOW_ACTIVATION) at Station 5, not just
   // ohmic ones. 0.0 for a perfect-quality stack.
   double activity_derate_fraction = 8;
+
+  // Relative humidity at anode inlet in [0.0, 1.0]. Default 0.0 (dry).
+  // Used for real-gas water-vapor partial-pressure subtraction in Nernst calculation.
+  double rh_anode = 9;
+
+  // Effective ECSA ratio (ECSA_eff / ECSA_0) in (0.0, 1.0]. Default 1.0 (pristine).
+  // Used for Arrhenius-corrected catalyst kinetics in Station 5 test bench.
+  double ecsa_ratio = 10;
 }
 
 message BatchTestResponse {

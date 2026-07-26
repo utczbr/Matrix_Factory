@@ -78,5 +78,22 @@ def test_missing_penalty_fields_default_to_zero(servicer):
     assert resp.failure_flags == 0
 
 
+def test_exposure_normalized_penalty_effect(servicer):
+    # Java computes ΔR_internal = 0.08*defects + 0.02*cum_var / max(N_v, 1)
+    # Stack A (1 station, var=0.4): penalty = 0.008 Ω·cm²
+    # Stack B (4 stations, var=0.4): penalty = 0.002 Ω·cm²
+    penalty_1_station = 0.02 * 0.4 / 1
+    penalty_4_stations = 0.02 * 0.4 / 4
+
+    resp_1 = servicer.RunBatchTest(_request("STACK-1-STATION", r_penalty=penalty_1_station), None)
+    resp_4 = servicer.RunBatchTest(_request("STACK-4-STATIONS", r_penalty=penalty_4_stations), None)
+
+    # 4-station stack receives less ohmic penalty per station visited, yielding higher or equal voltage
+    voltages_1 = list(resp_1.measured_voltages)
+    voltages_4 = list(resp_4.measured_voltages)
+    for v1, v4 in zip(voltages_1, voltages_4):
+        assert v4 >= v1 - 1e-9
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

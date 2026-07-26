@@ -123,24 +123,39 @@ public class DatabaseArtifact extends Artifact {
 
     /**
      * Station 5 (TestBenchArtifact) calls this when a stack arrives at the
-     * test bench, to fetch its cumulative quality profile before building
-     * the {@code BatchTestRequest}. Returns all-zero for a stack with no
-     * logged station events (never seen defects/variance — treated as a
-     * perfect stack, not an error).
+     * test bench, to peek at its cumulative quality profile before building
+     * the {@code BatchTestRequest}. Non-destructive: allows retries on contract-net
+     * failure without wiping defect/variance history.
      */
     @OPERATION
-    public void getQualityProfile(String stackId, OpFeedbackParam<Integer> defectCount,
+    public void peekQualityProfile(String stackId, OpFeedbackParam<Integer> defectCount,
                                    OpFeedbackParam<Integer> stationsVisited,
                                    OpFeedbackParam<Double> cumulativeVarianceRatio) {
-        // Consuming read: once Station 5 reads a stack's profile, that entry
-        // is provably dead — no station downstream of S5 exists to write to
-        // it again. remove() instead of getOrDefault() prevents unbounded
-        // accumulation on the normal (non-abort) path.
-        QualityProfile p = qualityProfilesCache.asMap().remove(stackId);
+        QualityProfile p = qualityProfilesCache.asMap().get(stackId);
         if (p == null) p = QualityProfile.EMPTY;
         defectCount.set(p.defectCount());
         stationsVisited.set(p.stationsVisited());
         cumulativeVarianceRatio.set(p.cumulativeVarianceRatio());
+    }
+
+    /**
+     * Explicitly invalidates a stack's quality profile from the cache.
+     * Called by Station 5 only when a stack has successfully passed testing.
+     */
+    @OPERATION
+    public void invalidateQualityProfile(String stackId) {
+        qualityProfilesCache.asMap().remove(stackId);
+    }
+
+    /**
+     * Legacy alias for {@link #peekQualityProfile}.
+     */
+    @Deprecated
+    @OPERATION
+    public void getQualityProfile(String stackId, OpFeedbackParam<Integer> defectCount,
+                                   OpFeedbackParam<Integer> stationsVisited,
+                                   OpFeedbackParam<Double> cumulativeVarianceRatio) {
+        peekQualityProfile(stackId, defectCount, stationsVisited, cumulativeVarianceRatio);
     }
 
     /**

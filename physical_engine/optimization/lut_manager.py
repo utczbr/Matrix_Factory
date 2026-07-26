@@ -1211,3 +1211,68 @@ class LUTManager(Component):
         for i in range(len(j_op_array)):
             results[i] = self.lookup_pem_vcell(j_op_array[i], t_op_h_array[i])
         return results
+
+
+def water_vapor_partial_pressure(
+    T_k: float,
+    rh: float = 0.0,
+    lut_manager: Optional[Any] = None
+) -> float:
+    """Compute equilibrium water vapor partial pressure P_sat(T) * RH [Pa].
+    
+    Uses _antoine_psat_water for Antoine equation P_sat calculation, with
+    optional LUT/CoolProp fallback if available.
+    """
+    rh = max(0.0, min(1.0, float(rh)))
+    if rh == 0.0:
+        return 0.0
+    
+    p_sat = None
+    if lut_manager is not None and hasattr(lut_manager, "lookup_water_saturation"):
+        try:
+            p_sat = lut_manager.lookup_water_saturation(T_k)
+        except Exception:
+            p_sat = None
+
+    if p_sat is None:
+        from physical_engine.optimization.numba_ops import _antoine_psat_water
+        p_sat = _antoine_psat_water(T_k)
+
+    return float(p_sat * rh)
+
+
+def real_gas_activity(
+    P_total_pa: float,
+    T_k: float,
+    fluid: str = 'H2',
+    rh: float = 0.0,
+    lut_manager: Optional[Any] = None,
+    P_ref_pa: float = 1e5
+) -> Tuple[float, float]:
+    """Compute fugacity-corrected reactant activity and fugacity coefficient phi.
+
+    Args:
+        P_total_pa (float): Total species inlet pressure in Pa.
+        T_k (float): Temperature in Kelvin.
+        fluid (str): Fluid name ('H2', 'O2', etc.).
+        rh (float): Relative humidity in [0.0, 1.0].
+        lut_manager (Optional[LUTManager]): Pre-warmed LUT manager.
+        P_ref_pa (float): Reference pressure (default 1e5 Pa = 1 bar).
+
+    Returns:
+        Tuple[float, float]: (activity a, fugacity_coefficient phi)
+    """
+    p_vapor = water_vapor_partial_pressure(T_k, rh, lut_manager)
+    p_partial = max(0.0, P_total_pa - p_vapor)
+
+    phi = 1.0
+    if CP is not None and p_partial > 0.0:
+        try:
+            z = CP.PropsSI('Z', 'P', p_partial, 'T', T_k, fluid)
+            phi = float(z)
+        except Exception:
+            phi = 1.0
+
+    a = (phi * p_partial) / P_ref_pa
+    return float(a), float(phi)
+

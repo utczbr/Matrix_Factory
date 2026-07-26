@@ -87,9 +87,10 @@ public class TestBenchArtifact extends Artifact {
             OpFeedbackParam<Integer> defectCountParam = new OpFeedbackParam<>();
             OpFeedbackParam<Integer> stationsVisitedParam = new OpFeedbackParam<>();
             OpFeedbackParam<Double> varianceRatioParam = new OpFeedbackParam<>();
-            execLinkedOp(databaseArtifactId, "getQualityProfile", stackId,
+            execLinkedOp(databaseArtifactId, "peekQualityProfile", stackId,
                     defectCountParam, stationsVisitedParam, varianceRatioParam);
             int defectCount = defectCountParam.get();
+            int stationsVisited = stationsVisitedParam.get();
             double cumulativeVarianceRatio = varianceRatioParam.get();
 
             // Each logged defect is a meaningful manufacturing fault (bad MEA
@@ -100,11 +101,11 @@ public class TestBenchArtifact extends Artifact {
             // serious defect can fail a real end-of-line test.
             rInternalPenalty += defectCount * 0.08;
 
-            // Cumulative processing-time variance (stations that ran hot/cold
-            // relative to their mean, even without tripping the boolean
-            // defect flag) is a proxy for assembly imprecision: a smaller,
+            // Cumulative processing-time variance normalized by stations visited
+            // (stations that ran hot/cold relative to their mean, normalized by
+            // exposure) is a proxy for assembly imprecision: a smaller,
             // continuous resistance penalty.
-            rInternalPenalty += cumulativeVarianceRatio * 0.02;
+            rInternalPenalty += (cumulativeVarianceRatio * 0.02) / Math.max(stationsVisited, 1);
 
             // Defects concentrated in MEA prep / catalytic deposition
             // (Stations 1-2) plausibly reduce active catalyst area or clog
@@ -116,6 +117,8 @@ public class TestBenchArtifact extends Artifact {
                     + " — testing with zero quality penalty: " + e);
         }
 
+        double ecsaRatio = Math.max(0.2, 1.0 - activityDerate);
+
         BatchTestRequest req = BatchTestRequest.newBuilder()
                 .setStackId(stackId).setNumCells(numCells)
                 .setOperatingTempK(tempK)
@@ -123,6 +126,7 @@ public class TestBenchArtifact extends Artifact {
                 .setInletPressureO2Bar(pO2Bar)
                 .setRInternalPenaltyOhmCm2(rInternalPenalty)
                 .setActivityDerateFraction(activityDerate)
+                .setEcsaRatio(ecsaRatio)
                 .build();
 
         String corrId = UUID.randomUUID().toString();
@@ -153,6 +157,14 @@ public class TestBenchArtifact extends Artifact {
                     currentSummary = passed
                             ? new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f)
                             : new StationSummary(StationStateEnum.STATION_DEFECT_DETECTED, stackId, 1.0f);
+                    if (passed) {
+                        try {
+                            ArtifactId databaseArtifactId = lookupArtifact("database");
+                            execLinkedOp(databaseArtifactId, "invalidateQualityProfile", stackId);
+                        } catch (Exception e) {
+                            log("Station " + stationId + ": failed to invalidate quality profile for " + stackId + ": " + e);
+                        }
+                    }
                     try {
                         execInternalOp("handleResult", corrId, passed, flags);
                     } catch (Exception e) {

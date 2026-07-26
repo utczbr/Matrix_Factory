@@ -60,6 +60,9 @@ __all__ = [
     "calculate_pemfc_voltage",
     "newton_raphson_solver",
     "batch_polarization_sweep",
+    "batch_polarization_sweep_thermal",
+    "_effective_j0",
+    "_thermal_step_jit",
     "PEMFCConstants",
     "OHMIC_DEGRADATION",
     "MASS_TRANSPORT_STARVATION",
@@ -186,6 +189,47 @@ def calculate_nernst_potential(
 
 
 @njit(nogil=True, cache=True)
+def _effective_j0(
+    j0_ref: float = 1e-9,
+    ecsa_ratio: float = 1.0,
+    T: float = 353.15,
+    E_act: float = 30000.0,
+    T_ref: float = 353.15,
+) -> float:
+    """Arrhenius temperature & ECSA degradation scaling for ORR exchange current density."""
+    ecsa_clamped = max(1e-4, ecsa_ratio)
+    R = 8.314462618
+    arrhenius = np.exp(-(E_act / (R * T)) * (1.0 - T / T_ref))
+    return j0_ref * ecsa_clamped * arrhenius
+
+
+@njit(nogil=True, cache=True)
+def _thermal_step_jit(
+    T_core: float,
+    T_skin: float,
+    dt: float,
+    Q_gen: float,
+    T_coolant: float,
+    C_core: float = 12500.0,
+    C_skin: float = 12500.0,
+    hA_int: float = 500.0,
+    hA_ext: float = 50.0,
+) -> tuple:
+    """Forward-Euler thermal step for two-lump stack thermal model with stability assertion."""
+    dt_max = 2.0 / max(hA_int / C_core, (hA_int + hA_ext) / C_skin)
+    if dt >= dt_max:
+        raise ValueError("Forward-Euler thermal step unstable: dt exceeds stability bound")
+
+    q_int = (T_core - T_skin) * hA_int
+    q_ext = (T_skin - T_coolant) * hA_ext
+
+    dT_core = (Q_gen - q_int) / C_core * dt
+    dT_skin = (q_int - q_ext) / C_skin * dt
+
+    return (T_core + dT_core, T_skin + dT_skin)
+
+
+@njit(nogil=True, cache=True)
 def calculate_pemfc_voltage(
     j: float,
     T: float,
@@ -193,6 +237,7 @@ def calculate_pemfc_voltage(
     a_o2: float,
     R_internal: float,
     N_cells: int,
+    ecsa_ratio: float = 1.0,
 ) -> tuple:
     """Compute the stack voltage at a given current density.
 
@@ -213,6 +258,7 @@ def calculate_pemfc_voltage(
         a_o2: O₂ activity.
         R_internal: Area-specific resistance [Ω·cm²].
         N_cells: Number of cells in the stack.
+        ecsa_ratio: Effective ECSA ratio (ECSA_eff / ECSA_0). Default 1.0.
 
     Returns:
         Tuple ``(V_stack, eta_act, eta_ohm, eta_conc, E_ocv)``.
@@ -221,7 +267,7 @@ def calculate_pemfc_voltage(
     F = 96485.33212
     alpha = 0.5       # alpha_orr
     z = 4             # z_pemfc
-    j0 = 1e-9         # j0_orr
+    j0 = _effective_j0(1e-9, ecsa_ratio, T, 30000.0, 353.15)
     j_lim = 2.5       # j_lim_pemfc
     B = 0.05           # B_conc
 
@@ -259,33 +305,14 @@ def newton_raphson_solver(
     a_o2: float,
     R_internal: float,
     N_cells: int,
+    ecsa_ratio: float = 1.0,
 ) -> tuple:
-    """Solve for the current density *j* that produces *V_target*.
-
-    Uses Newton-Raphson iteration with a closed-form analytic Jacobian
-    (no finite-difference derivatives).
-
-    Convergence criteria:
-        - Absolute voltage tolerance: ``tol = 1e-4``
-        - Maximum iterations: ``max_iter = 50``
-
-    Args:
-        V_target: Desired stack voltage [V].
-        T: Temperature [K].
-        a_h2: H₂ activity.
-        a_o2: O₂ activity.
-        R_internal: Area-specific resistance [Ω·cm²].
-        N_cells: Number of cells in the stack.
-
-    Returns:
-        Tuple ``(j_solution, converged)`` where *converged* is True
-        if ``|V(j) - V_target| < tol`` within *max_iter* iterations.
-    """
+    """Solve for the current density *j* that produces *V_target*."""
     R = 8.314462618
     F = 96485.33212
     alpha = 0.5
     z = 4
-    j0 = 1e-9
+    j0 = _effective_j0(1e-9, ecsa_ratio, T, 30000.0, 353.15)
     j_lim = 2.5
     B = 0.05
 
@@ -298,7 +325,7 @@ def newton_raphson_solver(
     for _ in range(max_iter):
         # --- Forward evaluation ---
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T, a_h2, a_o2, R_internal, N_cells
+            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
         )
 
         residual = V_stack - V_target
@@ -328,14 +355,12 @@ def newton_raphson_solver(
         dV_dj = N_cells * (-deta_act_dj - deta_ohm_dj - deta_conc_dj)
 
         if abs(dV_dj) < 1e-20:
-            # Jacobian is essentially zero — cannot continue
             return (j, False)
 
         # Newton step with bracket clamping
         j_new = j - residual / dV_dj
         j = max(1e-10, min(j_new, 0.999 * j_lim))
 
-    # Did not converge within max_iter
     return (j, False)
 
 
@@ -348,33 +373,12 @@ def batch_polarization_sweep(
     R_internal: float,
     N_cells: int,
     numba_threads: int,
+    ecsa_ratio: float = 1.0,
 ) -> tuple:
-    """Vectorized polarization curve computation via ``numba.prange``.
-
-    Pre-allocates a 2-D scratchpad to avoid NRT heap contention across
-    multiprocess daemons.  Thread isolation uses ``i % numba_threads``
-    (NOT ``get_thread_id()`` — doc4 §4.2 Numba defect).
-
-    Args:
-        current_densities: Array of *j* values to evaluate [A/cm²].
-        T: Temperature [K].
-        a_h2: H₂ activity.
-        a_o2: O₂ activity.
-        R_internal: Area-specific resistance [Ω·cm²].
-        N_cells: Number of cells in the stack.
-        numba_threads: Number of Numba threads for scratchpad sizing.
-
-    Returns:
-        Tuple ``(voltages, failure_flags)`` where *failure_flags* is
-        a ``uint32`` bitmask (0 if all points computed successfully).
-
-    Raises:
-        ValueError: If any ``current_densities >= j_lim_pemfc``.
-    """
+    """Vectorized polarization curve computation via ``numba.prange``."""
     j_lim = 2.5
     n = current_densities.shape[0]
 
-    # Input validation BEFORE the parallel loop
     for k in range(n):
         if current_densities[k] >= j_lim:
             raise ValueError(
@@ -382,9 +386,7 @@ def batch_polarization_sweep(
             )
 
     voltages = np.empty(n, dtype=np.float64)
-    # Per-thread scratchpad: [V_stack, eta_act, eta_ohm, eta_conc, E_ocv]
     scratch = np.empty((numba_threads, 5), dtype=np.float64)
-    # Per-thread flag accumulator — avoids a shared-write race inside prange.
     flag_scratch = np.zeros(numba_threads, dtype=np.uint32)
 
     for i in prange(n):
@@ -392,7 +394,7 @@ def batch_polarization_sweep(
         idx = i % numba_threads
 
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T, a_h2, a_o2, R_internal, N_cells
+            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
         )
 
         scratch[idx, 0] = V_stack
@@ -403,16 +405,6 @@ def batch_polarization_sweep(
 
         voltages[i] = V_stack
 
-        # OHMIC_DEGRADATION: ohmic overpotential exceeds the healthy ceiling
-        # at any tested point (membrane/contact resistance too high).
-        #
-        # NOTE: OHMIC_DEGRADATION is a plain Python int at module scope (it's
-        # also imported and used outside any @njit function, e.g. in
-        # sim_bridge_server.py). Numba infers such literals as int64. OR-ing
-        # an int64 against a uint32 accumulator makes Numba's type unifier
-        # fall back to float64 as the "common" type (it can't safely unify
-        # uint32 and int64), and float64 has no |= implementation — hence
-        # the explicit np.uint32(...) cast at every OR site below.
         if eta_ohm > OHMIC_DEGRADATION_ETA_V:
             flag_scratch[idx] |= np.uint32(OHMIC_DEGRADATION)
 
@@ -420,15 +412,68 @@ def batch_polarization_sweep(
     for t in range(numba_threads):
         failure |= flag_scratch[t]
 
-    # THERMAL_SHUTDOWN: the requested test temperature alone is enough to
-    # evaluate this — constant across the sweep, so it's checked once here
-    # rather than per-point.
     if T > THERMAL_SHUTDOWN_TEMP_K:
         failure |= np.uint32(THERMAL_SHUTDOWN)
 
-    # LOW_ACTIVATION: reactant starvation proxy (see constant docstring for
-    # why catalyst-kinetic degradation itself can't be modeled directly).
-    if a_h2 < LOW_ACTIVATION_ACTIVITY_FLOOR or a_o2 < LOW_ACTIVATION_ACTIVITY_FLOOR:
+    if ecsa_ratio < 0.3 or a_h2 < LOW_ACTIVATION_ACTIVITY_FLOOR or a_o2 < LOW_ACTIVATION_ACTIVITY_FLOOR:
         failure |= np.uint32(LOW_ACTIVATION)
 
     return (voltages, failure)
+
+
+@njit(nogil=True, cache=True)
+def batch_polarization_sweep_thermal(
+    current_densities: np.ndarray,
+    T_init: float,
+    a_h2: float,
+    a_o2: float,
+    R_internal: float,
+    N_cells: int,
+    ecsa_ratio: float = 1.0,
+    dt: float = 0.5,
+    C_core: float = 12500.0,
+    C_skin: float = 12500.0,
+    hA_int: float = 500.0,
+    hA_ext: float = 50.0,
+    T_coolant: float = 298.15,
+) -> tuple:
+    """Sequential electro-thermal coupled polarization curve sweep."""
+    j_lim = 2.5
+    n = current_densities.shape[0]
+
+    for k in range(n):
+        if current_densities[k] >= j_lim:
+            raise ValueError(
+                "current_densities must be strictly less than j_lim_pemfc"
+            )
+
+    voltages = np.empty(n, dtype=np.float64)
+    failure = np.uint32(0)
+
+    T_core = T_init
+    T_skin = T_init
+
+    for i in range(n):
+        j = current_densities[i]
+        T_current = T_core
+
+        V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
+            j, T_current, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
+        )
+        voltages[i] = V_stack
+
+        if eta_ohm > OHMIC_DEGRADATION_ETA_V:
+            failure |= np.uint32(OHMIC_DEGRADATION)
+
+        if T_current > THERMAL_SHUTDOWN_TEMP_K:
+            failure |= np.uint32(THERMAL_SHUTDOWN)
+
+        Q_gen = (j * N_cells) * (eta_act + eta_ohm)
+        T_core, T_skin = _thermal_step_jit(
+            T_core, T_skin, dt, Q_gen, T_coolant, C_core, C_skin, hA_int, hA_ext
+        )
+
+    if ecsa_ratio < 0.3 or a_h2 < LOW_ACTIVATION_ACTIVITY_FLOOR or a_o2 < LOW_ACTIVATION_ACTIVITY_FLOOR:
+        failure |= np.uint32(LOW_ACTIVATION)
+
+    return (voltages, failure, T_core, T_skin)

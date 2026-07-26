@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from physical_engine.factory_simulation.stack_thermal_model import StackThermalModel
+from physical_engine.factory_simulation.pemfc_model import _thermal_step_jit
 
 
 def _make_model(**kwargs) -> StackThermalModel:
@@ -31,6 +32,22 @@ def _make_model(**kwargs) -> StackThermalModel:
     )
     defaults.update(kwargs)
     return StackThermalModel(**defaults)
+
+
+def test_thermal_step_jit_equivalence():
+    T_core, T_skin = 300.0, 300.0
+    dt = 0.5
+    Q_gen = 500.0
+    T_coolant = 298.15
+
+    T_core_next, T_skin_next = _thermal_step_jit(T_core, T_skin, dt, Q_gen, T_coolant)
+    assert T_core_next > T_core
+    assert T_skin_next > T_coolant
+
+
+def test_thermal_step_jit_stability_guard():
+    with pytest.raises(ValueError, match="stability bound"):
+        _thermal_step_jit(300.0, 300.0, 100.0, 500.0, 298.15, C_core=1.0, C_skin=1.0)
 
 
 class TestYonkistValidation:

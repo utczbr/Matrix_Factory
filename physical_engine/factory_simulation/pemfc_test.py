@@ -14,10 +14,12 @@ import pytest
 from physical_engine.factory_simulation.pemfc_model import (
     PEMFCConstants,
     SOLVER_DID_NOT_CONVERGE,
+    LOW_ACTIVATION,
     calculate_nernst_potential,
     calculate_pemfc_voltage,
     newton_raphson_solver,
     batch_polarization_sweep,
+    batch_polarization_sweep_thermal,
 )
 
 
@@ -221,3 +223,37 @@ class TestBatchSweep:
         assert voltages.shape == (12,)
         assert np.all(np.isfinite(voltages))
         assert flags == 0
+
+
+class TestECSAKinetics:
+    """Tests for dynamic ECSA & Arrhenius kinetic scaling."""
+
+    def test_pristine_ecsa_matches_default(self):
+        V_default, *_ = calculate_pemfc_voltage(1.0, _T, _A_H2, _A_O2, _R_INT, _N_CELLS)
+        V_ecsa1, *_ = calculate_pemfc_voltage(1.0, _T, _A_H2, _A_O2, _R_INT, _N_CELLS, ecsa_ratio=1.0)
+        assert abs(V_default - V_ecsa1) < 1e-10
+
+    def test_degraded_ecsa_increases_activation_loss(self):
+        V_pristine, *_ = calculate_pemfc_voltage(1.0, _T, _A_H2, _A_O2, _R_INT, _N_CELLS, ecsa_ratio=1.0)
+        V_degraded, *_ = calculate_pemfc_voltage(1.0, _T, _A_H2, _A_O2, _R_INT, _N_CELLS, ecsa_ratio=0.5)
+        assert V_degraded < V_pristine
+
+    def test_severe_ecsa_degradation_trips_low_activation_flag(self):
+        j_values = np.linspace(0.05, 2.4, 12)
+        _, flags = batch_polarization_sweep(
+            j_values, _T, _A_H2, _A_O2, _R_INT, _N_CELLS, 2, ecsa_ratio=0.2
+        )
+        assert flags & LOW_ACTIVATION
+
+
+class TestThermalSweep:
+    """Tests for batch_polarization_sweep_thermal."""
+
+    def test_sequential_thermal_sweep_heats_up(self):
+        j_values = np.linspace(0.05, 2.4, 12)
+        voltages, flags, T_core_final, T_skin_final = batch_polarization_sweep_thermal(
+            j_values, _T, _A_H2, _A_O2, _R_INT, _N_CELLS, ecsa_ratio=1.0, dt=0.5, T_coolant=_T
+        )
+        assert voltages.shape == (12,)
+        assert np.all(np.isfinite(voltages))
+        assert T_core_final > _T

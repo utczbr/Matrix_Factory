@@ -67,6 +67,8 @@ protobuf {
     }
 }
 
+compileJava.dependsOn tasks.generateProto
+
 // Removed jacamo block since we don't use the plugin
 
 test {
