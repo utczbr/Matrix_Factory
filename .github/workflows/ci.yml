@@ -35,7 +35,7 @@ jobs:
         
     - name: Build Cython Extension
       run: |
-        cythonize -i physical_engine/optimization/_numba_ops_core.pyx
+        python setup.py build_ext --inplace
         
     - name: Run Python tests
       env:
