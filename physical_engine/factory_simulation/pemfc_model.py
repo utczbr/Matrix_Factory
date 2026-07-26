@@ -191,13 +191,18 @@ def calculate_nernst_potential(
 
 @njit(nogil=True, cache=True)
 def _effective_j0(
-    j0_ref: float = 1e-9,
+    j0_ref: float = 2.5e-8,
     ecsa_ratio: float = 1.0,
     T: float = 353.15,
-    E_act: float = 30000.0,
+    E_act: float = 68500.0,
     T_ref: float = 353.15,
 ) -> float:
-    """Arrhenius temperature & ECSA degradation scaling for ORR exchange current density."""
+    """Arrhenius temperature & ECSA degradation scaling for ORR exchange current density.
+    
+    References:
+        - Gasteiger et al. (2005) [DOI: 10.1016/j.apcatb.2004.06.021]: j0_ref = 2.5e-8 A/cm^2_Pt.
+        - Neyerlin et al. (2006) [DOI: 10.1149/1.2266294]: E_act = 68.5 kJ/mol.
+    """
     ecsa_clamped = max(1e-4, ecsa_ratio)
     R = 8.314462618
     arrhenius = np.exp(-(E_act / (R * T)) * (1.0 - T / T_ref))
@@ -270,7 +275,7 @@ def calculate_pemfc_voltage(
     F = 96485.33212
     alpha = 0.5       # alpha_orr
     z = 4             # z_pemfc
-    j0 = _effective_j0(1e-9, ecsa_ratio, T, 30000.0, 353.15)
+    j0 = _effective_j0(2.5e-8, ecsa_ratio, T, 68500.0, 353.15)
     j_lim = 2.5       # j_lim_pemfc
     B = 0.05           # B_conc
 
@@ -317,7 +322,7 @@ def newton_raphson_solver(
     F = 96485.33212
     alpha = 0.5
     z = 4
-    j0 = _effective_j0(1e-9, ecsa_ratio, T, 30000.0, 353.15)
+    j0 = _effective_j0(2.5e-8, ecsa_ratio, T, 68500.0, 353.15)
     j_lim = 2.5
     B = 0.05
 
