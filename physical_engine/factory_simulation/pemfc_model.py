@@ -236,9 +236,10 @@ def calculate_pemfc_voltage(
     T: float,
     a_h2: float,
     a_o2: float,
-    R_internal: float,
-    N_cells: int,
+    R_internal: float = 0.06,
+    N_cells: int = 10,
     ecsa_ratio: float = 1.0,
+    lambda_mem: float = 14.0,
 ) -> tuple:
     """Compute the stack voltage at a given current density.
 
@@ -257,9 +258,10 @@ def calculate_pemfc_voltage(
         T: Temperature [K].
         a_h2: H₂ activity.
         a_o2: O₂ activity.
-        R_internal: Area-specific resistance [Ω·cm²].
+        R_internal: Bulk electronic/contact resistance baseline [Ω·cm²] (default 0.06).
         N_cells: Number of cells in the stack.
         ecsa_ratio: Effective ECSA ratio (ECSA_eff / ECSA_0). Default 1.0.
+        lambda_mem: Membrane water content λ in [1.0, 14.0]. Default 14.0.
 
     Returns:
         Tuple ``(V_stack, eta_act, eta_ohm, eta_conc, E_ocv)``.
@@ -278,8 +280,9 @@ def calculate_pemfc_voltage(
     j_safe = max(j, 1e-10)
     eta_act = (R * T) / (alpha * z * F) * np.log(j_safe / j0)
 
-    # --- Ohmic overpotential ---
-    eta_ohm = j * R_internal
+    # --- Ohmic overpotential (R2 Dynamic Membrane + Bulk/Contact) ---
+    R_mem = compute_membrane_resistance(lambda_mem, T, 0.005)
+    eta_ohm = j * (R_internal + R_mem)
 
     # --- Concentration overpotential with C¹ continuity patch ---
     ratio = j / j_lim
@@ -304,9 +307,10 @@ def newton_raphson_solver(
     T: float,
     a_h2: float,
     a_o2: float,
-    R_internal: float,
-    N_cells: int,
+    R_internal: float = 0.06,
+    N_cells: int = 10,
     ecsa_ratio: float = 1.0,
+    lambda_mem: float = 14.0,
 ) -> tuple:
     """Solve for the current density *j* that produces *V_target*."""
     R = 8.314462618
@@ -326,7 +330,7 @@ def newton_raphson_solver(
     for _ in range(max_iter):
         # --- Forward evaluation ---
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
+            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem
         )
 
         residual = V_stack - V_target
@@ -341,7 +345,8 @@ def newton_raphson_solver(
         deta_act_dj = (R * T) / (alpha * z * F * j_safe)
 
         # d(eta_ohm)/dj
-        deta_ohm_dj = R_internal
+        R_mem = compute_membrane_resistance(lambda_mem, T, 0.005)
+        deta_ohm_dj = R_internal + R_mem
 
         # d(eta_conc)/dj with C¹ patch
         ratio = j / j_lim
@@ -375,6 +380,7 @@ def batch_polarization_sweep(
     N_cells: int,
     numba_threads: int,
     ecsa_ratio: float = 1.0,
+    lambda_mem: float = 14.0,
 ) -> tuple:
     """Vectorized polarization curve computation via ``numba.prange``."""
     j_lim = 2.5
@@ -395,7 +401,7 @@ def batch_polarization_sweep(
         idx = i % numba_threads
 
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
+            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem
         )
 
         scratch[idx, 0] = V_stack
@@ -431,6 +437,7 @@ def batch_polarization_sweep_thermal(
     R_internal: float,
     N_cells: int,
     ecsa_ratio: float = 1.0,
+    lambda_mem: float = 14.0,
     dt: float = 0.5,
     C_core: float = 12500.0,
     C_skin: float = 12500.0,
@@ -463,7 +470,7 @@ def batch_polarization_sweep_thermal(
         T_skin_arr[i] = T_skin
 
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T_current, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
+            j, T_current, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem
         )
         voltages[i] = V_stack
 

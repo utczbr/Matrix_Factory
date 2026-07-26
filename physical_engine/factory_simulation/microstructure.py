@@ -1,0 +1,84 @@
+"""
+microstructure.py — Bruggeman/Archie Microstructure & Assembly Contact Resistance Model.
+
+Computes interfacial contact resistance R_contact [Ω·cm²] between bipolar plate
+micro-grooves and compressed Gas Diffusion Layer (GDL) under clamping pressure P_assembly.
+
+References:
+    - Bruggeman, D. A. G. (1935). Berechnung verschiedener physikalischer Konstanten von heterogenen Substanzen.
+    - VDI 2230 / ISO 16047 Stack Assembly Clamping Standards.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+
+try:
+    from numba import njit
+except ImportError:  # pragma: no cover
+    def njit(*args, **kwargs):
+        def _wrap(fn):
+            return fn
+        if len(args) == 1 and callable(args[0]):
+            return args[0]
+        return _wrap
+
+# ----------------------------------------------------------------------
+# GRUPO B -- Constantes de CALIBRACAO FISICA
+# (status: NAO VERIFICADO — requer medicao de impedancia de contato BPP/GDL)
+# ----------------------------------------------------------------------
+R_CONTACT_0 = 0.02  # Ω·cm² [PLACEHOLDER SEM FONTE — nominal contact resistance at 4.25 MPa]
+P_NOMINAL_MPA = 4.25  # MPa [DECIDIDO PELO TIME — target clamping pressure]
+BRUGGEMAN_EXP = 1.5  # Standard Bruggeman exponent for fibrous porous media
+
+
+@njit(nogil=True, cache=True)
+def compute_effective_porosity_conductivity(
+    sigma_bulk: float,
+    gdl_porosity: float,
+    m_exponent: float = BRUGGEMAN_EXP,
+) -> float:
+    """Compute effective electrical/ionic conductivity via Bruggeman relation.
+
+    .. math::
+
+        \\sigma_{eff} = \\sigma_{bulk} (1 - \\varepsilon)^m
+
+    Args:
+        sigma_bulk: Bulk phase conductivity [S/cm].
+        gdl_porosity: GDL porosity ε in [0.01, 0.95].
+        m_exponent: Bruggeman exponent (default 1.5).
+
+    Returns:
+        Effective conductivity [S/cm].
+    """
+    eps_safe = max(0.01, min(0.95, float(gdl_porosity)))
+    return float(sigma_bulk * ((1.0 - eps_safe) ** m_exponent))
+
+
+@njit(nogil=True, cache=True)
+def compute_contact_resistance(
+    p_assembly_mpa: float,
+    gdl_porosity: float = 0.78,
+    r_contact_0: float = R_CONTACT_0,
+) -> float:
+    """Compute interfacial contact resistance R_contact [Ω·cm²].
+
+    U-shaped contact impedance curve:
+    - Under-clamping (P < 3.0 MPa): micro-contact area drops, raising contact resistance.
+    - Over-clamping (P > 5.5 MPa): channel intrusion & fiber crushing distort contact interface.
+
+    Args:
+        p_assembly_mpa: Assembly clamping pressure [MPa].
+        gdl_porosity: GDL porosity ε.
+        r_contact_0: Nominal contact resistance [Ω·cm²] at 4.25 MPa.
+
+    Returns:
+        Interfacial contact resistance [Ω·cm²].
+    """
+    p_safe = max(0.5, float(p_assembly_mpa))
+    p_dev = abs(p_safe - P_NOMINAL_MPA) / P_NOMINAL_MPA
+
+    # Impedance penalty from clamping deviation
+    r_contact = r_contact_0 * (1.0 + 0.35 * p_dev + 0.25 * (p_dev ** 2))
+    return float(max(0.0, r_contact))

@@ -207,16 +207,7 @@ class SimBridgeServicer:
     # RPC: AdvanceTime
     # ------------------------------------------------------------------
     def AdvanceTime(self, request, context):
-        """Advance the physical simulation by one timestep.
-
-        Acquires ``_physics_step_lock`` to serialise time steps.
-
-        Args:
-            request: ``TimeStep`` message with current_time and dt.
-
-        Returns:
-            ``StepReady`` message with success flag and embedded state vector.
-        """
+        """Unary RPC endpoint for synchronized time stepping."""
         with self._physics_step_lock:
             try:
                 dt = request.dt
@@ -240,10 +231,12 @@ class SimBridgeServicer:
                     self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j
 
                 # --- Electrochemistry ---
+                a_h2 = float(np.clip(self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR], 0.5, 10.0))
                 V_stack, eta_act, eta_ohm, eta_conc, E_ocv = (
                     calculate_pemfc_voltage(
                         j, T, a_h2, a_o2,
                         self._R_internal, self._num_cells,
+                        ecsa_ratio=1.0, lambda_mem=14.0,
                     )
                 )
 
@@ -258,39 +251,25 @@ class SimBridgeServicer:
                     Q_gen += Q_heater
 
                 Q_output = self._thermal.step(dt, Q_gen, T_coolant)
+                self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = Q_output[0]
+                self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = Q_output[1]
+                self._state[ThermoStateIndex.STACK_TEMP_K] = Q_output[0]
+                self._state[ThermoStateIndex.COMPRESSOR_POWER_KW] = W_comp / 1000.0
 
-                # --- Update state vector ---
-                self._state[ThermoStateIndex.STACK_VOLTAGE_V] = V_stack
-                self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = self._thermal.T_core
-                self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = self._thermal.T_skin
-                self._state[ThermoStateIndex.STACK_TEMP_K] = (
-                    0.5 * (self._thermal.T_core + self._thermal.T_skin)
-                )
-
-                # Compressor steps
-                m_dot_h2 = (I_total / (2 * 96485.0)) * 2.016e-3  # Faraday -> kg/s
-                p_out_bar = self._tank.pressure_bar
-                comp_kw = self._compressor.power_kw(m_dot_h2, T_coolant, 1.0, p_out_bar)
-
-                # Tank fills
-                self._tank.fill(m_dot_h2 * dt)  # dt is in seconds, m_dot is kg/s
-
-                self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR] = self._tank.pressure_bar
-                self._state[ThermoStateIndex.H2_TANK_FILL_FRACTION] = self._tank.fill_fraction
-                self._state[ThermoStateIndex.COMPRESSOR_POWER_KW] = comp_kw
+                self._step_counter += 1
 
                 return sim_bridge_pb2.StepReady(
                     target_time=t + dt,
                     success=True,
-                    state_vector=self._state.tolist(),
+                    state_vector=list(self._state),
                 )
 
-            except Exception as e:
-                logger.error(f"AdvanceTime failed: {e}", exc_info=True)
+            except Exception as exc:
+                logger.error("AdvanceTime error at t=%.2f: %s", request.current_time, exc, exc_info=True)
                 return sim_bridge_pb2.StepReady(
                     target_time=request.current_time,
                     success=False,
-                    state_vector=self._state.tolist(),
+                    state_vector=list(self._state),
                 )
 
     # ------------------------------------------------------------------
@@ -300,7 +279,7 @@ class SimBridgeServicer:
         """Execute a polarization curve sweep on the PEMFC stack.
 
         The polarization sweep itself (``batch_polarization_sweep``) is
-        computed read-only and does not touch ``_physics_step_lock`` — it
+        computed read-only and does not touch ``_physics_step_lock`` - it
         can run concurrently with other ``RunBatchTest`` calls. Only the
         brief per-point telemetry-visibility writes below (mirroring the
         in-progress current/voltage into ``_state`` for ``AdvanceTime`` to
@@ -329,24 +308,6 @@ class SimBridgeServicer:
             a_o2 = float(np.clip(a_o2_raw, 0.5, 10.0))
 
             # --- Manufacturing-quality bridge -----------------------------
-            # Stations 1-4 log defect/variance events to the DatabaseArtifact
-            # over the stack's lifetime. TestBenchArtifact (Station 5) reads
-            # that cumulative quality profile back and translates it into
-            # two physical penalties carried on the request:
-            #
-            #   r_internal_penalty_ohm_cm2 — added onto this server's
-            #     baseline R_internal before the sweep, so a poorly
-            #     assembled stack (bad bipolar-plate stamping, contact
-            #     resistance defects, ...) shows up as a *higher* ohmic
-            #     slope on the polarization curve.
-            #
-            #   activity_derate_fraction — shrinks the effective reactant
-            #     activity seen by the electrochemistry, modelling reduced
-            #     active catalyst area / clogged flow fields as starvation
-            #     rather than pure resistance.
-            #
-            # Both default to 0.0 (perfect stack) for backward compatibility
-            # with any caller that doesn't populate them.
             r_internal_penalty = max(0.0, request.r_internal_penalty_ohm_cm2)
             derate = float(np.clip(request.activity_derate_fraction, 0.0, 0.95))
 
@@ -357,7 +318,7 @@ class SimBridgeServicer:
             if r_internal_penalty > 0.0 or derate > 0.0:
                 logger.info(
                     "RunBatchTest stack_id=%s quality penalty applied: "
-                    "R_internal %.4f -> %.4f Ω·cm² (+%.4f), activity derate=%.3f",
+                    "R_internal %.4f -> %.4f Ohm*cm^2 (+%.4f), activity derate=%.3f",
                     request.stack_id, self._R_internal, R_internal_effective,
                     r_internal_penalty, derate,
                 )
@@ -375,6 +336,10 @@ class SimBridgeServicer:
             if ecsa_ratio <= 0.0:
                 ecsa_ratio = 1.0
 
+            lambda_mem = getattr(request, "lambda_mem", 14.0)
+            if lambda_mem <= 0.0:
+                lambda_mem = 14.0
+
             T_coolant = self._state[ThermoStateIndex.CHILLER_TEMP_K]
             T_init = self._thermal.T_core
 
@@ -383,6 +348,7 @@ class SimBridgeServicer:
                 j_values, T_init, a_h2, a_o2,
                 R_internal_effective, N_cells,
                 ecsa_ratio=ecsa_ratio,
+                lambda_mem=lambda_mem,
                 dt=0.5,
                 C_core=self._thermal.C_core,
                 C_skin=self._thermal.C_skin,
@@ -398,7 +364,7 @@ class SimBridgeServicer:
             # Exact Yonkist stability validation check at peak sweep overpotential
             j_max = float(np.max(j_values))
             _, eta_act_max, eta_ohm_max, *_ = calculate_pemfc_voltage(
-                j_max, T_core_arr[-1], a_h2, a_o2, R_internal_effective, N_cells, ecsa_ratio
+                j_max, T_core_arr[-1], a_h2, a_o2, R_internal_effective, N_cells, ecsa_ratio, lambda_mem
             )
             Q_gen_max = (j_max * N_cells) * (eta_act_max + eta_ohm_max)
             vol_stack_m3 = self._thermal.A_external * self._thermal.L_char
@@ -452,7 +418,7 @@ def serve(
     port: int = 50051,
     max_workers: int | None = None,
     num_cells: int = 200,
-    R_internal: float = 0.1,
+    R_internal: float = 0.06,
     T_initial: float = 353.15,
     run_id: int = 0,
 ) -> None:
@@ -462,7 +428,7 @@ def serve(
         port: TCP port to bind.
         max_workers: Thread pool size for concurrent RPCs.
         num_cells: Number of cells in the PEMFC stack.
-        R_internal: Area-specific resistance [Ω·cm²].
+        R_internal: Area-specific resistance [Ohm*cm^2] (default 0.06).
         T_initial: Initial stack temperature [K].
     """
     if not GRPC_AVAILABLE:

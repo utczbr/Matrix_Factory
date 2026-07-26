@@ -45,3 +45,11 @@ class TestMembraneHydration:
         R_dry = compute_membrane_resistance(3.0, 353.15, 0.005)
         R_wet = compute_membrane_resistance(14.0, 353.15, 0.005)
         assert R_wet < R_dry
+
+    def test_membrane_resistance_recalibration_target(self):
+        """Verify R_mem(14.0, 353.15K) is ~0.0403 Ω·cm², yielding ~0.1003 Ω·cm² with R_internal=0.06."""
+        R_wet = compute_membrane_resistance(14.0, 353.15, 0.005)
+        assert abs(R_wet - 0.040267) < 1e-4
+        R_total_nominal = 0.06 + R_wet
+        assert abs(R_total_nominal - 0.1003) < 1e-3
+
