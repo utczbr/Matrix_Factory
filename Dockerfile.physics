@@ -13,7 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt cython
 COPY physical_engine/ physical_engine/
 COPY scripts/ scripts/
 # Build Cython extensions
-RUN cythonize -i physical_engine/optimization/_numba_ops_core.pyx
+COPY setup.py .
+RUN python setup.py build_ext --inplace
 
 # Prebuild LUTs in the image so the slow fcntl-lock path is avoided
 RUN python -m physical_engine.scripts.prebuild_luts
