@@ -117,7 +117,8 @@ public class TestBenchArtifact extends Artifact {
                     + " — testing with zero quality penalty: " + e);
         }
 
-        double ecsaRatio = Math.max(0.2, 1.0 - activityDerate);
+        // Baseline ECSA ratio set to 1.0 (uncoupled baseline until Station 2 R6/R10 implementation)
+        double ecsaRatio = 1.0;
 
         BatchTestRequest req = BatchTestRequest.newBuilder()
                 .setStackId(stackId).setNumCells(numCells)

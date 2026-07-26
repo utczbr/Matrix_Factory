@@ -1268,6 +1268,8 @@ def real_gas_activity(
     phi = 1.0
     if CP is not None and p_partial > 0.0:
         try:
+            # Compressibility factor Z is used as a first-order low-pressure (P <= 10 bar)
+            # approximation for fugacity coefficient phi = f/P.
             z = CP.PropsSI('Z', 'P', p_partial, 'T', T_k, fluid)
             phi = float(z)
         except Exception:

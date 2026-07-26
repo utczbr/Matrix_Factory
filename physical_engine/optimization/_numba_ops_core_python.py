@@ -98,10 +98,14 @@ __all__ = [
 
 import numpy as np
 import numpy.typing as npt
-from numba import njit
+from numba import njit, prange
 from typing import Tuple
 
-from physical_engine.core.enums import TankState
+TANK_STATE_IDLE = 0
+TANK_STATE_FILLING = 1
+TANK_STATE_DISCHARGING = 2
+TANK_STATE_EMPTY = 3
+TANK_STATE_FULL = 4
 from physical_engine.core.constants import GasConstants
 
 
@@ -307,7 +311,7 @@ def find_available_tank(
     """
     for i in range(len(states)):
         available_capacity = capacities[i] - masses[i]
-        if (states[i] == TankState.IDLE or states[i] == TankState.EMPTY) and available_capacity >= min_capacity:
+        if (states[i] == TANK_STATE_IDLE or states[i] == TANK_STATE_EMPTY) and available_capacity >= min_capacity:
             return i
     return -1
 
@@ -337,7 +341,7 @@ def find_fullest_tank(
     best_idx = -1
 
     for i in range(len(states)):
-        if (states[i] == TankState.IDLE or states[i] == TankState.FULL) and masses[i] >= min_mass:
+        if (states[i] == TANK_STATE_IDLE or states[i] == TANK_STATE_FULL) and masses[i] >= min_mass:
             if masses[i] > max_mass:
                 max_mass = masses[i]
                 best_idx = i
@@ -448,7 +452,7 @@ def distribute_mass_to_tanks(
         if remaining <= 0:
             break
 
-        if not (states[i] == TankState.IDLE or states[i] == TankState.EMPTY):
+        if not (states[i] == TANK_STATE_IDLE or states[i] == TANK_STATE_EMPTY):
             continue
 
         available_capacity = capacities[i] - masses[i]
@@ -458,7 +462,7 @@ def distribute_mass_to_tanks(
         remaining -= mass_to_add
 
         if masses[i] >= capacities[i] * 0.99:
-            states[i] = TankState.FULL
+            states[i] = TANK_STATE_FULL
 
     return masses, remaining
 
@@ -1895,8 +1899,6 @@ def batch_bilinear_interp_jit(
     Returns:
         np.ndarray: Interpolated values.
     """
-    from numba import prange
-
     n = len(x_arr)
     results = np.zeros(n, dtype=np.float64)
 
@@ -3267,7 +3269,7 @@ def distribute_mass_and_energy(
         if remaining <= 0:
             break
 
-        if not (states[i] == TankState.IDLE or states[i] == TankState.EMPTY):
+        if not (states[i] == TANK_STATE_IDLE or states[i] == TANK_STATE_EMPTY):
             continue
 
         available_capacity = capacities[i] - masses[i]
@@ -3299,7 +3301,7 @@ def distribute_mass_and_energy(
             remaining -= mass_to_add
 
             if masses[i] >= capacities[i] * 0.99:
-                states[i] = TankState.FULL
+                states[i] = TANK_STATE_FULL
 
     return masses, temperatures, remaining
 

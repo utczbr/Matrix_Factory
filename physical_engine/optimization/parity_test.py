@@ -237,18 +237,57 @@ def _get_all_callable_export_names():
     return [name for name in numba_ops.__all__ if name not in constants]
 
 
+def _invoke_and_compare(fn_name: str):
+    import inspect
+    fn_c = getattr(core_c, fn_name, None)
+    fn_py = getattr(core_py, fn_name, None)
+    assert fn_c is not None, f"Function {fn_name} missing from compiled core"
+    assert fn_py is not None, f"Function {fn_name} missing from Python core"
+
+    sig = inspect.signature(fn_py)
+    args = []
+    for param in sig.parameters.values():
+        name = param.name
+        is_arr = "ndarray" in str(param.annotation) or (name.endswith("s") and not name.endswith("_s") and not name.startswith("dt_") and not name.startswith("N_") and not name.startswith("n_") and not name.startswith("num_") and not any(name.endswith(k) for k in ("steps", "seconds", "hours", "status", "radius", "loss", "process", "mass", "sys", "min", "max", "m3s", "tubes", "cells", "gas", "guess", "moles")) or any(k in name for k in ("grid", "luts", "weights", "fracs", "coeffs", "array", "data", "mat")))
+        if param.default is not inspect.Parameter.empty:
+            args.append(param.default)
+        elif is_arr:
+            dtype = np.int32 if any(k in name for k in ("state", "index", "indices", "flag", "map", "species")) or name in ("id", "ids") or name.endswith("_id") or name.endswith("_ids") else np.float64
+            if "3d" in name or name.endswith("luts") or name.startswith("stacked_"):
+                args.append(np.ones((2, 2, 2), dtype=dtype))
+            elif (any(k in name for k in ("2d", "lut", "data", "mat_", "matrix", "table")) or name == "coeffs" or "cp_coeffs" in name) and "fracs" not in name:
+                args.append(np.ones((2, 2), dtype=dtype))
+            else:
+                args.append(np.array([1, 2] if dtype == np.int64 else [1.0, 2.0], dtype=dtype))
+        elif "int" in str(param.annotation) or name.startswith("n_") or name.startswith("num_") or "steps" in name or "iter" in name or "threads" in name:
+            args.append(2)
+        elif "bool" in str(param.annotation) or name.startswith("is_") or "flag" in name:
+            args.append(True)
+        else:
+            args.append(1.0)
+
+    res_c = fn_c(*args)
+    res_py = fn_py(*args)
+
+    if res_c is None and res_py is None:
+        return
+    if isinstance(res_c, tuple):
+        for item_c, item_py in zip(res_c, res_py):
+            if item_c is not None:
+                assert np.allclose(item_c, item_py, rtol=1e-4, atol=1e-6)
+    else:
+        assert np.allclose(res_c, res_py, rtol=1e-4, atol=1e-6)
+
+
 def test_all_kernels_covered():
-    """Verify that all callable kernels exported in numba_ops.__all__ are tested."""
+    """Verify that all callable kernels exported in numba_ops.__all__ are tested numerically."""
     exported_callables = set(_get_all_callable_export_names())
-    
-    untested = exported_callables - TESTED_KERNELS
+
+    untested = sorted(list(exported_callables - TESTED_KERNELS))
     for fn_name in untested:
-        fn_c = getattr(core_c, fn_name, None)
-        fn_py = getattr(core_py, fn_name, None)
-        assert fn_c is not None, f"Function {fn_name} missing from compiled core"
-        assert fn_py is not None, f"Function {fn_name} missing from Python core"
+        _invoke_and_compare(fn_name)
         TESTED_KERNELS.add(fn_name)
-        
+
     assert exported_callables.issubset(TESTED_KERNELS), (
         f"Untested kernels found: {exported_callables - TESTED_KERNELS}"
     )
