@@ -92,12 +92,18 @@ from physical_engine.factory_simulation.pemfc_model import (
     calculate_pemfc_voltage,
     newton_raphson_solver,
     batch_polarization_sweep,
+    batch_polarization_sweep_thermal,
     PEMFCConstants,
     OHMIC_DEGRADATION,
     MASS_TRANSPORT_STARVATION,
     THERMAL_SHUTDOWN,
     LOW_ACTIVATION,
     SOLVER_DID_NOT_CONVERGE,
+)
+from physical_engine.factory_simulation.cathode_air_bop import (
+    calculate_cathode_air_flow_rate,
+    calculate_compressor_power,
+    calculate_net_stack_power,
 )
 from physical_engine.factory_simulation.stack_thermal_model import (
     StackThermalModel,
@@ -368,22 +374,40 @@ class SimBridgeServicer:
             if ecsa_ratio <= 0.0:
                 ecsa_ratio = 1.0
 
-            # Vectorized computation with ECSA kinetics
-            voltages, failure_flags = batch_polarization_sweep(
-                j_values, T, a_h2, a_o2,
-                R_internal_effective, N_cells, _NUMBA_THREADS,
+            T_coolant = self._state[ThermoStateIndex.CHILLER_TEMP_K]
+            T_init = self._thermal.T_core
+
+            # Vectorized electro-thermal coupled polarization sweep
+            voltages, failure_flags, T_core_final, T_skin_final = batch_polarization_sweep_thermal(
+                j_values, T_init, a_h2, a_o2,
+                R_internal_effective, N_cells,
                 ecsa_ratio=ecsa_ratio,
+                dt=0.5,
+                C_core=self._thermal.C_core,
+                C_skin=self._thermal.C_skin,
+                hA_int=self._thermal.hA_internal,
+                hA_ext=self._thermal.hA_external,
+                T_coolant=T_coolant
             )
 
-            # Simulate physical time passing so the background telemetry
-            # reflects the test cycle drawing current and generating heat.
-            T_coolant = self._state[ThermoStateIndex.CHILLER_TEMP_K]
+            # Update thermal model state to post-sweep thermal condition
+            self._thermal.T_core = T_core_final
+            self._thermal.T_skin = T_skin_final
+
+            # Yonkist stability validation check
+            j_max = float(np.max(j_values))
+            Q_gen_max = j_max * N_cells * 0.5  # approximate peak heat generation
+            Yo, Bi, is_yonkist_valid = self._thermal.validate_yonkist(
+                Q_gen_max / 0.025,
+                max(0.1, abs(T_core_final - T_skin_final))
+            )
+            if not is_yonkist_valid:
+                logger.warning("RunBatchTest Yonkist criterion invalidated: Yo=%.4f Bi=%.4f", Yo, Bi)
+
+            # Pacing loop to stream telemetry during diagnostic sweep
             for j_val, v_val in zip(j_values, voltages):
-                # Calculate heat generation at test point
-                eta_ohm = j_val * R_internal_effective
-                eta_act = (8.314 * T) / (0.5 * 4 * 96485.0) * np.log(max(j_val, 1e-10) / (1e-9 * ecsa_ratio))
-                Q_gen = (j_val * N_cells) * (eta_act + eta_ohm)
-                self._thermal.step(0.5, Q_gen, T_coolant)
+                m_dot_air = calculate_cathode_air_flow_rate(j_val * 300.0, N_cells, lambda_air=2.0)
+                W_comp = calculate_compressor_power(m_dot_air, P_in_pa=101325.0, P_out_pa=202650.0)
 
                 with self._physics_step_lock:
                     self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j_val

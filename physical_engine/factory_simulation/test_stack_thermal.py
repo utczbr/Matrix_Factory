@@ -209,3 +209,28 @@ class TestGetState:
         model.reset()
         assert model.T_core == 300.0
         assert model.T_skin == 300.0
+
+
+def test_live_run_batch_test_thermal_coupling():
+    """Verify RunBatchTest dynamically updates stack temperature through batch_polarization_sweep_thermal."""
+    from physical_engine.sim_bridge_server import SimBridgeServicer
+    from physical_engine.proto_index import ThermoStateIndex
+    servicer = SimBridgeServicer()
+    servicer._state[ThermoStateIndex.CHILLER_TEMP_K] = 353.15
+    T_init = servicer._thermal.T_core
+
+    class MockRequest:
+        stack_id = "TEST_STACK"
+        num_cells = 200
+        operating_temp_k = 353.15
+        inlet_pressure_h2_bar = 2.0
+        inlet_pressure_o2_bar = 2.0
+        r_internal_penalty_ohm_cm2 = 0.0
+        activity_derate_fraction = 0.0
+        rh_anode = 0.0
+        ecsa_ratio = 1.0
+        current_densities = np.linspace(0.1, 2.2, 12).tolist()
+
+    response = servicer.RunBatchTest(MockRequest(), None)
+    assert response.passed
+    assert servicer._thermal.T_core > T_init
