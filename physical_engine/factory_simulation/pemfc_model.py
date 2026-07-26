@@ -30,6 +30,7 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
+from physical_engine.factory_simulation.membrane_hydration import compute_membrane_resistance
 
 # ---------------------------------------------------------------------------
 # Numba import with graceful fallback
@@ -448,6 +449,8 @@ def batch_polarization_sweep_thermal(
             )
 
     voltages = np.empty(n, dtype=np.float64)
+    T_core_arr = np.empty(n, dtype=np.float64)
+    T_skin_arr = np.empty(n, dtype=np.float64)
     failure = np.uint32(0)
 
     T_core = T_init
@@ -456,6 +459,8 @@ def batch_polarization_sweep_thermal(
     for i in range(n):
         j = current_densities[i]
         T_current = T_core
+        T_core_arr[i] = T_core
+        T_skin_arr[i] = T_skin
 
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
             j, T_current, a_h2, a_o2, R_internal, N_cells, ecsa_ratio
@@ -476,4 +481,4 @@ def batch_polarization_sweep_thermal(
     if ecsa_ratio < 0.3 or a_h2 < LOW_ACTIVATION_ACTIVITY_FLOOR or a_o2 < LOW_ACTIVATION_ACTIVITY_FLOOR:
         failure |= np.uint32(LOW_ACTIVATION)
 
-    return (voltages, failure, T_core, T_skin)
+    return (voltages, failure, T_core_arr, T_skin_arr)

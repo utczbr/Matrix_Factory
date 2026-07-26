@@ -251,9 +251,9 @@ class TestThermalSweep:
 
     def test_sequential_thermal_sweep_heats_up(self):
         j_values = np.linspace(0.05, 2.4, 12)
-        voltages, flags, T_core_final, T_skin_final = batch_polarization_sweep_thermal(
+        voltages, flags, T_core_arr, T_skin_arr = batch_polarization_sweep_thermal(
             j_values, _T, _A_H2, _A_O2, _R_INT, _N_CELLS, ecsa_ratio=1.0, dt=0.5, T_coolant=_T
         )
         assert voltages.shape == (12,)
         assert np.all(np.isfinite(voltages))
-        assert T_core_final > _T
+        assert T_core_arr[-1] > _T

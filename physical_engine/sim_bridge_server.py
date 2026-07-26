@@ -227,10 +227,11 @@ class SimBridgeServicer:
                 T_coolant = self._state[ThermoStateIndex.CHILLER_TEMP_K]
 
                 # --- Activities from pressures & real-gas fugacity ---
-                P_h2_pa = self._state[ThermoStateIndex.H2_TANK_PRESSURE_BAR] * 1e5
-                a_h2_raw, _ = real_gas_activity(P_h2_pa, T, fluid="H2", rh=0.0, lut_manager=self._lut)
-                a_h2 = float(np.clip(a_h2_raw, 0.5, 10.0))
-                a_o2 = 1.0  # Constant 1 bar (O2 supply from atmosphere; cathode RH=0 baseline until R7)
+                # --- Cathode Air BOP Subsystem (R7) ---
+                j_curr = self._state[ThermoStateIndex.STACK_CURRENT_A_CM2]
+                m_dot_air = calculate_cathode_air_flow_rate(j_curr * 300.0, self._num_cells, lambda_air=2.0)
+                W_comp = calculate_compressor_power(m_dot_air, P_in_pa=101325.0, P_out_pa=202650.0)
+                a_o2 = float(np.clip(1.0 + (m_dot_air * 10.0), 0.5, 10.0))
 
                 # --- Current density from state ---
                 j = self._state[ThermoStateIndex.STACK_CURRENT_A_CM2]
@@ -378,7 +379,7 @@ class SimBridgeServicer:
             T_init = self._thermal.T_core
 
             # Vectorized electro-thermal coupled polarization sweep
-            voltages, failure_flags, T_core_final, T_skin_final = batch_polarization_sweep_thermal(
+            voltages, failure_flags, T_core_arr, T_skin_arr = batch_polarization_sweep_thermal(
                 j_values, T_init, a_h2, a_o2,
                 R_internal_effective, N_cells,
                 ecsa_ratio=ecsa_ratio,
@@ -391,30 +392,34 @@ class SimBridgeServicer:
             )
 
             # Update thermal model state to post-sweep thermal condition
-            self._thermal.T_core = T_core_final
-            self._thermal.T_skin = T_skin_final
+            self._thermal.T_core = T_core_arr[-1]
+            self._thermal.T_skin = T_skin_arr[-1]
 
-            # Yonkist stability validation check
+            # Exact Yonkist stability validation check at peak sweep overpotential
             j_max = float(np.max(j_values))
-            Q_gen_max = j_max * N_cells * 0.5  # approximate peak heat generation
+            _, eta_act_max, eta_ohm_max, *_ = calculate_pemfc_voltage(
+                j_max, T_core_arr[-1], a_h2, a_o2, R_internal_effective, N_cells, ecsa_ratio
+            )
+            Q_gen_max = (j_max * N_cells) * (eta_act_max + eta_ohm_max)
+            vol_stack_m3 = self._thermal.A_external * self._thermal.L_char
             Yo, Bi, is_yonkist_valid = self._thermal.validate_yonkist(
-                Q_gen_max / 0.025,
-                max(0.1, abs(T_core_final - T_skin_final))
+                Q_gen_max / vol_stack_m3,
+                max(0.1, abs(T_core_arr[-1] - T_skin_arr[-1]))
             )
             if not is_yonkist_valid:
                 logger.warning("RunBatchTest Yonkist criterion invalidated: Yo=%.4f Bi=%.4f", Yo, Bi)
 
             # Pacing loop to stream telemetry during diagnostic sweep
-            for j_val, v_val in zip(j_values, voltages):
+            for j_val, v_val, t_core_val, t_skin_val in zip(j_values, voltages, T_core_arr, T_skin_arr):
                 m_dot_air = calculate_cathode_air_flow_rate(j_val * 300.0, N_cells, lambda_air=2.0)
                 W_comp = calculate_compressor_power(m_dot_air, P_in_pa=101325.0, P_out_pa=202650.0)
 
                 with self._physics_step_lock:
                     self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = j_val
                     self._state[ThermoStateIndex.STACK_VOLTAGE_V] = v_val
-                    self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = self._thermal.T_core
-                    self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = self._thermal.T_skin
-                    self._state[ThermoStateIndex.STACK_TEMP_K] = 0.5 * (self._thermal.T_core + self._thermal.T_skin)
+                    self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = t_core_val
+                    self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = t_skin_val
+                    self._state[ThermoStateIndex.STACK_TEMP_K] = 0.5 * (t_core_val + t_skin_val)
                 time.sleep(0.5)
             with self._physics_step_lock:
                 self._state[ThermoStateIndex.STACK_CURRENT_A_CM2] = 0.0

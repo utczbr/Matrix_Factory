@@ -71,7 +71,7 @@ public class TestBenchArtifact extends Artifact {
         int numCells = 100;
         double tempK = 350.0;
         double pH2Bar = 2.0;
-        double pO2Bar = 2.0;
+        double pO2Bar = 1.0 + Math.min(1.5, numCells * 0.01);
 
         // --- Manufacturing-quality bridge -------------------------------
         // Fetch this stack's cumulative quality profile (defects + process
