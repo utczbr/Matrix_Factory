@@ -18,28 +18,54 @@ Progressive stamping die wear ratio $W_{\text{ratio}}$ per stroke is computed us
 
 $$W_{\text{raw}} = W_0 + K_{\text{wear}} \cdot N_{\text{stroke}} \cdot \left( \frac{F_{\text{press}}}{F_{\text{nominal}}} \right)^{\gamma_{\text{archard}}}$$
 
+$$W_{\text{ratio}} = \min(0.99999,\ \max(0,\ W_{\text{raw}}))$$
+
 where:
-* **$W_0$** — Initial die wear ratio.
+
+* **$W_0$** — Initial die wear ratio (input).
 * **$N_{\text{stroke}}$** — Cumulative die stroke count.
 * **$\gamma_{\text{archard}} = 1.35$** — Pressure exponent.
-* **$K_{\text{wear,duplex}} = 1.47 \times 10^{-10}\text{ mm}^3/(\text{N}\cdot\text{m})$** — Duplex PVD coating wear coefficient (Bitay et al. 2021).
-* **$K_{\text{wear,pvd}} = 3.50 \times 10^{-6}\text{ mm}^3/(\text{N}\cdot\text{m})$** — Standard PVD wear coefficient (Fernandes et al. 2017).
+* **$K_{\text{wear}}$** — Either $K_{\text{wear,duplex}} = 1.47 \times 10^{-10}\text{ mm}^3/(\text{N}\cdot\text{m})$ if the die uses a duplex PVD coating, or $K_{\text{wear,pvd}} = 3.50 \times 10^{-6}\text{ mm}^3/(\text{N}\cdot\text{m})$ for a standard PVD coating.
 
-### 2. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage
+### 2. From Press Force to Local Stress State
 
-Material plastic strain $\varepsilon_p$ and membrane stress $\sigma_1$ across 60 micro-channels ($A_{\text{total}} = 0.0012\text{ m}^2$) follow SS316L strain hardening:
+The NCL criterion requires a local plastic strain $\varepsilon_p$ and local stress $\sigma_1$, which are derived from `press_force_kn` and the current wear state via a wear-coupled friction model.
 
-$$\sigma_{\text{flow}} = K_{\text{strength}} \cdot \varepsilon_p^{n_{\text{hardening}}}$$
+**Wear-coupled local friction.** As the die wears, local friction at the flow-channel radius rises:
+
+$$\mu_{\text{local}} = \mu_0 + \alpha_f \cdot W_{\text{ratio}}, \qquad \mu_0 = 0.12,\ \ \alpha_f = 0.45$$
+
+**Plastic strain (empirical process proxy).** Plastic strain scales linearly with normalized press force:
+
+$$\varepsilon_p = \varepsilon_{p,\text{scale}} \cdot \frac{F_{\text{press}}}{F_{\text{nominal}}}, \qquad \varepsilon_{p,\text{scale}} = 0.1456$$
+
+**Local stress.** Press force is spread over the total engaged micro-channel area ($A_{\text{total}} = 0.0012\ \text{m}^2$ across 60 channels, $1.0\text{ mm}$ wide $\times$ $20.0\text{ mm}$ engaged length each) to obtain a membrane/channel stress, which is friction-augmented with a capstan-type correction using die draft angle $\theta_{\text{die}} = 10^\circ$, and added to the flow stress:
+
+$$\sigma_{\text{mem}} = \frac{F_{\text{press}} \times 10^3}{A_{\text{total}}} \times 10^{-6} \quad [\text{MPa}]$$
+
+$$\sigma_{\text{flow}} = K_{\text{strength}} \cdot \varepsilon_p^{\,n_{\text{hardening}}}$$
+
+$$\sigma_1 = \sigma_{\text{mem}} \cdot \exp\!\left(\mu_{\text{local}}\,\theta_{\text{die}}\right) + \sigma_{\text{flow}}$$
 
 where $K_{\text{strength}} = 1280.0\text{ MPa}$ and $n_{\text{hardening}} = 0.43$ (Blandford 2007; Mahabunphachai & Koc 2008).
 
-Plastic work done $W_{\text{plastic}}$ is integrated and normalized against critical threshold $C_{\text{crit,NCL}} = 0.35$ (Modanloo et al. 2018):
+### 3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage
 
-$$W_{\text{plastic}} = \frac{\sigma_1 / K_{\text{strength}}}{1 - n_{\text{hardening}}} \cdot \frac{\varepsilon_p^{1 - n_{\text{hardening}}}}{1 - n_{\text{hardening}}}$$
+Plastic work done $W_{\text{plastic}}$ is integrated and normalized against critical threshold $C_{\text{crit,NCL}} = 0.35$ (Modanloo et al.):
 
-$$\text{damage}_{\text{NCL}} = \frac{W_{\text{plastic}}}{C_{\text{crit,NCL}}}$$
+$$W_{\text{plastic}} = \frac{\sigma_1 / K_{\text{strength}}}{1 - n_{\text{hardening}}} \cdot \varepsilon_p^{\,1 - n_{\text{hardening}}}$$
 
-A defect is registered if $\text{damage}_{\text{NCL}} > 1.0$ or wear ratio $W_{\text{ratio}} \ge 0.75$.
+$$\text{damage}_{\text{NCL}} = \min\left(2.0,\ \max\left(0,\ \frac{W_{\text{plastic}}}{C_{\text{crit,NCL}}}\right)\right)$$
+
+A defect is registered if $\text{damage}_{\text{NCL}} > 1.0$ or $W_{\text{ratio}} \ge 0.75$.
+
+### 4. Execution Pacing
+
+$$t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.12\, F_{\text{dev}} + 0.18\, W_{\text{ratio}}\right), \qquad t_{\text{base}} = 3.0\ \text{s}$$
+
+$$\text{var\_ratio} = 1.0 + 0.40\, W_{\text{ratio}} + 0.30\, \text{damage}_{\text{NCL}}^2$$
+
+where $F_{\text{dev}} = |F_{\text{press}} - F_{\text{nominal}}| / F_{\text{nominal}}$.
 
 ---
 
@@ -48,12 +74,19 @@ A defect is registered if $\text{damage}_{\text{NCL}} > 1.0$ or wear ratio $W_{\
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
 | Critical NCL Damage Threshold | $C_{\text{crit,NCL}}$ | $0.35$ | — | Modanloo et al. (2018) |
-| Archard Pressure Exponent | $\gamma_{\text{archard}}$ | $1.35$ | — | Archard (1953) |
+| Archard Pressure Exponent | $\gamma_{\text{archard}}$ | $1.35$ | — | Archard (1953), DOI `10.1063/1.1721448` |
 | Duplex Wear Coeff. | $K_{\text{wear,duplex}}$ | $1.47 \times 10^{-10}$ | $\text{mm}^3/(\text{N}\cdot\text{m})$ | Bitay et al. (2021) |
 | Standard PVD Wear Coeff. | $K_{\text{wear,pvd}}$ | $3.50 \times 10^{-6}$ | $\text{mm}^3/(\text{N}\cdot\text{m})$ | Fernandes et al. (2017) |
-| Strength Coefficient 316L | $K_{\text{strength}}$ | $1280.0$ | $\text{MPa}$ | Blandford (2007) |
+| Strength Coefficient 316L | $K_{\text{strength}}$ | $1280.0$ | $\text{MPa}$ | Blandford (2007) / Mahabunphachai & Koc (2008) |
 | Strain Hardening Exponent 316L | $n_{\text{hardening}}$ | $0.43$ | — | Mahabunphachai & Koc (2008) |
 | Nominal Press Force | $F_{\text{nominal}}$ | $120.0$ | $\text{kN}$ | Stamping Press Specs |
+| Wear-Friction Baseline | $\mu_0$ | $0.12$ | — | Process Baseline |
+| Wear-Friction Acceleration | $\alpha_f$ | $0.45$ | — | Process Baseline |
+| Plastic Strain Scale | $\varepsilon_{p,\text{scale}}$ | $0.1456$ | — | Process Baseline |
+| Die Draft Angle | $\theta_{\text{die}}$ | $10.0$ | $^\circ$ | Die Geometry Spec |
+| Critical Wear Ratio | $W_{\text{crit}}$ | $0.75$ | — | Defect threshold |
+| Total Channel Area | $A_{\text{total}}$ | $0.0012$ | $\text{m}^2$ | 60 channels $\times$ 1.0mm $\times$ 20.0mm |
+| Nominal Station Cycle Time | $t_{\text{base}}$ | $3.0$ | $\text{s}$ | `factory.jcm` process recipe |
 
 ---
 

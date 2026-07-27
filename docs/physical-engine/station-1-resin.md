@@ -6,7 +6,7 @@ This document details the mathematical formulations, kinetic equations, and cali
 
 ## Physical Process Description
 
-Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA) during hot-press lamination. The degree of cure conversion $\alpha \in [0, 1]$ is computed using Kamal–Sourour autocatalytic reaction kinetics. Under-curing ($\alpha < 0.85$) introduces delamination risks, while over-curing ($\alpha > 0.98$) risks thermal degradation and membrane pinhole formation.
+Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA) during hot-press lamination. The degree of cure conversion $\alpha \in [0, 1]$ is computed using Kamal–Sourour autocatalytic reaction kinetics. Under-curing ($\alpha < 0.85$) introduces delamination risks, while over-curing ($\alpha > 0.98$) risks thermal degradation and membrane pinhole formation. A component is flagged defective if $\alpha < 0.85$ or $\alpha > 0.98$.
 
 ---
 
@@ -24,9 +24,9 @@ $$k_1(T) = A_1 \exp\left(-\frac{E_1}{R T_{\text{press}}}\right)$$
 
 $$k_2(T) = A_2 \exp\left(-\frac{E_2}{R T_{\text{press}}}\right)$$
 
-### 2. Defect Risk Functions & Execution Pacing
+Degree of cure $\alpha$ is integrated via 4th-order Runge–Kutta (RK4), fixed at 100 substeps over dwell time $t_{\text{dwell}}$, with $\alpha$ clamped to $[0, 0.9999]$ after every substep to keep $(1-\alpha)^n$ from becoming singular as $\alpha \to 1$.
 
-Degree of cure $\alpha$ is integrated via 4th-order Runge–Kutta (RK4) over dwell time $t_{\text{dwell}}$:
+### 2. Defect Risk Functions & Execution Pacing
 
 * **Delamination Risk ($\alpha < 0.85$):**
 
@@ -38,7 +38,13 @@ $$R_{\text{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\text{max}}}{1 - \alp
 
 Processing variance ratio $V_{\text{ratio}}$ scales execution variability:
 
-$$V_{\text{ratio}} = 1.0 + 0.30 R_{\text{delam}} + 0.25 R_{\text{pinhole}}$$
+$$V_{\text{ratio}} = 1.0 + 0.30\, R_{\text{delam}} + 0.25\, R_{\text{pinhole}}$$
+
+Station cycle time $t_{\text{proc}}$ scales with deviations from nominal press temperature and dwell time:
+
+$$t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.15\, T_{\text{dev}} + 0.10\, t_{\text{dwell,dev}}\right)$$
+
+where $t_{\text{base}} = 5.0\ \text{s}$, $T_{\text{dev}} = |T_{\text{press}} - T_{\text{press,nominal}}| / T_{\text{press,nominal}}$, and $t_{\text{dwell,dev}}$ is defined analogously for dwell time. $k_{\text{time}}$ is a global time-acceleration factor (1.0 in accelerated simulation mode, 10.0 in industrial-pace mode).
 
 ---
 
@@ -56,6 +62,7 @@ $$V_{\text{ratio}} = 1.0 + 0.30 R_{\text{delam}} + 0.25 R_{\text{pinhole}}$$
 | Nominal Dwell Time | $t_{\text{dwell}}$ | $180.0$ | $\text{s}$ | Process Recipe |
 | Min Bonding Cure | $\alpha_{\text{min}}$ | $0.85$ | — | Structural Adhesion Limit |
 | Max Safe Cure | $\alpha_{\text{max}}$ | $0.98$ | — | Degradation Limit |
+| Nominal Station Cycle Time | $t_{\text{base}}$ | $5.0$ | $\text{s}$ | `factory.jcm` process recipe |
 
 ---
 

@@ -25,11 +25,10 @@ except ImportError:  # pragma: no cover
 
 # ----------------------------------------------------------------------
 # GRUPO B -- Constantes de CALIBRACAO FISICA (calibradas com literatura primaria)
-# Rastreabilidade: Mason et al. (2012) [DOI: 10.1016/j.jpowsour.2012.07.021],
-# El-Kharouf et al. (2012) [DOI: 10.1016/j.jpowsour.2012.02.046].
+# Rastreabilidade: El-Kharouf, Mason et al. (2012) [DOI: 10.1016/j.jpowsour.2012.06.099].
 # ----------------------------------------------------------------------
-R_CONTACT_0 = 0.0042      # Ω·cm² (4.20 mΩ·cm²) [Revestido TiAlN/CrN, Mason et al. 2012]
-R_CONTACT_UNCOATED = 0.0185 # Ω·cm² (18.50 mΩ·cm²) [316L Sem Revestimento, El-Kharouf et al. 2012]
+R_CONTACT_0 = 0.0042      # Ω·cm² (4.20 mΩ·cm²) [Revestido TiAlN/CrN, El-Kharouf, Mason et al. 2012]
+R_CONTACT_UNCOATED = 0.0185 # Ω·cm² (18.50 mΩ·cm²) [316L Sem Revestimento, El-Kharouf, Mason et al. 2012]
 P_NOMINAL_MPA = 4.25      # MPa [DECIDIDO PELO TIME — target clamping pressure]
 BRUGGEMAN_EXP = 1.5      # Standard Bruggeman exponent for fibrous porous media
 

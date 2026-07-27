@@ -124,7 +124,7 @@ class _PEMFCConstantsData:
     share constants across the two models.
     """
 
-    j0_orr: float = 1e-9       # Exchange current density  [A/cm²]
+    j0_orr: float = 2.5e-8     # Exchange current density  [A/cm²] (Gasteiger et al. 2005)
     z_pemfc: int = 4            # Electron transfer number (ORR)
     alpha_orr: float = 0.5      # Charge transfer coefficient
     j_lim_pemfc: float = 2.5    # Limiting current density  [A/cm²]

@@ -56,7 +56,7 @@ All physical parameters in the digital twin are ground-truth calibrated against 
 | :--- | :--- | :--- |
 | **Tool Tribology** | Non-linear Archard wear law ($K_{wear,PVD} = 3.50 \times 10^{-6}\text{ mm}^3/\text{N}\cdot\text{m}$, $K_{wear,Duplex} = 1.47 \times 10^{-10}\text{ mm}^3/\text{N}\cdot\text{m}$, $\gamma = 1.35$) | Fernandes et al. (2017) [`10.1016/j.surfcoat.2017.10.052`], Bitay et al. (2021) [`10.1007/s00170-024-13800-x`] |
 | **Foil Formability** | Cockcroft-Latham ductile fracture ($C_{crit,NCL} = 0.35$), Hollomon strain hardening ($K = 1280\text{ MPa}, n = 0.43$) | Modanloo et al. (2018) [`10.1007/s00170-018-2210-y`], Blandford et al. (2007) [`10.2172/918231`] |
-| **GDL Mechanics & ICR** | Kleemann non-linear tangent modulus ($E_0 = 2.80\text{ MPa}, K_s = 28.5$), Interfacial contact resistance ($R_{contact,0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$) | Kleemann et al. (2009) [`10.1016/j.jpowsour.2008.09.026`], Mason et al. (2012) [`10.1016/j.jpowsour.2012.07.021`] |
+| **GDL Mechanics & ICR** | Kleemann non-linear tangent modulus ($E_0 = 2.80\text{ MPa}, K_s = 28.5$), Interfacial contact resistance ($R_{contact,0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$) | Kleemann et al. (2009) [`10.1016/j.jpowsour.2008.09.026`], El-Kharouf, Mason et al. (2012) [`10.1016/j.jpowsour.2012.06.099`] |
 | **Electrochemistry & Transport**| Multi-parameter Butler-Volmer kinetics ($E_{act} = 68.5\text{ kJ/mol}$, $j_{0,ref} = 2.50 \times 10^{-8}\text{ A/cm}^2$), Springer hydration ($\lambda$) | Neyerlin et al. (2006) [`10.1149/1.2266294`], Gasteiger et al. (2005) [`10.1016/j.apcatb.2004.06.021`] |
 
 ---
