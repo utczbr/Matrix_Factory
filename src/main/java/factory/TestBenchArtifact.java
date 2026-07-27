@@ -117,8 +117,23 @@ public class TestBenchArtifact extends Artifact {
                     + " — testing with zero quality penalty: " + e);
         }
 
-        // Baseline ECSA ratio set to 1.0 (uncoupled baseline until Station 2 R6/R10 implementation)
         double ecsaRatio = 1.0;
+        double pClampMpa = 4.25;
+        double gdlPorosity = 0.78;
+        try {
+            ArtifactId databaseArtifactId = lookupArtifact("database");
+            OpFeedbackParam<Double> ecsaRatioParam = new OpFeedbackParam<>();
+            OpFeedbackParam<Double> damageIndexParam = new OpFeedbackParam<>();
+            OpFeedbackParam<Double> pClampMpaParam = new OpFeedbackParam<>();
+            OpFeedbackParam<Double> gdlPorosityParam = new OpFeedbackParam<>();
+            execLinkedOp(databaseArtifactId, "peekMechanisticSignal", stackId,
+                    ecsaRatioParam, damageIndexParam, pClampMpaParam, gdlPorosityParam);
+            if (ecsaRatioParam.get() != null) ecsaRatio = ecsaRatioParam.get();
+            if (pClampMpaParam.get() != null) pClampMpa = pClampMpaParam.get();
+            if (gdlPorosityParam.get() != null) gdlPorosity = gdlPorosityParam.get();
+        } catch (Exception e) {
+            log("Station " + stationId + ": failed to fetch mechanistic signal for " + stackId + ": " + e);
+        }
 
         BatchTestRequest req = BatchTestRequest.newBuilder()
                 .setStackId(stackId).setNumCells(numCells)
@@ -128,6 +143,8 @@ public class TestBenchArtifact extends Artifact {
                 .setRInternalPenaltyOhmCm2(rInternalPenalty)
                 .setActivityDerateFraction(activityDerate)
                 .setEcsaRatio(ecsaRatio)
+                .setPClampMpa(pClampMpa)
+                .setGdlPorosity(gdlPorosity)
                 .build();
 
         String corrId = UUID.randomUUID().toString();

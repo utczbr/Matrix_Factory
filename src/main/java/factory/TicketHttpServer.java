@@ -11,8 +11,13 @@ import java.util.UUID;
 
 public final class TicketHttpServer {
 
-    public static void start(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+    private static com.sun.net.httpserver.HttpServer server;
+
+    public static synchronized void start(int port) throws IOException {
+        if (server != null) {
+            return;
+        }
+        server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/telemetry/ticket", exchange -> {
             Map<String, String> q = parseQuery(exchange.getRequestURI().getQuery());
             int runId = Integer.parseInt(q.getOrDefault("run_id", "0"));
@@ -30,6 +35,13 @@ public final class TicketHttpServer {
         });
         server.setExecutor(null);
         server.start();
+    }
+
+    public static synchronized void stop() {
+        if (server != null) {
+            server.stop(0);
+            server = null;
+        }
     }
 
     private static Map<String, String> parseQuery(String query) {

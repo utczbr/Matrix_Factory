@@ -84,3 +84,52 @@ def compute_contact_resistance(
     # Impedance penalty from clamping deviation
     r_contact = r_contact_0 * (1.0 + 0.35 * p_dev + 0.25 * (p_dev ** 2))
     return float(max(0.0, r_contact))
+
+
+def run_calibration_sanity_checks(verbose: bool = True):
+    results = {}
+
+    # Check 1: At nominal pressure 4.25 MPa, R_contact == R_CONTACT_0 (0.0042 Ohm*cm^2)
+    rc_nom = compute_contact_resistance(P_NOMINAL_MPA)
+    results["r_contact_nominal_matches"] = {
+        "passou": abs(rc_nom - R_CONTACT_0) < 1e-6,
+        "r_contact_nom": rc_nom,
+        "esperado": R_CONTACT_0,
+    }
+
+    # Check 2: U-shaped response: both under-clamping (2.0 MPa) and over-clamping (6.0 MPa) increase R_contact
+    rc_under = compute_contact_resistance(2.0)
+    rc_over = compute_contact_resistance(6.0)
+    results["r_contact_ushaped_curve"] = {
+        "passou": (rc_under > rc_nom) and (rc_over > rc_nom),
+        "rc_under_2mpa": rc_under,
+        "rc_over_6mpa": rc_over,
+        "rc_nom": rc_nom,
+    }
+
+    # Check 3: Effective conductivity via Bruggeman relation drops as porosity increases
+    sigma_bulk = 100.0
+    sigma_eff_low_porosity = compute_effective_porosity_conductivity(sigma_bulk, 0.4)  # 60% solid
+    sigma_eff_high_porosity = compute_effective_porosity_conductivity(sigma_bulk, 0.8) # 20% solid
+    results["bruggeman_porosity_scaling"] = {
+        "passou": sigma_eff_low_porosity > sigma_eff_high_porosity > 0.0,
+        "sigma_eff_eps_0.4": sigma_eff_low_porosity,
+        "sigma_eff_eps_0.8": sigma_eff_high_porosity,
+    }
+
+    if verbose:
+        print("=" * 60)
+        print("MICROSTRUCTURE CALIBRATION SANITY CHECKS")
+        print("=" * 60)
+        for name, res in results.items():
+            status = "PASSOU" if res["passou"] else "FALHOU"
+            print(f"[{status}] {name}")
+            for k, v in res.items():
+                if k != "passou":
+                    print(f"          {k}: {v}")
+    return results
+
+
+if __name__ == "__main__":
+    run_calibration_sanity_checks()
+

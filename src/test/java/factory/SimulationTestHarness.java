@@ -89,11 +89,6 @@ public class SimulationTestHarness {
 
         RunManager.registerSimulator(runId, sim);
         TelemetryHub.startServer(8080);
-        try {
-            TicketHttpServer.start(8081);
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-        }
 
         // Start the TMC tick loop (runs on a daemon thread)
         sim.startTmcThreads();
@@ -129,6 +124,12 @@ public class SimulationTestHarness {
             if (pythonProcess != null) {
                 pythonProcess.destroyForcibly();
             }
+            try {
+                var runner = jason.infra.centralised.RunCentralisedMAS.getRunner();
+                if (runner != null) {
+                    runner.finish();
+                }
+            } catch (Throwable ignored) {}
         }
 
         return new SimRunHandle(sim, runId, tickBudget);

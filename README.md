@@ -39,11 +39,12 @@ graph TD
 ## Key Features
 
 * **Hybrid BDI & First-Principles Physics**: Combines Jason/CArtAgO agent cognitive reasoning in Java 17 with Numba-accelerated PEMFC fuel cell electrochemistry, Springer membrane hydration ($\lambda \in [1, 14]$), real-gas fugacity EOS (CoolProp LUT), two-lump thermal capacitance, and cathode air BOP dynamics in Python.
-* **Manufacturing-to-Performance Multiphysics Coupling**: Connects upstream manufacturing physics—non-linear Archard tool wear, Cockcroft-Latham ductile fracture ($C_{crit,NCL} = 0.35$), and VDI 2230 stack clamping GDL compaction ($E_0 = 2.80\text{ MPa}, K_s = 28.5$)—directly into downstream electrochemical polarization sweeps via Bruggeman effective medium conductivity and interfacial contact resistance ($R_{contact,0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$).
+* **Upstream Manufacturing Process Models (Stations 1–4)**: Includes first-principles physical kernels for Station 1 (Kamal–Sourour resin cure kinetics), Station 2 (slot-die catalyst coating hydrodynamics & ECSA spatial ratio), Station 3 (316L bipolar plate stamping with Archard tool wear & Cockcroft-Latham $D_{\text{NCL}}$ damage), and Station 4 (VDI 2230 stack assembly bolt torque friction & clamping pressure).
+* **Manufacturing-to-Performance Multiphysics Coupling**: Connects upstream manufacturing signals ($P_{\text{clamp}}$, $\varepsilon_{\text{gdl}}$, ECSA ratio) directly into downstream Station 5 fuel cell polarization sweeps via Bruggeman effective medium conductivity, mass-transport limiting current derating ($j_{\text{lim}}$), and interfacial contact resistance ($R_{\text{contact},0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$).
 * **Dynamic Control Schema Transitions**: Real-time Two-Phase Commit (Phase 0 Drain, Phase 1 Suspend) switching between PROSA (peer-negotiated) and ADACOR (hierarchical) upon energy price spikes.
 * **Deterministic Lock-Stepped Simulator (TMC)**: Replaces non-deterministic wall-clock sleeps (`Thread.sleep`) with a synchronous Next Event Request (NER) engine in `MainSimulator.java`.
 * **Single-JVM Fan-Out Monte Carlo Scale**: Orchestrates up to 30 parallel, fully isolated simulation runs inside a single JVM instance via source-level agent namespace rewriting.
-* **Configurable gRPC Security & Async Telemetry**: Optional mutual TLS (mTLS) authentication between Java clients and Python daemons, paired with authenticated HMAC-signed WebSocket streaming (`ws://127.0.0.1:8080/telemetry`).
+* **Live Web Telemetry Dashboard**: Real-time canvas telemetry visualization streaming at `ws://127.0.0.1:8080` with HMAC-signed ticket authentication (`http://127.0.0.1:8081/telemetry/ticket`).
 
 ---
 
@@ -132,11 +133,25 @@ GRPC_SECURE_MODE=true .venv/bin/python3 -m physical_engine.sim_bridge_server --p
 GRPC_SECURE_MODE=true ./gradlew run --args="0 50051 --max-ticks=1000"
 ```
 
-### 5. Running Test Suites
+### 5. Launching the Live Telemetry Web Dashboard
+
+Start the local HTTP server to view real-time AMR movements, station states, and thermal heatmaps in your browser:
 
 ```bash
-# Run Python physical engine unit, integration & security test suite (74 tests)
+# 1. Start Python HTTP server in workspace root
+python3 -m http.server 8000
+
+# 2. Open http://127.0.0.1:8000/visualization/ in your browser
+```
+
+### 6. Running Test Suites & Calibration Reports
+
+```bash
+# Run Python physical engine test suite (78 pytest unit, property & integration tests)
 .venv/bin/pytest physical_engine/
+
+# Run Stations 1–4 Monte Carlo process calibration report (10,000 runs)
+PYTHONPATH=. .venv/bin/python3 physical_engine/scripts/calibrate_stamping_clamping.py
 
 # Run Java MAS integration test suite
 ./gradlew test

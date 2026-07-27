@@ -111,6 +111,7 @@ from physical_engine.factory_simulation.stack_thermal_model import (
 from physical_engine.optimization.lut_manager import LUTManager, MATRIX_FACTORY_LUT_CONFIG, real_gas_activity
 from physical_engine.factory_simulation.h2_tank import TankArray
 from physical_engine.factory_simulation.compressor import CompressorStage
+import physical_engine.factory_simulation.microstructure as microstructure
 
 # ---------------------------------------------------------------------------
 # Failure flags bitmask (matches BatchTestResponse.failure_flags in .proto).
@@ -169,6 +170,7 @@ class SimBridgeServicer:
         # Concurrency
         self._physics_step_lock = threading.Lock()
         self._ready = False
+        self._step_counter = 0
         
         self._run_id = run_id
         seed = derive_seed(stack_id, run_id)
@@ -251,9 +253,9 @@ class SimBridgeServicer:
                     Q_gen += Q_heater
 
                 Q_output = self._thermal.step(dt, Q_gen, T_coolant)
-                self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = Q_output[0]
-                self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = Q_output[1]
-                self._state[ThermoStateIndex.STACK_TEMP_K] = Q_output[0]
+                self._state[ThermoStateIndex.STACK_CORE_TEMP_K] = self._thermal.T_core
+                self._state[ThermoStateIndex.STACK_SKIN_TEMP_K] = self._thermal.T_skin
+                self._state[ThermoStateIndex.STACK_TEMP_K] = self._thermal.T_core
                 self._state[ThermoStateIndex.COMPRESSOR_POWER_KW] = W_comp / 1000.0
 
                 self._step_counter += 1
@@ -311,16 +313,28 @@ class SimBridgeServicer:
             r_internal_penalty = max(0.0, request.r_internal_penalty_ohm_cm2)
             derate = float(np.clip(request.activity_derate_fraction, 0.0, 0.95))
 
-            R_internal_effective = self._R_internal + r_internal_penalty
+            # Clamping pressure & GDL contact resistance (R1 Milestone 2)
+            p_clamp_mpa = getattr(request, "p_clamp_mpa", 4.25)
+            if p_clamp_mpa <= 0.0:
+                p_clamp_mpa = 4.25
+            gdl_porosity = getattr(request, "gdl_porosity", 0.78)
+            if gdl_porosity <= 0.0:
+                gdl_porosity = 0.78
+            r_contact = microstructure.compute_contact_resistance(p_clamp_mpa, gdl_porosity)
+
+            R_internal_effective = self._R_internal + r_internal_penalty + r_contact
             a_h2 = np.clip(a_h2 * (1.0 - derate), 0.5, 10.0)
             a_o2 = np.clip(a_o2 * (1.0 - derate), 0.5, 10.0)
 
-            if r_internal_penalty > 0.0 or derate > 0.0:
+            j_lim_derate = float(np.clip(getattr(request, "j_lim_derate_fraction", 0.0), 0.0, 0.90))
+            j_lim_effective = max(0.2, 2.5 * (1.0 - j_lim_derate))
+
+            if r_internal_penalty > 0.0 or derate > 0.0 or abs(p_clamp_mpa - 4.25) > 0.1 or j_lim_derate > 0.0:
                 logger.info(
                     "RunBatchTest stack_id=%s quality penalty applied: "
-                    "R_internal %.4f -> %.4f Ohm*cm^2 (+%.4f), activity derate=%.3f",
+                    "R_internal %.4f -> %.4f Ohm*cm^2 (+%.4f penalty, +%.4f R_contact), activity derate=%.3f, j_lim=%.3f",
                     request.stack_id, self._R_internal, R_internal_effective,
-                    r_internal_penalty, derate,
+                    r_internal_penalty, r_contact, derate, j_lim_effective,
                 )
 
             # Current densities
@@ -330,7 +344,7 @@ class SimBridgeServicer:
                 )
             else:
                 # Default 12-point diagnostic sweep
-                j_values = np.linspace(0.05, 2.4, 12)
+                j_values = np.linspace(0.05, min(2.4, 0.95 * j_lim_effective), 12)
 
             ecsa_ratio = getattr(request, "ecsa_ratio", 1.0)
             if ecsa_ratio <= 0.0:
@@ -354,7 +368,8 @@ class SimBridgeServicer:
                 C_skin=self._thermal.C_skin,
                 hA_int=self._thermal.hA_internal,
                 hA_ext=self._thermal.hA_external,
-                T_coolant=T_coolant
+                T_coolant=T_coolant,
+                j_lim=j_lim_effective,
             )
 
             # Update thermal model state to post-sweep thermal condition

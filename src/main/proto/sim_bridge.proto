@@ -73,6 +73,18 @@ message BatchTestRequest {
   // Effective ECSA ratio (ECSA_eff / ECSA_0) in (0.0, 1.0]. Default 1.0 (pristine).
   // Used for Arrhenius-corrected catalyst kinetics in Station 5 test bench.
   double ecsa_ratio = 10;
+
+  // Assembly clamping pressure [MPa] from Station 4 stack clamping.
+  // Default 4.25 (nominal target). Used in microstructure model for R_contact.
+  double p_clamp_mpa = 11;
+
+  // Compressed GDL porosity in [0.01, 0.95] from Station 4 stack clamping.
+  // Default 0.78 (nominal). Used in microstructure model and mass-transport derating.
+  double gdl_porosity = 12;
+
+  // Fractional derate of limiting current density j_lim caused by GDL compaction/flooding.
+  // Applied as multiplier (1 - j_lim_derate_fraction) on j_lim. 0.0 for pristine stack.
+  double j_lim_derate_fraction = 13;
 }
 
 message BatchTestResponse {

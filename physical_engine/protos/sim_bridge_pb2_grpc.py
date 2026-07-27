@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from physical_engine.protos import sim_bridge_pb2 as sim__bridge__pb2
+from physical_engine.protos import sim_bridge_pb2 as physical__engine_dot_protos_dot_sim__bridge__pb2
 
 GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in sim_bridge_pb2_grpc.py depends on'
+        + ' but the generated code in physical_engine/protos/sim_bridge_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -46,18 +46,18 @@ class SimBridgeStub:
         """
         self.AdvanceTime = channel.unary_unary(
                 '/factory.SimBridge/AdvanceTime',
-                request_serializer=sim__bridge__pb2.TimeStep.SerializeToString,
-                response_deserializer=sim__bridge__pb2.StepReady.FromString,
+                request_serializer=physical__engine_dot_protos_dot_sim__bridge__pb2.TimeStep.SerializeToString,
+                response_deserializer=physical__engine_dot_protos_dot_sim__bridge__pb2.StepReady.FromString,
                 _registered_method=True)
         self.RunBatchTest = channel.unary_unary(
                 '/factory.SimBridge/RunBatchTest',
-                request_serializer=sim__bridge__pb2.BatchTestRequest.SerializeToString,
-                response_deserializer=sim__bridge__pb2.BatchTestResponse.FromString,
+                request_serializer=physical__engine_dot_protos_dot_sim__bridge__pb2.BatchTestRequest.SerializeToString,
+                response_deserializer=physical__engine_dot_protos_dot_sim__bridge__pb2.BatchTestResponse.FromString,
                 _registered_method=True)
         self.HealthCheck = channel.unary_unary(
                 '/factory.SimBridge/HealthCheck',
-                request_serializer=sim__bridge__pb2.Empty.SerializeToString,
-                response_deserializer=sim__bridge__pb2.HealthStatus.FromString,
+                request_serializer=physical__engine_dot_protos_dot_sim__bridge__pb2.Empty.SerializeToString,
+                response_deserializer=physical__engine_dot_protos_dot_sim__bridge__pb2.HealthStatus.FromString,
                 _registered_method=True)
 
 
@@ -100,18 +100,18 @@ def add_SimBridgeServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'AdvanceTime': grpc.unary_unary_rpc_method_handler(
                     servicer.AdvanceTime,
-                    request_deserializer=sim__bridge__pb2.TimeStep.FromString,
-                    response_serializer=sim__bridge__pb2.StepReady.SerializeToString,
+                    request_deserializer=physical__engine_dot_protos_dot_sim__bridge__pb2.TimeStep.FromString,
+                    response_serializer=physical__engine_dot_protos_dot_sim__bridge__pb2.StepReady.SerializeToString,
             ),
             'RunBatchTest': grpc.unary_unary_rpc_method_handler(
                     servicer.RunBatchTest,
-                    request_deserializer=sim__bridge__pb2.BatchTestRequest.FromString,
-                    response_serializer=sim__bridge__pb2.BatchTestResponse.SerializeToString,
+                    request_deserializer=physical__engine_dot_protos_dot_sim__bridge__pb2.BatchTestRequest.FromString,
+                    response_serializer=physical__engine_dot_protos_dot_sim__bridge__pb2.BatchTestResponse.SerializeToString,
             ),
             'HealthCheck': grpc.unary_unary_rpc_method_handler(
                     servicer.HealthCheck,
-                    request_deserializer=sim__bridge__pb2.Empty.FromString,
-                    response_serializer=sim__bridge__pb2.HealthStatus.SerializeToString,
+                    request_deserializer=physical__engine_dot_protos_dot_sim__bridge__pb2.Empty.FromString,
+                    response_serializer=physical__engine_dot_protos_dot_sim__bridge__pb2.HealthStatus.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -149,8 +149,8 @@ class SimBridge:
             request,
             target,
             '/factory.SimBridge/AdvanceTime',
-            sim__bridge__pb2.TimeStep.SerializeToString,
-            sim__bridge__pb2.StepReady.FromString,
+            physical__engine_dot_protos_dot_sim__bridge__pb2.TimeStep.SerializeToString,
+            physical__engine_dot_protos_dot_sim__bridge__pb2.StepReady.FromString,
             options,
             channel_credentials,
             insecure,
@@ -176,8 +176,8 @@ class SimBridge:
             request,
             target,
             '/factory.SimBridge/RunBatchTest',
-            sim__bridge__pb2.BatchTestRequest.SerializeToString,
-            sim__bridge__pb2.BatchTestResponse.FromString,
+            physical__engine_dot_protos_dot_sim__bridge__pb2.BatchTestRequest.SerializeToString,
+            physical__engine_dot_protos_dot_sim__bridge__pb2.BatchTestResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -203,8 +203,8 @@ class SimBridge:
             request,
             target,
             '/factory.SimBridge/HealthCheck',
-            sim__bridge__pb2.Empty.SerializeToString,
-            sim__bridge__pb2.HealthStatus.FromString,
+            physical__engine_dot_protos_dot_sim__bridge__pb2.Empty.SerializeToString,
+            physical__engine_dot_protos_dot_sim__bridge__pb2.HealthStatus.FromString,
             options,
             channel_credentials,
             insecure,

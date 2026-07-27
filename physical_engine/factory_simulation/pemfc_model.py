@@ -245,6 +245,7 @@ def calculate_pemfc_voltage(
     N_cells: int = 10,
     ecsa_ratio: float = 1.0,
     lambda_mem: float = 14.0,
+    j_lim: float = 2.5,
 ) -> tuple:
     """Compute the stack voltage at a given current density.
 
@@ -267,6 +268,7 @@ def calculate_pemfc_voltage(
         N_cells: Number of cells in the stack.
         ecsa_ratio: Effective ECSA ratio (ECSA_eff / ECSA_0). Default 1.0.
         lambda_mem: Membrane water content λ in [1.0, 14.0]. Default 14.0.
+        j_lim: Limiting current density [A/cm²]. Default 2.5.
 
     Returns:
         Tuple ``(V_stack, eta_act, eta_ohm, eta_conc, E_ocv)``.
@@ -276,7 +278,6 @@ def calculate_pemfc_voltage(
     alpha = 0.5       # alpha_orr
     z = 4             # z_pemfc
     j0 = _effective_j0(2.5e-8, ecsa_ratio, T, 68500.0, 353.15)
-    j_lim = 2.5       # j_lim_pemfc
     B = 0.05           # B_conc
 
     E_ocv = calculate_nernst_potential(T, a_h2, a_o2)
@@ -316,6 +317,7 @@ def newton_raphson_solver(
     N_cells: int = 10,
     ecsa_ratio: float = 1.0,
     lambda_mem: float = 14.0,
+    j_lim: float = 2.5,
 ) -> tuple:
     """Solve for the current density *j* that produces *V_target*."""
     R = 8.314462618
@@ -323,19 +325,18 @@ def newton_raphson_solver(
     alpha = 0.5
     z = 4
     j0 = _effective_j0(2.5e-8, ecsa_ratio, T, 68500.0, 353.15)
-    j_lim = 2.5
     B = 0.05
 
     tol = 1e-4
     max_iter = 50
 
     # Initial guess: mid-range current density
-    j = 1.0
+    j = 0.5 * j_lim
 
     for _ in range(max_iter):
         # --- Forward evaluation ---
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem
+            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem, j_lim
         )
 
         residual = V_stack - V_target
@@ -386,9 +387,9 @@ def batch_polarization_sweep(
     numba_threads: int,
     ecsa_ratio: float = 1.0,
     lambda_mem: float = 14.0,
+    j_lim: float = 2.5,
 ) -> tuple:
     """Vectorized polarization curve computation via ``numba.prange``."""
-    j_lim = 2.5
     n = current_densities.shape[0]
 
     for k in range(n):
@@ -406,7 +407,7 @@ def batch_polarization_sweep(
         idx = i % numba_threads
 
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem
+            j, T, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem, j_lim
         )
 
         scratch[idx, 0] = V_stack
@@ -449,9 +450,9 @@ def batch_polarization_sweep_thermal(
     hA_int: float = 500.0,
     hA_ext: float = 50.0,
     T_coolant: float = 298.15,
+    j_lim: float = 2.5,
 ) -> tuple:
     """Sequential electro-thermal coupled polarization curve sweep."""
-    j_lim = 2.5
     n = current_densities.shape[0]
 
     for k in range(n):
@@ -475,7 +476,7 @@ def batch_polarization_sweep_thermal(
         T_skin_arr[i] = T_skin
 
         V_stack, eta_act, eta_ohm, eta_conc, E_ocv = calculate_pemfc_voltage(
-            j, T_current, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem
+            j, T_current, a_h2, a_o2, R_internal, N_cells, ecsa_ratio, lambda_mem, j_lim
         )
         voltages[i] = V_stack
 

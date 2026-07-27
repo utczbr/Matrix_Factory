@@ -42,18 +42,11 @@ public class DatabaseArtifact extends Artifact {
         .expireAfterAccess(Duration.ofMinutes(30))  // catches orphans from aborted orders
         .build();
 
-    /**
-     * Immutable, additively-mergeable quality accumulator for one stack.
-     *
-     * @param defectCount            number of station events flagged as
-     *                                defective (rng.nextDouble() < defectRate)
-     * @param stationsVisited        number of Stations 1-4 events recorded
-     * @param cumulativeVarianceRatio sum over visited stations of
-     *                                |tProc - tMean| / tMean — a proxy for
-     *                                cumulative process imprecision even on
-     *                                runs that didn't trip the boolean
-     *                                defect flag
-     */
+    private final Cache<String, MechanisticSignal> mechanisticSignalsCache = Caffeine.newBuilder()
+        .maximumSize(10_000)
+        .expireAfterAccess(Duration.ofMinutes(30))
+        .build();
+
     public record QualityProfile(int defectCount, int stationsVisited, double cumulativeVarianceRatio) {
         static final QualityProfile EMPTY = new QualityProfile(0, 0, 0.0);
 
@@ -62,6 +55,19 @@ public class DatabaseArtifact extends Artifact {
                     this.defectCount + other.defectCount,
                     this.stationsVisited + other.stationsVisited,
                     this.cumulativeVarianceRatio + other.cumulativeVarianceRatio);
+        }
+    }
+
+    public record MechanisticSignal(double ecsaRatioMin, double damageIndexMax,
+                                    double pClampMpaLast, double gdlPorosityLast) {
+        public static final MechanisticSignal EMPTY = new MechanisticSignal(1.0, 0.0, 4.25, 0.78);
+
+        public MechanisticSignal combine(MechanisticSignal other) {
+            return new MechanisticSignal(
+                    Math.min(this.ecsaRatioMin, other.ecsaRatioMin),
+                    Math.max(this.damageIndexMax, other.damageIndexMax),
+                    other.pClampMpaLast > 0 ? other.pClampMpaLast : this.pClampMpaLast,
+                    other.gdlPorosityLast > 0 ? other.gdlPorosityLast : this.gdlPorosityLast);
         }
     }
 
@@ -121,6 +127,13 @@ public class DatabaseArtifact extends Artifact {
         }
     }
 
+    @OPERATION
+    public void recordMechanisticQuality(String stackId, double ecsaRatio, double damageIndex,
+                                          double pClampMpa, double gdlPorosity) {
+        MechanisticSignal delta = new MechanisticSignal(ecsaRatio, damageIndex, pClampMpa, gdlPorosity);
+        mechanisticSignalsCache.asMap().merge(stackId, delta, MechanisticSignal::combine);
+    }
+
     /**
      * Station 5 (TestBenchArtifact) calls this when a stack arrives at the
      * test bench, to peek at its cumulative quality profile before building
@@ -138,13 +151,27 @@ public class DatabaseArtifact extends Artifact {
         cumulativeVarianceRatio.set(p.cumulativeVarianceRatio());
     }
 
+    @OPERATION
+    public void peekMechanisticSignal(String stackId, OpFeedbackParam<Double> ecsaRatioMin,
+                                      OpFeedbackParam<Double> damageIndexMax,
+                                      OpFeedbackParam<Double> pClampMpaLast,
+                                      OpFeedbackParam<Double> gdlPorosityLast) {
+        MechanisticSignal s = mechanisticSignalsCache.asMap().get(stackId);
+        if (s == null) s = MechanisticSignal.EMPTY;
+        ecsaRatioMin.set(s.ecsaRatioMin());
+        damageIndexMax.set(s.damageIndexMax());
+        pClampMpaLast.set(s.pClampMpaLast());
+        gdlPorosityLast.set(s.gdlPorosityLast());
+    }
+
     /**
-     * Explicitly invalidates a stack's quality profile from the cache.
+     * Explicitly invalidates a stack's quality profile and mechanistic signals from the cache.
      * Called by Station 5 only when a stack has successfully passed testing.
      */
     @OPERATION
     public void invalidateQualityProfile(String stackId) {
         qualityProfilesCache.asMap().remove(stackId);
+        mechanisticSignalsCache.asMap().remove(stackId);
     }
 
     /**

@@ -97,6 +97,27 @@ public class BaseStationArtifact extends Artifact {
             ArtifactId databaseArtifactId = lookupArtifact("database");
             execLinkedOp(databaseArtifactId, "recordStationQuality",
                     runId, orderId, stationId, defect, tProc, tMean_s, currentSimTime);
+
+            double ecsaRatio = 1.0;
+            double damageIndex = 0.0;
+            double pClampMpa = 4.25;
+            double gdlPorosity = 0.78;
+            if ("S1".equals(stationId) || recipeStep == 1) {
+                // Station 1 MEA prep
+                damageIndex = 0.0;
+            } else if ("S2".equals(stationId) || recipeStep == 2) {
+                // Station 2 Catalyst deposition
+                ecsaRatio = defect ? 0.65 : 1.0;
+            } else if ("S3".equals(stationId) || recipeStep == 3) {
+                // Station 3 Stamping
+                damageIndex = defect ? 1.35 : 0.86;
+            } else if ("S4".equals(stationId) || recipeStep == 4) {
+                // Station 4 Clamping
+                pClampMpa = defect ? 2.50 : 4.22;
+                gdlPorosity = defect ? 0.82 : 0.772;
+            }
+            execLinkedOp(databaseArtifactId, "recordMechanisticQuality",
+                    orderId, ecsaRatio, damageIndex, pClampMpa, gdlPorosity);
         } catch (Exception e) {
             log("Station " + stationId + ": failed to log quality profile for " + orderId + ": " + e);
         }

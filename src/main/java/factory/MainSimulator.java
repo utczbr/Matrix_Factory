@@ -210,11 +210,6 @@ public class MainSimulator {
         // Register it for single run
         RunManager.registerSimulator(runId, sim);
         TelemetryHub.startServer(8080);
-        try {
-            TicketHttpServer.start(8081);
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-        }
 
         try {
             sim.startTmcThreads();
