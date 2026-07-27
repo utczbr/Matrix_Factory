@@ -833,10 +833,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-activation-overpotential-butlervolmer-kinetics" class="md-nav__link">
+  <a href="#2-activation-overpotential-butlervolmer-4-electron-orr-kinetics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Activation Overpotential (Butler–Volmer Kinetics)
+        2. Activation Overpotential (Butler–Volmer 4-Electron ORR Kinetics)
       
     </span>
   </a>
@@ -1596,10 +1596,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-activation-overpotential-butlervolmer-kinetics" class="md-nav__link">
+  <a href="#2-activation-overpotential-butlervolmer-4-electron-orr-kinetics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Activation Overpotential (Butler–Volmer Kinetics)
+        2. Activation Overpotential (Butler–Volmer 4-Electron ORR Kinetics)
       
     </span>
   </a>
@@ -1688,26 +1688,26 @@
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-polarization-cell-voltage-equation">1. Polarization Cell Voltage Equation</h3>
-<p>Cell voltage <span class="arithmatex">\(V_{\mathrm{cell}}\)</span> at current density <span class="arithmatex">\(j\)</span> (<span class="arithmatex">\(\mathrm{A/cm}^2\)</span>) is governed by thermodynamic Nernst potential <span class="arithmatex">\(E_{\mathrm{Nernst}}\)</span> minus three loss overpotentials:</p>
-<div class="arithmatex">\[V_{\mathrm{cell}}(j) = E_{\mathrm{Nernst}} - \eta_{\mathrm{act}} - \eta_{\mathrm{ohmic}} - \eta_{\mathrm{trans}}\]</div>
-<h3 id="2-activation-overpotential-butlervolmer-kinetics">2. Activation Overpotential (Butler–Volmer Kinetics)</h3>
-<p>The cathode Oxygen Reduction Reaction (ORR) activation overpotential <span class="arithmatex">\(\eta_{\mathrm{act}}\)</span> is expressed via Tafel kinetics:</p>
-<div class="arithmatex">\[\eta_{\mathrm{act}} = \frac{R T}{\alpha_{\mathrm{ORR}} F} \ln\left( \frac{j + j_{\mathrm{loss}}}{j_0 \cdot \mathrm{ECSA} \cdot L_{\mathrm{Pt}}} \right)\]</div>
+<p>Cell voltage <span class="arithmatex">\(V_{\mathrm{cell}}\)</span> at current density <span class="arithmatex">\(j\)</span> (<span class="arithmatex">\(\mathrm{A/cm}^2\)</span>) follows the <strong>subtractive</strong> fuel cell convention:</p>
+<div class="arithmatex">\[V_{\mathrm{cell}}(j) = E_{\mathrm{Nernst}} - \eta_{\mathrm{act}} - \eta_{\mathrm{ohm}} - \eta_{\mathrm{conc}}\]</div>
+<div class="arithmatex">\[V_{\mathrm{stack}}(j) = N_{\mathrm{cells}} \cdot V_{\mathrm{cell}}(j)\]</div>
+<h3 id="2-activation-overpotential-butlervolmer-4-electron-orr-kinetics">2. Activation Overpotential (Butler–Volmer 4-Electron ORR Kinetics)</h3>
+<p>Cathodic Oxygen Reduction Reaction (ORR) activation overpotential <span class="arithmatex">\(\eta_{\mathrm{act}}\)</span> accounts for the <strong><span class="arithmatex">\(z = 4\)</span></strong> electron transfer pathway:</p>
+<div class="arithmatex">\[\eta_{\mathrm{act}} = \frac{R T}{\alpha_{\mathrm{orr}} z F} \ln\left( \frac{j}{j_0} \right)\]</div>
 <p>where:
-* <strong><span class="arithmatex">\(\alpha_{\mathrm{ORR}}\)</span></strong> — Cathodic charge transfer coefficient (<span class="arithmatex">\(\approx 0.50\)</span>).
-* <strong><span class="arithmatex">\(j_0\)</span></strong> — Reference exchange current density (<span class="arithmatex">\(\mathrm{A/cm}_{\mathrm{Pt}}^2\)</span>).
-* <strong><span class="arithmatex">\(\mathrm{ECSA}\)</span></strong> — Inherited electro-chemical surface area from Station 2.</p>
+* <strong><span class="arithmatex">\(\alpha_{\mathrm{orr}} = 0.50\)</span></strong> — Charge transfer coefficient.
+* <strong><span class="arithmatex">\(z = 4\)</span></strong> — ORR electron transfer number (hard runtime assertion).
+* <strong><span class="arithmatex">\(j_0\)</span></strong> — Arrhenius temperature &amp; ECSA scaled exchange current density (<span class="arithmatex">\(j_{0,\mathrm{ref}} = 2.5 \times 10^{-8}\mathrm{ A/cm}_{\mathrm{Pt}}^2\)</span>, <span class="arithmatex">\(E_{\mathrm{act}} = 68.5\mathrm{ kJ/mol}\)</span>; Gasteiger et al. 2005; Neyerlin et al. 2006):</p>
+<div class="arithmatex">\[j_0 = j_{0,\mathrm{ref}} \cdot \mathrm{ECSA}_{\mathrm{ratio}} \cdot \exp\left( -\frac{E_{\mathrm{act}}}{R T} \left( 1 - \frac{T}{T_{\mathrm{ref}}} \right) \right)\]</div>
 <h3 id="3-ohmic-overpotential-springer-membrane-hydration">3. Ohmic Overpotential &amp; Springer Membrane Hydration</h3>
-<p>Ohmic loss <span class="arithmatex">\(\eta_{\mathrm{ohmic}}\)</span> includes electronic membrane resistance <span class="arithmatex">\(R_{\mathrm{mem}}\)</span> and interfacial contact resistance <span class="arithmatex">\(R_{\mathrm{contact}}\)</span> (inherited from Station 4):</p>
-<div class="arithmatex">\[\eta_{\mathrm{ohmic}} = j \cdot \left( R_{\mathrm{mem}}(\lambda) + R_{\mathrm{contact}} \right)\]</div>
-<p>Membrane ionic conductivity <span class="arithmatex">\(\sigma_{\mathrm{mem}}\)</span> depends on water content <span class="arithmatex">\(\lambda \in [1, 14]\)</span> (Springer model):</p>
-<div class="arithmatex">\[\sigma_{\mathrm{mem}}(\lambda, T) = (0.005139 \lambda - 0.00326) \exp\left( 1268 \left( \frac{1}{303} - \frac{1}{T} \right) \right)\]</div>
+<p>Ohmic overpotential <span class="arithmatex">\(\eta_{\mathrm{ohm}}\)</span> incorporates bulk contact resistance <span class="arithmatex">\(R_{\mathrm{internal}}\)</span> and membrane ionic resistance <span class="arithmatex">\(R_{\mathrm{mem}}\)</span>:</p>
+<div class="arithmatex">\[\eta_{\mathrm{ohm}} = j \cdot \left( R_{\mathrm{internal}} + R_{\mathrm{mem}}(\lambda, T) \right)\]</div>
+<p>Membrane thickness is <span class="arithmatex">\(t_{\mathrm{mem}} = 50.0\ \mu\mathrm{m}\)</span> (<span class="arithmatex">\(0.005\mathrm{ cm}\)</span>). Conductivity <span class="arithmatex">\(\sigma_{\mathrm{mem}}\)</span> (<span class="arithmatex">\(\mathrm{S/cm}\)</span>) follows Springer's model for water content <span class="arithmatex">\(\lambda \in [1, 14]\)</span>:</p>
+<div class="arithmatex">\[\sigma_{\mathrm{mem}}(\lambda, T) = (0.005139 \lambda - 0.00326) \exp\left( 1268 \left( \frac{1}{303.15} - \frac{1}{T} \right) \right)\]</div>
 <div class="arithmatex">\[R_{\mathrm{mem}} = \frac{t_{\mathrm{mem}}}{\sigma_{\mathrm{mem}}(\lambda, T)}\]</div>
 <h3 id="4-mass-transport-concentration-overpotential">4. Mass Transport Concentration Overpotential</h3>
-<p>Concentration loss <span class="arithmatex">\(\eta_{\mathrm{trans}}\)</span> accounts for reactant gas starvation and liquid water flooding at high current densities:</p>
-<div class="arithmatex">\[\eta_{\mathrm{trans}} = -\frac{R T}{n F} \ln\left( 1 - \frac{j}{j_{\mathrm{lim}}} \right)\]</div>
-<p>where mass transport limit current density <span class="arithmatex">\(j_{\mathrm{lim}}\)</span> is derated by GDL compression:</p>
-<div class="arithmatex">\[j_{\mathrm{lim}} = j_{\mathrm{lim},0} \cdot \left( \frac{\varepsilon_{\mathrm{gdl}}(P_{\mathrm{clamp}})}{\varepsilon_0} \right)^{1.5}\]</div>
+<p>Concentration overpotential <span class="arithmatex">\(\eta_{\mathrm{conc}}\)</span> uses an empirical logarithmic formulation with a <span class="arithmatex">\(C^1\)</span> continuity patch at <span class="arithmatex">\(j / j_{\mathrm{lim}} &gt; 0.99\)</span> (<span class="arithmatex">\(B = 0.05\)</span>, <span class="arithmatex">\(j_{\mathrm{lim}} = 2.5\mathrm{ A/cm}^2\)</span>):</p>
+<div class="arithmatex">\[\eta_{\mathrm{conc}} = -B \ln\left(1 - \frac{j}{j_{\mathrm{lim}}}\right) \quad \text{for } \frac{j}{j_{\mathrm{lim}}} \le 0.99\]</div>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1722,39 +1722,53 @@
 </thead>
 <tbody>
 <tr>
-<td>Reference Exchange Current</td>
-<td><span class="arithmatex">\(j_0\)</span></td>
+<td>ORR Exchange Current</td>
+<td><span class="arithmatex">\(j_{0,\mathrm{ref}}\)</span></td>
 <td><span class="arithmatex">\(2.5 \times 10^{-8}\)</span></td>
 <td><span class="arithmatex">\(\mathrm{A/cm}_{\mathrm{Pt}}^2\)</span></td>
-<td>Neyerlin et al. (2007)</td>
+<td>Gasteiger et al. (2005) [DOI: 10.1016/j.apcatb.2004.06.021]</td>
+</tr>
+<tr>
+<td>ORR Activation Energy</td>
+<td><span class="arithmatex">\(E_{\mathrm{act}}\)</span></td>
+<td><span class="arithmatex">\(68.5\)</span></td>
+<td><span class="arithmatex">\(\mathrm{kJ/mol}\)</span></td>
+<td>Neyerlin et al. (2006) [DOI: 10.1149/1.2266294]</td>
+</tr>
+<tr>
+<td>Electron Transfer Number</td>
+<td><span class="arithmatex">\(z\)</span></td>
+<td><span class="arithmatex">\(4\)</span></td>
+<td>—</td>
+<td>4-Electron ORR Pathway</td>
 </tr>
 <tr>
 <td>Charge Transfer Coeff.</td>
-<td><span class="arithmatex">\(\alpha_{\mathrm{ORR}}\)</span></td>
+<td><span class="arithmatex">\(\alpha_{\mathrm{orr}}\)</span></td>
 <td><span class="arithmatex">\(0.50\)</span></td>
 <td>—</td>
-<td>Springer et al. (1991)</td>
+<td>Kinetic Parameter</td>
 </tr>
 <tr>
 <td>Membrane Thickness</td>
 <td><span class="arithmatex">\(t_{\mathrm{mem}}\)</span></td>
-<td><span class="arithmatex">\(15.0\)</span></td>
+<td><span class="arithmatex">\(50.0\)</span> (<span class="arithmatex">\(0.005\mathrm{ cm}\)</span>)</td>
 <td><span class="arithmatex">\(\mu\mathrm{m}\)</span></td>
-<td>Nafion HP Datasheet</td>
+<td>Nafion Membrane Specs</td>
 </tr>
 <tr>
-<td>Baseline Limiting Current</td>
-<td><span class="arithmatex">\(j_{\mathrm{lim},0}\)</span></td>
-<td><span class="arithmatex">\(2.40\)</span></td>
+<td>Limiting Current</td>
+<td><span class="arithmatex">\(j_{\mathrm{lim}}\)</span></td>
+<td><span class="arithmatex">\(2.50\)</span></td>
 <td><span class="arithmatex">\(\mathrm{A/cm}^2\)</span></td>
-<td>Experimental Polarization</td>
+<td>Polarization Boundary</td>
 </tr>
 <tr>
-<td>Membrane Water Content</td>
-<td><span class="arithmatex">\(\lambda\)</span></td>
-<td><span class="arithmatex">\(12.5\)</span></td>
+<td>Concentration Coeff.</td>
+<td><span class="arithmatex">\(B\)</span></td>
+<td><span class="arithmatex">\(0.05\)</span></td>
 <td>—</td>
-<td>Relative Humidity = 80%</td>
+<td>Fitted Empirical Constant</td>
 </tr>
 </tbody>
 </table>

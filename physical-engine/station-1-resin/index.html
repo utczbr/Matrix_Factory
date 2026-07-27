@@ -721,10 +721,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-glass-transition-vitrification-derating" class="md-nav__link">
+  <a href="#2-defect-risk-functions-execution-pacing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Glass Transition &amp; Vitrification Derating
+        2. Defect Risk Functions &amp; Execution Pacing
       
     </span>
   </a>
@@ -1574,10 +1574,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-glass-transition-vitrification-derating" class="md-nav__link">
+  <a href="#2-defect-risk-functions-execution-pacing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Glass Transition &amp; Vitrification Derating
+        2. Defect Risk Functions &amp; Execution Pacing
       
     </span>
   </a>
@@ -1637,24 +1637,30 @@
 
 
 <h1 id="station-1-mea-resin-cure-kinetics-reference">Station 1: MEA Resin Cure Kinetics (Reference)</h1>
-<p>This document details the mathematical formulations, kinetic equations, and calibration parameters for <strong>Station 1: MEA Preparation &amp; Resin Curing</strong>.</p>
+<p>This document details the mathematical formulations, kinetic equations, and calibration parameters for <strong>Station 1: MEA Preparation &amp; Hot-Press Lamination</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
-<p>Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA). The reaction rate is governed by an autocatalytic phenomenological model that accounts for thermal activation energy and vitrification phenomena.</p>
+<p>Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA) during hot-press lamination. The degree of cure conversion <span class="arithmatex">\(\alpha \in [0, 1]\)</span> is computed using Kamal–Sourour autocatalytic reaction kinetics. Under-curing (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>) introduces delamination risks, while over-curing (<span class="arithmatex">\(\alpha &gt; 0.98\)</span>) risks thermal degradation and membrane pinhole formation.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-kamalsourour-autocatalytic-curing-kinetics">1. Kamal–Sourour Autocatalytic Curing Kinetics</h3>
-<p>The rate of cure conversion <span class="arithmatex">\(\alpha \in [0, 1]\)</span> over time is expressed as:</p>
+<p>The rate of cure conversion <span class="arithmatex">\(\alpha\)</span> over time is expressed as:</p>
 <div class="arithmatex">\[\frac{\mathrm{d}\alpha}{\mathrm{d}t} = \left( k_1 + k_2 \alpha^m \right) (1 - \alpha)^n\]</div>
-<p>where <span class="arithmatex">\(k_1\)</span> and <span class="arithmatex">\(k_2\)</span> follow Arrhenius temperature dependencies:</p>
-<div class="arithmatex">\[k_1(T) = A_1 \exp\left( -\frac{E_1}{R T} \right)\]</div>
-<div class="arithmatex">\[k_2(T) = A_2 \exp\left( -\frac{E_2}{R T} \right)\]</div>
-<h3 id="2-glass-transition-vitrification-derating">2. Glass Transition &amp; Vitrification Derating</h3>
-<p>As curing progresses, the glass transition temperature <span class="arithmatex">\(T_g(\alpha)\)</span> increases according to DiBenedetto's equation:</p>
-<div class="arithmatex">\[\frac{T_g - T_{g0}}{T_{g\infty} - T_{g0}} = \frac{\lambda \alpha}{1 - (1 - \lambda)\alpha}\]</div>
-<p>If <span class="arithmatex">\(T &lt; T_g(\alpha)\)</span>, diffusion control reduces the reaction rate by factor <span class="arithmatex">\(f_d(\alpha)\)</span>:</p>
-<div class="arithmatex">\[f_d(\alpha) = \frac{1}{1 + \exp\left( C_d (\alpha - \alpha_c) \right)}\]</div>
-<div class="arithmatex">\[\frac{\mathrm{d}\alpha}{\mathrm{d}t}\Bigg|_{\text{effective}} = \frac{\mathrm{d}\alpha}{\mathrm{d}t} \cdot f_d(\alpha)\]</div>
+<p>where Arrhenius reaction rate constants <span class="arithmatex">\(k_1\)</span> and <span class="arithmatex">\(k_2\)</span> at hot-press temperature <span class="arithmatex">\(T_{\mathrm{press}}\)</span> (<span class="arithmatex">\(\mathrm{K}\)</span>) are defined by:</p>
+<div class="arithmatex">\[k_1(T) = A_1 \exp\left( -\frac{E_1}{R T_{\mathrm{press}}} \right)\]</div>
+<div class="arithmatex">\[k_2(T) = A_2 \exp\left( -\frac{E_2}{R T_{\mathrm{press}}} \right)\]</div>
+<h3 id="2-defect-risk-functions-execution-pacing">2. Defect Risk Functions &amp; Execution Pacing</h3>
+<p>Degree of cure <span class="arithmatex">\(\alpha\)</span> is integrated via 4th-order Runge–Kutta (RK4) over dwell time <span class="arithmatex">\(t_{\mathrm{dwell}}\)</span>:</p>
+<ul>
+<li><strong>Delamination Risk (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>):</strong> </li>
+</ul>
+<div class="arithmatex">\[R_{\mathrm{delam}} = \max\left(0, \frac{\alpha_{\mathrm{min}} - \alpha}{\alpha_{\mathrm{min}}}\right)\]</div>
+<ul>
+<li><strong>Pinhole Risk (<span class="arithmatex">\(\alpha &gt; 0.98\)</span>):</strong> </li>
+</ul>
+<div class="arithmatex">\[R_{\mathrm{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\mathrm{max}}}{1 - \alpha_{\mathrm{max}}}\right)\]</div>
+<p>Processing variance ratio <span class="arithmatex">\(V_{\mathrm{ratio}}\)</span> scales execution variability:</p>
+<div class="arithmatex">\[V_{\mathrm{ratio}} = 1.0 + 0.30 R_{\mathrm{delam}} + 0.25 R_{\mathrm{pinhole}}\]</div>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1671,51 +1677,72 @@
 <tr>
 <td>Frequency Factor 1</td>
 <td><span class="arithmatex">\(A_1\)</span></td>
-<td><span class="arithmatex">\(2.4 \times 10^4\)</span></td>
+<td><span class="arithmatex">\(1.2 \times 10^4\)</span></td>
 <td><span class="arithmatex">\(\mathrm{s}^{-1}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Frequency Factor 2</td>
 <td><span class="arithmatex">\(A_2\)</span></td>
-<td><span class="arithmatex">\(1.8 \times 10^7\)</span></td>
+<td><span class="arithmatex">\(5.5 \times 10^6\)</span></td>
 <td><span class="arithmatex">\(\mathrm{s}^{-1}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Activation Energy 1</td>
 <td><span class="arithmatex">\(E_1\)</span></td>
-<td><span class="arithmatex">\(54.2\)</span></td>
+<td><span class="arithmatex">\(58.2\)</span></td>
 <td><span class="arithmatex">\(\mathrm{kJ/mol}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Activation Energy 2</td>
 <td><span class="arithmatex">\(E_2\)</span></td>
-<td><span class="arithmatex">\(46.8\)</span></td>
+<td><span class="arithmatex">\(68.5\)</span></td>
 <td><span class="arithmatex">\(\mathrm{kJ/mol}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Reaction Order <span class="arithmatex">\(m\)</span></td>
 <td><span class="arithmatex">\(m\)</span></td>
-<td><span class="arithmatex">\(0.42\)</span></td>
+<td><span class="arithmatex">\(0.48\)</span></td>
 <td>—</td>
 <td>Experimental Fit</td>
 </tr>
 <tr>
 <td>Reaction Order <span class="arithmatex">\(n\)</span></td>
 <td><span class="arithmatex">\(n\)</span></td>
-<td><span class="arithmatex">\(1.58\)</span></td>
+<td><span class="arithmatex">\(1.52\)</span></td>
 <td>—</td>
 <td>Experimental Fit</td>
 </tr>
 <tr>
-<td>DiBenedetto Parameter</td>
-<td><span class="arithmatex">\(\lambda\)</span></td>
-<td><span class="arithmatex">\(0.45\)</span></td>
+<td>Nominal Press Temp.</td>
+<td><span class="arithmatex">\(T_{\mathrm{press}}\)</span></td>
+<td><span class="arithmatex">\(433.15\)</span> (<span class="arithmatex">\(160^\circ\mathrm{C}\)</span>)</td>
+<td><span class="arithmatex">\(\mathrm{K}\)</span></td>
+<td>Hot-Press Specification</td>
+</tr>
+<tr>
+<td>Nominal Dwell Time</td>
+<td><span class="arithmatex">\(t_{\mathrm{dwell}}\)</span></td>
+<td><span class="arithmatex">\(180.0\)</span></td>
+<td><span class="arithmatex">\(\mathrm{s}\)</span></td>
+<td>Process Recipe</td>
+</tr>
+<tr>
+<td>Min Bonding Cure</td>
+<td><span class="arithmatex">\(\alpha_{\mathrm{min}}\)</span></td>
+<td><span class="arithmatex">\(0.85\)</span></td>
 <td>—</td>
-<td>Material Specs</td>
+<td>Structural Adhesion Limit</td>
+</tr>
+<tr>
+<td>Max Safe Cure</td>
+<td><span class="arithmatex">\(\alpha_{\mathrm{max}}\)</span></td>
+<td><span class="arithmatex">\(0.98\)</span></td>
+<td>—</td>
+<td>Degradation Limit</td>
 </tr>
 </tbody>
 </table>

@@ -738,10 +738,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-slot-die-coating-hydrodynamics-capillary-number" class="md-nav__link">
+  <a href="#1-process-deviations-hydrodynamic-variance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Slot-Die Coating Hydrodynamics &amp; Capillary Number
+        1. Process Deviations &amp; Hydrodynamic Variance
       
     </span>
   </a>
@@ -749,10 +749,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-solvent-evaporation-ecsa-formation" class="md-nav__link">
+  <a href="#2-effective-ecsa-yield-quality-criteria" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Solvent Evaporation &amp; ECSA Formation
+        2. Effective ECSA Yield &amp; Quality Criteria
       
     </span>
   </a>
@@ -1563,10 +1563,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-slot-die-coating-hydrodynamics-capillary-number" class="md-nav__link">
+  <a href="#1-process-deviations-hydrodynamic-variance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Slot-Die Coating Hydrodynamics &amp; Capillary Number
+        1. Process Deviations &amp; Hydrodynamic Variance
       
     </span>
   </a>
@@ -1574,10 +1574,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-solvent-evaporation-ecsa-formation" class="md-nav__link">
+  <a href="#2-effective-ecsa-yield-quality-criteria" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Solvent Evaporation &amp; ECSA Formation
+        2. Effective ECSA Yield &amp; Quality Criteria
       
     </span>
   </a>
@@ -1637,26 +1637,22 @@
 
 
 <h1 id="station-2-catalyst-coating-ecsa-models-reference">Station 2: Catalyst Coating &amp; ECSA Models (Reference)</h1>
-<p>This document details the hydrodynamic coating equations, solvent drying kinetics, and Electro-Chemical Surface Area (ECSA) predictions for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
+<p>This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area (<span class="arithmatex">\(\mathrm{ECSA}\)</span>) yield model for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
-<p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. The process determines catalyst layer thickness uniformity, platinum loading <span class="arithmatex">\(L_{\mathrm{Pt}}\)</span> (<span class="arithmatex">\(\mathrm{mg/cm}^2\)</span>), and initial active surface area <span class="arithmatex">\(\mathrm{ECSA}_0\)</span> (<span class="arithmatex">\(\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}\)</span>).</p>
+<p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed <span class="arithmatex">\(v_{\mathrm{coat}}\)</span> and ink slurry dynamic viscosity <span class="arithmatex">\(\mu_{\mathrm{slurry}}\)</span> alter ink film uniformity, establishing effective catalyst utilization <span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{ratio}}\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
-<h3 id="1-slot-die-coating-hydrodynamics-capillary-number">1. Slot-Die Coating Hydrodynamics &amp; Capillary Number</h3>
-<p>The stable coating window is constrained by the Capillary number <span class="arithmatex">\(Ca\)</span>:</p>
-<div class="arithmatex">\[Ca = \frac{\mu U_{\mathrm{web}}}{\sigma_{\mathrm{ink}}}\]</div>
-<p>where:
-* <strong><span class="arithmatex">\(\mu\)</span></strong> — Dynamic ink viscosity (<span class="arithmatex">\(\mathrm{Pa}\cdot\mathrm{s}\)</span>).
-* <strong><span class="arithmatex">\(U_{\mathrm{web}}\)</span></strong> — Web line speed (<span class="arithmatex">\(\mathrm{m/s}\)</span>).
-* <strong><span class="arithmatex">\(\sigma_{\mathrm{ink}}\)</span></strong> — Liquid-vapor surface tension (<span class="arithmatex">\(\mathrm{N/m}\)</span>).</p>
-<p>Wet film thickness <span class="arithmatex">\(h_{\mathrm{wet}}\)</span> is governed by mass conservation:</p>
-<div class="arithmatex">\[h_{\mathrm{wet}} = \frac{Q_{\mathrm{ink}}}{W_{\mathrm{die}} \cdot U_{\mathrm{web}}}\]</div>
-<h3 id="2-solvent-evaporation-ecsa-formation">2. Solvent Evaporation &amp; ECSA Formation</h3>
-<p>Dry thickness <span class="arithmatex">\(h_{\mathrm{dry}}\)</span> depends on solid volume fraction <span class="arithmatex">\(\phi_s\)</span>:</p>
-<div class="arithmatex">\[h_{\mathrm{dry}} = h_{\mathrm{wet}} \cdot \phi_s\]</div>
-<p>Effective Electro-Chemical Surface Area (<span class="arithmatex">\(\mathrm{ECSA}\)</span>) is modeled as a function of drying rate <span class="arithmatex">\(\dot{E}_{\mathrm{dry}}\)</span> and agglomerate porosity <span class="arithmatex">\(\varepsilon_{\mathrm{agg}}\)</span>:</p>
-<div class="arithmatex">\[\mathrm{ECSA} = \mathrm{ECSA}_{\mathrm{max}} \cdot \left[ 1 - \gamma_{\mathrm{dry}} \cdot \left( \frac{\dot{E}_{\mathrm{dry}}}{\dot{E}_{\mathrm{crit}}} - 1 \right)^2 \right] \cdot \left( \frac{\varepsilon_{\mathrm{agg}}}{\varepsilon_{\mathrm{target}}} \right)^{0.5}\]</div>
+<h3 id="1-process-deviations-hydrodynamic-variance">1. Process Deviations &amp; Hydrodynamic Variance</h3>
+<p>Process parameter deviations relative to nominal setpoints <span class="arithmatex">\(v_0 = 0.15\mathrm{ m/s}\)</span> and <span class="arithmatex">\(\mu_0 = 0.050\mathrm{ Pa}\cdot\mathrm{s}\)</span> are evaluated as:</p>
+<div class="arithmatex">\[v_{\mathrm{dev}} = \frac{|v_{\mathrm{coat}} - v_0|}{v_0}\]</div>
+<div class="arithmatex">\[\mu_{\mathrm{dev}} = \frac{|\mu_{\mathrm{slurry}} - \mu_0|}{\mu_0}\]</div>
+<p>Hydrodynamic catalyst loading variance index <span class="arithmatex">\(\text{loading\_variance}\)</span> combines quadratic and cross-coupling deviations:</p>
+<div class="arithmatex">\[\text{loading\_variance} = 0.35 v_{\mathrm{dev}}^2 + 0.25 \mu_{\mathrm{dev}}^2 + 0.15 v_{\mathrm{dev}} \mu_{\mathrm{dev}}\]</div>
+<h3 id="2-effective-ecsa-yield-quality-criteria">2. Effective ECSA Yield &amp; Quality Criteria</h3>
+<p>Effective catalyst surface area yield <span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{ratio}} \in [0.10, 1.00]\)</span> is computed as:</p>
+<div class="arithmatex">\[\mathrm{ECSA}_{\mathrm{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\mathrm{dev}}\right)\right)\]</div>
+<p>A component is flagged defective if <span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{ratio}} &lt; 0.70\)</span> or <span class="arithmatex">\(\text{loading\_variance} &gt; 0.30\)</span>.</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1671,39 +1667,39 @@
 </thead>
 <tbody>
 <tr>
-<td>Max Pt ECSA</td>
-<td><span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{max}}\)</span></td>
-<td><span class="arithmatex">\(68.5\)</span></td>
-<td><span class="arithmatex">\(\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}\)</span></td>
-<td>Neyerlin et al. (2007)</td>
+<td>Nominal Line Speed</td>
+<td><span class="arithmatex">\(v_0\)</span></td>
+<td><span class="arithmatex">\(0.15\)</span> (<span class="arithmatex">\(15\mathrm{ cm/s}\)</span>)</td>
+<td><span class="arithmatex">\(\mathrm{m/s}\)</span></td>
+<td>Slot-Die Machine Specs</td>
 </tr>
 <tr>
-<td>Target Agglomerate Porosity</td>
-<td><span class="arithmatex">\(\varepsilon_{\mathrm{target}}\)</span></td>
-<td><span class="arithmatex">\(0.48\)</span></td>
-<td>—</td>
-<td>Kleemann et al. (2021)</td>
-</tr>
-<tr>
-<td>Ink Viscosity</td>
-<td><span class="arithmatex">\(\mu\)</span></td>
-<td><span class="arithmatex">\(0.045\)</span></td>
+<td>Nominal Ink Viscosity</td>
+<td><span class="arithmatex">\(\mu_0\)</span></td>
+<td><span class="arithmatex">\(0.050\)</span> (<span class="arithmatex">\(50\mathrm{ cP}\)</span>)</td>
 <td><span class="arithmatex">\(\mathrm{Pa}\cdot\mathrm{s}\)</span></td>
 <td>Rheometer Measurements</td>
 </tr>
 <tr>
 <td>Surface Tension</td>
 <td><span class="arithmatex">\(\sigma_{\mathrm{ink}}\)</span></td>
-<td><span class="arithmatex">\(0.028\)</span></td>
+<td><span class="arithmatex">\(0.035\)</span></td>
 <td><span class="arithmatex">\(\mathrm{N/m}\)</span></td>
 <td>Pendant Drop Method</td>
 </tr>
 <tr>
-<td>Critical Drying Rate</td>
-<td><span class="arithmatex">\(\dot{E}_{\mathrm{crit}}\)</span></td>
-<td><span class="arithmatex">\(1.2 \times 10^{-3}\)</span></td>
-<td><span class="arithmatex">\(\mathrm{kg/m}^2\mathrm{s}\)</span></td>
-<td>Drying Oven Specs</td>
+<td>Min Acceptable ECSA</td>
+<td><span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{min}}\)</span></td>
+<td><span class="arithmatex">\(0.70\)</span></td>
+<td>—</td>
+<td>Quality Threshold</td>
+</tr>
+<tr>
+<td>Nominal Cycle Time</td>
+<td><span class="arithmatex">\(t_{\mathrm{base}}\)</span></td>
+<td><span class="arithmatex">\(12.0\)</span></td>
+<td><span class="arithmatex">\(\mathrm{s}\)</span></td>
+<td>Factory Schedule</td>
 </tr>
 </tbody>
 </table>

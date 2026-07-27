@@ -1295,10 +1295,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#executing-parameter-calibration-scripts" class="md-nav__link">
+  <a href="#executing-parameter-calibration-sanity-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Executing Parameter Calibration Scripts
+        Executing Parameter Calibration &amp; Sanity Checks
       
     </span>
   </a>
@@ -1512,10 +1512,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#executing-parameter-calibration-scripts" class="md-nav__link">
+  <a href="#executing-parameter-calibration-sanity-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Executing Parameter Calibration Scripts
+        Executing Parameter Calibration &amp; Sanity Checks
       
     </span>
   </a>
@@ -1568,20 +1568,27 @@
 </code></pre></div>
 <p>Targeted Station Test Suites:
 * <strong>Station 1 &amp; 2 Mechanistic Tests:</strong> <code>pytest physical_engine/factory_simulation/station_mechanistic_test.py</code>
-* <strong>Station 3 &amp; 4 Calibration Tests:</strong> <code>pytest physical_engine/factory_simulation/quality_bridge_test.py</code>
+* <strong>Station 3 &amp; 4 Quality Bridge Tests:</strong> <code>pytest physical_engine/factory_simulation/quality_bridge_test.py</code>
 * <strong>Station 5 PEMFC Electrochemistry Tests:</strong> <code>pytest physical_engine/factory_simulation/pemfc_test.py</code>
 * <strong>Thermal &amp; Hydration Coupling Tests:</strong> <code>pytest physical_engine/factory_simulation/test_stack_thermal.py</code></p>
 <hr />
-<h2 id="executing-parameter-calibration-scripts">Executing Parameter Calibration Scripts</h2>
-<p>To re-calibrate Station 3 ductile damage parameters (<span class="arithmatex">\(C_{\text{crit,NCL}}\)</span>) and Station 4 clamping pressure torque curves:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python3<span class="w"> </span>physical_engine/scripts/calibrate_stamping_clamping.py
+<h2 id="executing-parameter-calibration-sanity-checks">Executing Parameter Calibration &amp; Sanity Checks</h2>
+<p>To run standalone calibration sanity check functions across physical station JIT kernels:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python3<span class="w"> </span>physical_engine/factory_simulation/station1_mea_preparation.py
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python3<span class="w"> </span>physical_engine/factory_simulation/station2_catalyst_deposition.py
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python3<span class="w"> </span>physical_engine/factory_simulation/station3_bipolar_plate_stamping.py
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>python3<span class="w"> </span>physical_engine/factory_simulation/station4_stack_clamping.py
 </code></pre></div>
-<p>Expected output:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[CalibrationEngine] Fitting Cockcroft-Latham damage integral for SS316L...
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[CalibrationEngine] Optimal C_threshold = 0.4214 (R^2 = 0.994)
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>[CalibrationEngine] Fitting VDI 2230 bolt clamping torque vs contact resistance...
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>[CalibrationEngine] Optimal R_contact_0 = 4.200 mOhm*cm^2
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>[CalibrationEngine] Calibration report saved to analysis/calibration_summary.json
+<p>Expected output (Station 3 Example):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>============================================================
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>STATION 3 STAMPING CALIBRATION SANITY CHECKS
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>============================================================
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>[PASSOU] stage1_nominal_nao_defeituoso
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>          damage_index: 0.8636844400249464
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>          esperado: damage_index &lt; 1.0 (~0.863), is_defective=False
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>[PASSOU] stage1_taxa_defeito_proxima_do_alvo_real_S3
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>          taxa_empirica: 0.180%
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>          alvo: 0.20%
 </code></pre></div></p>
 <hr />
 <h2 id="java-mas-integration-verification">Java MAS Integration Verification</h2>
