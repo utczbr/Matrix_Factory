@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -22,6 +24,11 @@ jobs:
       - name: Install dependencies
         run: |
           pip install mkdocs-material pymdown-extensions
+
+      - name: Configure Git User
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Build and Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
