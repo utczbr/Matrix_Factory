@@ -16,29 +16,29 @@ Station 1 models the thermal curing of thermosetting resin frames encapsulating 
 
 The rate of cure conversion $\alpha$ over time is expressed as:
 
-$$\frac{\mathrm{d}\alpha}{\mathrm{d}t} = \left( k_1 + k_2 \alpha^m \right) (1 - \alpha)^n$$
+$$\frac{d\alpha}{dt} = (k_1 + k_2 \alpha^m) (1 - \alpha)^n$$
 
-where Arrhenius reaction rate constants $k_1$ and $k_2$ at hot-press temperature $T_{\mathrm{press}}$ ($\mathrm{K}$) are defined by:
+where Arrhenius reaction rate constants $k_1$ and $k_2$ at hot-press temperature $T_{\text{press}}$ ($\text{K}$) are defined by:
 
-$$k_1(T) = A_1 \exp\left( -\frac{E_1}{R T_{\mathrm{press}}} \right)$$
+$$k_1(T) = A_1 \exp\left(-\frac{E_1}{R T_{\text{press}}}\right)$$
 
-$$k_2(T) = A_2 \exp\left( -\frac{E_2}{R T_{\mathrm{press}}} \right)$$
+$$k_2(T) = A_2 \exp\left(-\frac{E_2}{R T_{\text{press}}}\right)$$
 
 ### 2. Defect Risk Functions & Execution Pacing
 
-Degree of cure $\alpha$ is integrated via 4th-order Runge–Kutta (RK4) over dwell time $t_{\mathrm{dwell}}$:
+Degree of cure $\alpha$ is integrated via 4th-order Runge–Kutta (RK4) over dwell time $t_{\text{dwell}}$:
 
-* **Delamination Risk ($\alpha < 0.85$):** 
+* **Delamination Risk ($\alpha < 0.85$):**
 
-$$R_{\mathrm{delam}} = \max\left(0, \frac{\alpha_{\mathrm{min}} - \alpha}{\alpha_{\mathrm{min}}}\right)$$
+$$R_{\text{delam}} = \max\left(0, \frac{\alpha_{\text{min}} - \alpha}{\alpha_{\text{min}}}\right)$$
 
-* **Pinhole Risk ($\alpha > 0.98$):** 
+* **Pinhole Risk ($\alpha > 0.98$):**
 
-$$R_{\mathrm{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\mathrm{max}}}{1 - \alpha_{\mathrm{max}}}\right)$$
+$$R_{\text{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\text{max}}}{1 - \alpha_{\text{max}}}\right)$$
 
-Processing variance ratio $V_{\mathrm{ratio}}$ scales execution variability:
+Processing variance ratio $V_{\text{ratio}}$ scales execution variability:
 
-$$V_{\mathrm{ratio}} = 1.0 + 0.30 R_{\mathrm{delam}} + 0.25 R_{\mathrm{pinhole}}$$
+$$V_{\text{ratio}} = 1.0 + 0.30 R_{\text{delam}} + 0.25 R_{\text{pinhole}}$$
 
 ---
 
@@ -46,16 +46,16 @@ $$V_{\mathrm{ratio}} = 1.0 + 0.30 R_{\mathrm{delam}} + 0.25 R_{\mathrm{pinhole}}
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Frequency Factor 1 | $A_1$ | $1.2 \times 10^4$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
-| Frequency Factor 2 | $A_2$ | $5.5 \times 10^6$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
-| Activation Energy 1 | $E_1$ | $58.2$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
-| Activation Energy 2 | $E_2$ | $68.5$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
+| Frequency Factor 1 | $A_1$ | $1.2 \times 10^4$ | $\text{s}^{-1}$ | Fernandes et al. (2018) |
+| Frequency Factor 2 | $A_2$ | $5.5 \times 10^6$ | $\text{s}^{-1}$ | Fernandes et al. (2018) |
+| Activation Energy 1 | $E_1$ | $58.2$ | $\text{kJ/mol}$ | Fernandes et al. (2018) |
+| Activation Energy 2 | $E_2$ | $68.5$ | $\text{kJ/mol}$ | Fernandes et al. (2018) |
 | Reaction Order $m$ | $m$ | $0.48$ | — | Experimental Fit |
 | Reaction Order $n$ | $n$ | $1.52$ | — | Experimental Fit |
-| Nominal Press Temp. | $T_{\mathrm{press}}$ | $433.15$ ($160^\circ\mathrm{C}$) | $\mathrm{K}$ | Hot-Press Specification |
-| Nominal Dwell Time | $t_{\mathrm{dwell}}$ | $180.0$ | $\mathrm{s}$ | Process Recipe |
-| Min Bonding Cure | $\alpha_{\mathrm{min}}$ | $0.85$ | — | Structural Adhesion Limit |
-| Max Safe Cure | $\alpha_{\mathrm{max}}$ | $0.98$ | — | Degradation Limit |
+| Nominal Press Temp. | $T_{\text{press}}$ | $433.15$ ($160^\circ\text{C}$) | $\text{K}$ | Hot-Press Specification |
+| Nominal Dwell Time | $t_{\text{dwell}}$ | $180.0$ | $\text{s}$ | Process Recipe |
+| Min Bonding Cure | $\alpha_{\text{min}}$ | $0.85$ | — | Structural Adhesion Limit |
+| Max Safe Cure | $\alpha_{\text{max}}$ | $0.98$ | — | Degradation Limit |
 
 ---
 

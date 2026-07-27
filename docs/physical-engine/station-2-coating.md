@@ -1,12 +1,12 @@
 # Station 2: Catalyst Coating & ECSA Models (Reference)
 
-This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area ($\mathrm{ECSA}$) yield model for **Station 2: Catalyst Layer Deposition**.
+This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area ($\text{ECSA}$) yield model for **Station 2: Catalyst Layer Deposition**.
 
 ---
 
 ## Physical Process Description
 
-Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed $v_{\mathrm{coat}}$ and ink slurry dynamic viscosity $\mu_{\mathrm{slurry}}$ alter ink film uniformity, establishing effective catalyst utilization $\mathrm{ECSA}_{\mathrm{ratio}}$.
+Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed $v_{\text{coat}}$ and ink slurry dynamic viscosity $\mu_{\text{slurry}}$ alter ink film uniformity, establishing effective catalyst utilization $\text{ECSA}_{\text{ratio}}$.
 
 ---
 
@@ -14,23 +14,23 @@ Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto po
 
 ### 1. Process Deviations & Hydrodynamic Variance
 
-Process parameter deviations relative to nominal setpoints $v_0 = 0.15\mathrm{ m/s}$ and $\mu_0 = 0.050\mathrm{ Pa}\cdot\mathrm{s}$ are evaluated as:
+Process parameter deviations relative to nominal setpoints $v_0 = 0.15\text{ m/s}$ and $\mu_0 = 0.050\text{ Pa}\cdot\text{s}$ are evaluated as:
 
-$$v_{\mathrm{dev}} = \frac{|v_{\mathrm{coat}} - v_0|}{v_0}$$
+$$v_{\text{dev}} = \frac{|v_{\text{coat}} - v_0|}{v_0}$$
 
-$$\mu_{\mathrm{dev}} = \frac{|\mu_{\mathrm{slurry}} - \mu_0|}{\mu_0}$$
+$$\mu_{\text{dev}} = \frac{|\mu_{\text{slurry}} - \mu_0|}{\mu_0}$$
 
 Hydrodynamic catalyst loading variance index $\text{loading\_variance}$ combines quadratic and cross-coupling deviations:
 
-$$\text{loading\_variance} = 0.35 v_{\mathrm{dev}}^2 + 0.25 \mu_{\mathrm{dev}}^2 + 0.15 v_{\mathrm{dev}} \mu_{\mathrm{dev}}$$
+$$\text{loading\_variance} = 0.35 v_{\text{dev}}^2 + 0.25 \mu_{\text{dev}}^2 + 0.15 v_{\text{dev}} \mu_{\text{dev}}$$
 
 ### 2. Effective ECSA Yield & Quality Criteria
 
-Effective catalyst surface area yield $\mathrm{ECSA}_{\mathrm{ratio}} \in [0.10, 1.00]$ is computed as:
+Effective catalyst surface area yield $\text{ECSA}_{\text{ratio}} \in [0.10, 1.00]$ is computed as:
 
-$$\mathrm{ECSA}_{\mathrm{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\mathrm{dev}}\right)\right)$$
+$$\text{ECSA}_{\text{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\text{dev}}\right)\right)$$
 
-A component is flagged defective if $\mathrm{ECSA}_{\mathrm{ratio}} < 0.70$ or $\text{loading\_variance} > 0.30$.
+A component is flagged defective if $\text{ECSA}_{\text{ratio}} < 0.70$ or $\text{loading\_variance} > 0.30$.
 
 ---
 
@@ -38,11 +38,11 @@ A component is flagged defective if $\mathrm{ECSA}_{\mathrm{ratio}} < 0.70$ or $
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Nominal Line Speed | $v_0$ | $0.15$ ($15\mathrm{ cm/s}$) | $\mathrm{m/s}$ | Slot-Die Machine Specs |
-| Nominal Ink Viscosity | $\mu_0$ | $0.050$ ($50\mathrm{ cP}$) | $\mathrm{Pa}\cdot\mathrm{s}$ | Rheometer Measurements |
-| Surface Tension | $\sigma_{\mathrm{ink}}$ | $0.035$ | $\mathrm{N/m}$ | Pendant Drop Method |
-| Min Acceptable ECSA | $\mathrm{ECSA}_{\mathrm{min}}$ | $0.70$ | — | Quality Threshold |
-| Nominal Cycle Time | $t_{\mathrm{base}}$ | $12.0$ | $\mathrm{s}$ | Factory Schedule |
+| Nominal Line Speed | $v_0$ | $0.15$ ($15\text{ cm/s}$) | $\text{m/s}$ | Slot-Die Machine Specs |
+| Nominal Ink Viscosity | $\mu_0$ | $0.050$ ($50\text{ cP}$) | $\text{Pa}\cdot\text{s}$ | Rheometer Measurements |
+| Surface Tension | $\sigma_{\text{ink}}$ | $0.035$ | $\text{N/m}$ | Pendant Drop Method |
+| Min Acceptable ECSA | $\text{ECSA}_{\text{min}}$ | $0.70$ | — | Quality Threshold |
+| Nominal Cycle Time | $t_{\text{base}}$ | $12.0$ | $\text{s}$ | Factory Schedule |
 
 ---
 

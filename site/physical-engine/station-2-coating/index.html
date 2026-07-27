@@ -1637,22 +1637,22 @@
 
 
 <h1 id="station-2-catalyst-coating-ecsa-models-reference">Station 2: Catalyst Coating &amp; ECSA Models (Reference)</h1>
-<p>This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area (<span class="arithmatex">\(\mathrm{ECSA}\)</span>) yield model for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
+<p>This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area (<span class="arithmatex">\(\text{ECSA}\)</span>) yield model for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
-<p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed <span class="arithmatex">\(v_{\mathrm{coat}}\)</span> and ink slurry dynamic viscosity <span class="arithmatex">\(\mu_{\mathrm{slurry}}\)</span> alter ink film uniformity, establishing effective catalyst utilization <span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{ratio}}\)</span>.</p>
+<p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed <span class="arithmatex">\(v_{\text{coat}}\)</span> and ink slurry dynamic viscosity <span class="arithmatex">\(\mu_{\text{slurry}}\)</span> alter ink film uniformity, establishing effective catalyst utilization <span class="arithmatex">\(\text{ECSA}_{\text{ratio}}\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-process-deviations-hydrodynamic-variance">1. Process Deviations &amp; Hydrodynamic Variance</h3>
-<p>Process parameter deviations relative to nominal setpoints <span class="arithmatex">\(v_0 = 0.15\mathrm{ m/s}\)</span> and <span class="arithmatex">\(\mu_0 = 0.050\mathrm{ Pa}\cdot\mathrm{s}\)</span> are evaluated as:</p>
-<div class="arithmatex">\[v_{\mathrm{dev}} = \frac{|v_{\mathrm{coat}} - v_0|}{v_0}\]</div>
-<div class="arithmatex">\[\mu_{\mathrm{dev}} = \frac{|\mu_{\mathrm{slurry}} - \mu_0|}{\mu_0}\]</div>
+<p>Process parameter deviations relative to nominal setpoints <span class="arithmatex">\(v_0 = 0.15\text{ m/s}\)</span> and <span class="arithmatex">\(\mu_0 = 0.050\text{ Pa}\cdot\text{s}\)</span> are evaluated as:</p>
+<div class="arithmatex">\[v_{\text{dev}} = \frac{|v_{\text{coat}} - v_0|}{v_0}\]</div>
+<div class="arithmatex">\[\mu_{\text{dev}} = \frac{|\mu_{\text{slurry}} - \mu_0|}{\mu_0}\]</div>
 <p>Hydrodynamic catalyst loading variance index <span class="arithmatex">\(\text{loading\_variance}\)</span> combines quadratic and cross-coupling deviations:</p>
-<div class="arithmatex">\[\text{loading\_variance} = 0.35 v_{\mathrm{dev}}^2 + 0.25 \mu_{\mathrm{dev}}^2 + 0.15 v_{\mathrm{dev}} \mu_{\mathrm{dev}}\]</div>
+<div class="arithmatex">\[\text{loading\_variance} = 0.35 v_{\text{dev}}^2 + 0.25 \mu_{\text{dev}}^2 + 0.15 v_{\text{dev}} \mu_{\text{dev}}\]</div>
 <h3 id="2-effective-ecsa-yield-quality-criteria">2. Effective ECSA Yield &amp; Quality Criteria</h3>
-<p>Effective catalyst surface area yield <span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{ratio}} \in [0.10, 1.00]\)</span> is computed as:</p>
-<div class="arithmatex">\[\mathrm{ECSA}_{\mathrm{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\mathrm{dev}}\right)\right)\]</div>
-<p>A component is flagged defective if <span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{ratio}} &lt; 0.70\)</span> or <span class="arithmatex">\(\text{loading\_variance} &gt; 0.30\)</span>.</p>
+<p>Effective catalyst surface area yield <span class="arithmatex">\(\text{ECSA}_{\text{ratio}} \in [0.10, 1.00]\)</span> is computed as:</p>
+<div class="arithmatex">\[\text{ECSA}_{\text{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\text{dev}}\right)\right)\]</div>
+<p>A component is flagged defective if <span class="arithmatex">\(\text{ECSA}_{\text{ratio}} &lt; 0.70\)</span> or <span class="arithmatex">\(\text{loading\_variance} &gt; 0.30\)</span>.</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1669,36 +1669,36 @@
 <tr>
 <td>Nominal Line Speed</td>
 <td><span class="arithmatex">\(v_0\)</span></td>
-<td><span class="arithmatex">\(0.15\)</span> (<span class="arithmatex">\(15\mathrm{ cm/s}\)</span>)</td>
-<td><span class="arithmatex">\(\mathrm{m/s}\)</span></td>
+<td><span class="arithmatex">\(0.15\)</span> (<span class="arithmatex">\(15\text{ cm/s}\)</span>)</td>
+<td><span class="arithmatex">\(\text{m/s}\)</span></td>
 <td>Slot-Die Machine Specs</td>
 </tr>
 <tr>
 <td>Nominal Ink Viscosity</td>
 <td><span class="arithmatex">\(\mu_0\)</span></td>
-<td><span class="arithmatex">\(0.050\)</span> (<span class="arithmatex">\(50\mathrm{ cP}\)</span>)</td>
-<td><span class="arithmatex">\(\mathrm{Pa}\cdot\mathrm{s}\)</span></td>
+<td><span class="arithmatex">\(0.050\)</span> (<span class="arithmatex">\(50\text{ cP}\)</span>)</td>
+<td><span class="arithmatex">\(\text{Pa}\cdot\text{s}\)</span></td>
 <td>Rheometer Measurements</td>
 </tr>
 <tr>
 <td>Surface Tension</td>
-<td><span class="arithmatex">\(\sigma_{\mathrm{ink}}\)</span></td>
+<td><span class="arithmatex">\(\sigma_{\text{ink}}\)</span></td>
 <td><span class="arithmatex">\(0.035\)</span></td>
-<td><span class="arithmatex">\(\mathrm{N/m}\)</span></td>
+<td><span class="arithmatex">\(\text{N/m}\)</span></td>
 <td>Pendant Drop Method</td>
 </tr>
 <tr>
 <td>Min Acceptable ECSA</td>
-<td><span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{min}}\)</span></td>
+<td><span class="arithmatex">\(\text{ECSA}_{\text{min}}\)</span></td>
 <td><span class="arithmatex">\(0.70\)</span></td>
 <td>—</td>
 <td>Quality Threshold</td>
 </tr>
 <tr>
 <td>Nominal Cycle Time</td>
-<td><span class="arithmatex">\(t_{\mathrm{base}}\)</span></td>
+<td><span class="arithmatex">\(t_{\text{base}}\)</span></td>
 <td><span class="arithmatex">\(12.0\)</span></td>
-<td><span class="arithmatex">\(\mathrm{s}\)</span></td>
+<td><span class="arithmatex">\(\text{s}\)</span></td>
 <td>Factory Schedule</td>
 </tr>
 </tbody>
