@@ -80,4 +80,4 @@ export GRPC_CLIENT_KEY=certs/client-key.pem
 ```
 
 Verification test suite:
-* Test Script: [`physical_engine/factory_simulation/test_grpc_security.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/test_grpc_security.py)
+* Test Script: [`physical_engine/factory_simulation/test_grpc_security.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/test_grpc_security.py)

@@ -1613,19 +1613,19 @@
     RH1--&gt;&gt;OH: Inform-Done(Quality_Metrics, Energy_Consumed)</code></pre>
 <hr />
 <h2 id="bidding-utility-function">Bidding Utility Function</h2>
-<p>When receiving a Call for Proposals (CFP), a Resource Holon evaluates its bid cost <span class="arithmatex">\(B_{\text{res}}\)</span> using:</p>
-<div class="arithmatex">\[B_{\text{res}} = w_e \cdot E_{\text{est}} \cdot P_{\text{grid}} + w_w \cdot D_{\text{wear}} + w_q \cdot (1 - Q_{\text{historical}})\]</div>
+<p>When receiving a Call for Proposals (CFP), a Resource Holon evaluates its bid cost <span class="arithmatex">\(B_{\mathrm{res}}\)</span> using:</p>
+<div class="arithmatex">\[B_{\mathrm{res}} = w_e \cdot E_{\mathrm{est}} \cdot P_{\mathrm{grid}} + w_w \cdot D_{\mathrm{wear}} + w_q \cdot (1 - Q_{\mathrm{historical}})\]</div>
 <p>where:
-* <span class="arithmatex">\(E_{\text{est}}\)</span> is estimated energy consumption (<span class="arithmatex">\(\text{kWh}\)</span>).
-* <span class="arithmatex">\(P_{\text{grid}}\)</span> is current spot market energy price (<span class="arithmatex">\(\$/\text{kWh}\)</span>).
-* <span class="arithmatex">\(D_{\text{wear}}\)</span> is incremental tool wear or fracture risk (e.g., Archard wear or <span class="arithmatex">\(C_{\text{crit,NCL}}\)</span> from Station 3).
-* <span class="arithmatex">\(Q_{\text{historical}}\)</span> is historical station quality metric yield <span class="arithmatex">\(\in [0, 1]\)</span>.
+* <span class="arithmatex">\(E_{\mathrm{est}}\)</span> is estimated energy consumption (<span class="arithmatex">\(\mathrm{kWh}\)</span>).
+* <span class="arithmatex">\(P_{\mathrm{grid}}\)</span> is current spot market energy price (<span class="arithmatex">\(\$/\mathrm{kWh}\)</span>).
+* <span class="arithmatex">\(D_{\mathrm{wear}}\)</span> is incremental tool wear or fracture risk (e.g., Archard wear or <span class="arithmatex">\(C_{\mathrm{crit,NCL}}\)</span> from Station 3).
+* <span class="arithmatex">\(Q_{\mathrm{historical}}\)</span> is historical station quality metric yield <span class="arithmatex">\(\in [0, 1]\)</span>.
 * <span class="arithmatex">\(w_e, w_w, w_q\)</span> are weighting coefficients dynamically adjusted based on control topology (PROSA vs. ADACOR).</p>
 <hr />
 <h2 id="code-reference">Code Reference</h2>
 <ul>
-<li>Order Holon: <a href="file:///home/stuart/Documentos/matrix_factory_twin/src/agt/order_holon.asl"><code>src/agt/order_holon.asl</code></a></li>
-<li>Resource Holon: <a href="file:///home/stuart/Documentos/matrix_factory_twin/src/agt/resource_holon.asl"><code>src/agt/resource_holon.asl</code></a></li>
+<li>Order Holon: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/order_holon.asl"><code>src/agt/order_holon.asl</code></a></li>
+<li>Resource Holon: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/resource_holon.asl"><code>src/agt/resource_holon.asl</code></a></li>
 </ul>
 
 

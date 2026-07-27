@@ -71,5 +71,5 @@ message HealthResponse {
 
 ## Code Reference
 
-* Python Protobuf Bridge: [`physical_engine/sim_bridge_server.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/sim_bridge_server.py)
-* Proto Index Helper: [`physical_engine/proto_index.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/proto_index.py)
+* Python Protobuf Bridge: [`physical_engine/sim_bridge_server.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/sim_bridge_server.py)
+* Proto Index Helper: [`physical_engine/proto_index.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/proto_index.py)

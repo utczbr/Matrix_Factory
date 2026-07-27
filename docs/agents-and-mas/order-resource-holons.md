@@ -41,20 +41,20 @@ sequenceDiagram
 
 ## Bidding Utility Function
 
-When receiving a Call for Proposals (CFP), a Resource Holon evaluates its bid cost $B_{\text{res}}$ using:
+When receiving a Call for Proposals (CFP), a Resource Holon evaluates its bid cost $B_{\mathrm{res}}$ using:
 
-$$B_{\text{res}} = w_e \cdot E_{\text{est}} \cdot P_{\text{grid}} + w_w \cdot D_{\text{wear}} + w_q \cdot (1 - Q_{\text{historical}})$$
+$$B_{\mathrm{res}} = w_e \cdot E_{\mathrm{est}} \cdot P_{\mathrm{grid}} + w_w \cdot D_{\mathrm{wear}} + w_q \cdot (1 - Q_{\mathrm{historical}})$$
 
 where:
-* $E_{\text{est}}$ is estimated energy consumption ($\text{kWh}$).
-* $P_{\text{grid}}$ is current spot market energy price ($\$/\text{kWh}$).
-* $D_{\text{wear}}$ is incremental tool wear or fracture risk (e.g., Archard wear or $C_{\text{crit,NCL}}$ from Station 3).
-* $Q_{\text{historical}}$ is historical station quality metric yield $\in [0, 1]$.
+* $E_{\mathrm{est}}$ is estimated energy consumption ($\mathrm{kWh}$).
+* $P_{\mathrm{grid}}$ is current spot market energy price ($\$/\mathrm{kWh}$).
+* $D_{\mathrm{wear}}$ is incremental tool wear or fracture risk (e.g., Archard wear or $C_{\mathrm{crit,NCL}}$ from Station 3).
+* $Q_{\mathrm{historical}}$ is historical station quality metric yield $\in [0, 1]$.
 * $w_e, w_w, w_q$ are weighting coefficients dynamically adjusted based on control topology (PROSA vs. ADACOR).
 
 ---
 
 ## Code Reference
 
-* Order Holon: [`src/agt/order_holon.asl`](file:///home/stuart/Documentos/matrix_factory_twin/src/agt/order_holon.asl)
-* Resource Holon: [`src/agt/resource_holon.asl`](file:///home/stuart/Documentos/matrix_factory_twin/src/agt/resource_holon.asl)
+* Order Holon: [`src/agt/order_holon.asl`](https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/order_holon.asl)
+* Resource Holon: [`src/agt/resource_holon.asl`](https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/resource_holon.asl)

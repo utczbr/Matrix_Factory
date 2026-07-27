@@ -1599,17 +1599,17 @@
     CHARGING --&gt; IDLE : SoC &gt; 90%</code></pre>
 <hr />
 <h2 id="battery-state-of-charge-soc-derating-model">Battery State of Charge (SoC) Derating Model</h2>
-<p>Battery depletion during transport depends on payload mass <span class="arithmatex">\(m_{\text{load}}\)</span> (<span class="arithmatex">\(\text{kg}\)</span>) and travel distance <span class="arithmatex">\(d\)</span> (<span class="arithmatex">\(\text{m}\)</span>):</p>
-<div class="arithmatex">\[\text{SoC}_{t+1} = \text{SoC}_t - \frac{\left( P_{\text{idle}} + \mu_{\text{roll}} (m_{\text{robot}} + m_{\text{load}}) g v_{\text{amr}} \right) \cdot \Delta t}{E_{\text{battery,max}}}\]</div>
+<p>Battery depletion during transport depends on payload mass <span class="arithmatex">\(m_{\mathrm{load}}\)</span> (<span class="arithmatex">\(\mathrm{kg}\)</span>) and travel distance <span class="arithmatex">\(d\)</span> (<span class="arithmatex">\(\mathrm{m}\)</span>):</p>
+<div class="arithmatex">\[\mathrm{SoC}_{t+1} = \mathrm{SoC}_t - \frac{\left( P_{\mathrm{idle}} + \mu_{\mathrm{roll}} (m_{\mathrm{robot}} + m_{\mathrm{load}}) g v_{\mathrm{amr}} \right) \cdot \Delta t}{E_{\mathrm{battery,max}}}\]</div>
 <p>where:
-* <span class="arithmatex">\(m_{\text{robot}} = 120\text{ kg}\)</span>.
-* <span class="arithmatex">\(v_{\text{amr}} = 1.5\text{ m/s}\)</span>.
-* <span class="arithmatex">\(\mu_{\text{roll}} = 0.015\)</span> (rubber wheel on industrial epoxy floor).
-* <span class="arithmatex">\(E_{\text{battery,max}} = 1.20\text{ kWh}\)</span>.</p>
+* <span class="arithmatex">\(m_{\mathrm{robot}} = 120\mathrm{kg}\)</span>.
+* <span class="arithmatex">\(v_{\mathrm{amr}} = 1.5\mathrm{m/s}\)</span>.
+* <span class="arithmatex">\(\mu_{\mathrm{roll}} = 0.015\)</span> (rubber wheel on industrial epoxy floor).
+* <span class="arithmatex">\(E_{\mathrm{battery,max}} = 1.20\mathrm{kWh}\)</span>.</p>
 <hr />
 <h2 id="code-reference">Code Reference</h2>
 <ul>
-<li>Agent Source File: <a href="file:///home/stuart/Documentos/matrix_factory_twin/src/agt/amr_agent.asl"><code>src/agt/amr_agent.asl</code></a></li>
+<li>Agent Source File: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/amr_agent.asl"><code>src/agt/amr_agent.asl</code></a></li>
 </ul>
 
 

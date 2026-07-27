@@ -53,4 +53,4 @@ $$\mathrm{ECSA} = \mathrm{ECSA}_{\mathrm{max}} \cdot \left[ 1 - \gamma_{\mathrm{
 
 ## Code Reference
 
-* Python Kernel: [`physical_engine/factory_simulation/station2_catalyst_deposition.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/station2_catalyst_deposition.py)
+* Python Kernel: [`physical_engine/factory_simulation/station2_catalyst_deposition.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/station2_catalyst_deposition.py)

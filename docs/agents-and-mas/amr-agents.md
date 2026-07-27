@@ -29,18 +29,18 @@ stateDiagram-v2
 
 ## Battery State of Charge (SoC) Derating Model
 
-Battery depletion during transport depends on payload mass $m_{\text{load}}$ ($\text{kg}$) and travel distance $d$ ($\text{m}$):
+Battery depletion during transport depends on payload mass $m_{\mathrm{load}}$ ($\mathrm{kg}$) and travel distance $d$ ($\mathrm{m}$):
 
-$$\text{SoC}_{t+1} = \text{SoC}_t - \frac{\left( P_{\text{idle}} + \mu_{\text{roll}} (m_{\text{robot}} + m_{\text{load}}) g v_{\text{amr}} \right) \cdot \Delta t}{E_{\text{battery,max}}}$$
+$$\mathrm{SoC}_{t+1} = \mathrm{SoC}_t - \frac{\left( P_{\mathrm{idle}} + \mu_{\mathrm{roll}} (m_{\mathrm{robot}} + m_{\mathrm{load}}) g v_{\mathrm{amr}} \right) \cdot \Delta t}{E_{\mathrm{battery,max}}}$$
 
 where:
-* $m_{\text{robot}} = 120\text{ kg}$.
-* $v_{\text{amr}} = 1.5\text{ m/s}$.
-* $\mu_{\text{roll}} = 0.015$ (rubber wheel on industrial epoxy floor).
-* $E_{\text{battery,max}} = 1.20\text{ kWh}$.
+* $m_{\mathrm{robot}} = 120\mathrm{kg}$.
+* $v_{\mathrm{amr}} = 1.5\mathrm{m/s}$.
+* $\mu_{\mathrm{roll}} = 0.015$ (rubber wheel on industrial epoxy floor).
+* $E_{\mathrm{battery,max}} = 1.20\mathrm{kWh}$.
 
 ---
 
 ## Code Reference
 
-* Agent Source File: [`src/agt/amr_agent.asl`](file:///home/stuart/Documentos/matrix_factory_twin/src/agt/amr_agent.asl)
+* Agent Source File: [`src/agt/amr_agent.asl`](https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/amr_agent.asl)

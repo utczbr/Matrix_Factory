@@ -67,5 +67,5 @@ $$j_{\mathrm{lim}} = j_{\mathrm{lim},0} \cdot \left( \frac{\varepsilon_{\mathrm{
 
 ## Code Reference
 
-* Main Model: [`physical_engine/factory_simulation/pemfc_model.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/pemfc_model.py)
-* Test Suite: [`physical_engine/factory_simulation/pemfc_test.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/pemfc_test.py)
+* Main Model: [`physical_engine/factory_simulation/pemfc_model.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/pemfc_model.py)
+* Test Suite: [`physical_engine/factory_simulation/pemfc_test.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/pemfc_test.py)

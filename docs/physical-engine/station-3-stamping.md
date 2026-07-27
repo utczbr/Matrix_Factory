@@ -53,5 +53,5 @@ where:
 
 ## Code Reference
 
-* Python Kernel: [`physical_engine/factory_simulation/station3_bipolar_plate_stamping.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/station3_bipolar_plate_stamping.py)
-* Calibration Script: [`physical_engine/scripts/calibrate_stamping_clamping.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/scripts/calibrate_stamping_clamping.py)
+* Python Kernel: [`physical_engine/factory_simulation/station3_bipolar_plate_stamping.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/station3_bipolar_plate_stamping.py)
+* Calibration Script: [`physical_engine/scripts/calibrate_stamping_clamping.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/scripts/calibrate_stamping_clamping.py)

@@ -55,4 +55,4 @@ $$D_{\mathrm{eff}} = D_0 \cdot \left( \varepsilon_{\mathrm{gdl}}(P_{\mathrm{clam
 
 ## Code Reference
 
-* Python Kernel: [`physical_engine/factory_simulation/station4_stack_clamping.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/station4_stack_clamping.py)
+* Python Kernel: [`physical_engine/factory_simulation/station4_stack_clamping.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/station4_stack_clamping.py)

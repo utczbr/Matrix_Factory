@@ -66,4 +66,4 @@ adacor_mode_active    :- control_mode("adacor").
 
 ## Code Reference
 
-* Agent Source File: [`src/agt/supervisor_agent.asl`](file:///home/stuart/Documentos/matrix_factory_twin/src/agt/supervisor_agent.asl)
+* Agent Source File: [`src/agt/supervisor_agent.asl`](https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/supervisor_agent.asl)

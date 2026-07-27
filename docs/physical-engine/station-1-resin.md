@@ -54,4 +54,4 @@ $$\frac{\mathrm{d}\alpha}{\mathrm{d}t}\Bigg|_{\text{effective}} = \frac{\mathrm{
 
 ## Code Reference
 
-* Python Kernel: [`physical_engine/factory_simulation/station1_mea_preparation.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/station1_mea_preparation.py)
+* Python Kernel: [`physical_engine/factory_simulation/station1_mea_preparation.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/station1_mea_preparation.py)
