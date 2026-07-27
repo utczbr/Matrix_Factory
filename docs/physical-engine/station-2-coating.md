@@ -1,41 +1,36 @@
 # Station 2: Catalyst Coating & ECSA Models (Reference)
 
-This document details the hydrodynamic coating equations, solvent drying kinetics, and Electro-Chemical Surface Area (ECSA) predictions for **Station 2: Catalyst Layer Deposition**.
+This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area ($\mathrm{ECSA}$) yield model for **Station 2: Catalyst Layer Deposition**.
 
 ---
 
 ## Physical Process Description
 
-Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. The process determines catalyst layer thickness uniformity, platinum loading $L_{\mathrm{Pt}}$ ($\mathrm{mg/cm}^2$), and initial active surface area $\mathrm{ECSA}_0$ ($\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}$).
+Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed $v_{\mathrm{coat}}$ and ink slurry dynamic viscosity $\mu_{\mathrm{slurry}}$ alter ink film uniformity, establishing effective catalyst utilization $\mathrm{ECSA}_{\mathrm{ratio}}$.
 
 ---
 
 ## Mathematical Formulation
 
-### 1. Slot-Die Coating Hydrodynamics & Capillary Number
+### 1. Process Deviations & Hydrodynamic Variance
 
-The stable coating window is constrained by the Capillary number $Ca$:
+Process parameter deviations relative to nominal setpoints $v_0 = 0.15\mathrm{ m/s}$ and $\mu_0 = 0.050\mathrm{ Pa}\cdot\mathrm{s}$ are evaluated as:
 
-$$Ca = \frac{\mu U_{\mathrm{web}}}{\sigma_{\mathrm{ink}}}$$
+$$v_{\mathrm{dev}} = \frac{|v_{\mathrm{coat}} - v_0|}{v_0}$$
 
-where:
-* **$\mu$** — Dynamic ink viscosity ($\mathrm{Pa}\cdot\mathrm{s}$).
-* **$U_{\mathrm{web}}$** — Web line speed ($\mathrm{m/s}$).
-* **$\sigma_{\mathrm{ink}}$** — Liquid-vapor surface tension ($\mathrm{N/m}$).
+$$\mu_{\mathrm{dev}} = \frac{|\mu_{\mathrm{slurry}} - \mu_0|}{\mu_0}$$
 
-Wet film thickness $h_{\mathrm{wet}}$ is governed by mass conservation:
+Hydrodynamic catalyst loading variance index $\text{loading\_variance}$ combines quadratic and cross-coupling deviations:
 
-$$h_{\mathrm{wet}} = \frac{Q_{\mathrm{ink}}}{W_{\mathrm{die}} \cdot U_{\mathrm{web}}}$$
+$$\text{loading\_variance} = 0.35 v_{\mathrm{dev}}^2 + 0.25 \mu_{\mathrm{dev}}^2 + 0.15 v_{\mathrm{dev}} \mu_{\mathrm{dev}}$$
 
-### 2. Solvent Evaporation & ECSA Formation
+### 2. Effective ECSA Yield & Quality Criteria
 
-Dry thickness $h_{\mathrm{dry}}$ depends on solid volume fraction $\phi_s$:
+Effective catalyst surface area yield $\mathrm{ECSA}_{\mathrm{ratio}} \in [0.10, 1.00]$ is computed as:
 
-$$h_{\mathrm{dry}} = h_{\mathrm{wet}} \cdot \phi_s$$
+$$\mathrm{ECSA}_{\mathrm{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\mathrm{dev}}\right)\right)$$
 
-Effective Electro-Chemical Surface Area ($\mathrm{ECSA}$) is modeled as a function of drying rate $\dot{E}_{\mathrm{dry}}$ and agglomerate porosity $\varepsilon_{\mathrm{agg}}$:
-
-$$\mathrm{ECSA} = \mathrm{ECSA}_{\mathrm{max}} \cdot \left[ 1 - \gamma_{\mathrm{dry}} \cdot \left( \frac{\dot{E}_{\mathrm{dry}}}{\dot{E}_{\mathrm{crit}}} - 1 \right)^2 \right] \cdot \left( \frac{\varepsilon_{\mathrm{agg}}}{\varepsilon_{\mathrm{target}}} \right)^{0.5}$$
+A component is flagged defective if $\mathrm{ECSA}_{\mathrm{ratio}} < 0.70$ or $\text{loading\_variance} > 0.30$.
 
 ---
 
@@ -43,11 +38,11 @@ $$\mathrm{ECSA} = \mathrm{ECSA}_{\mathrm{max}} \cdot \left[ 1 - \gamma_{\mathrm{
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Max Pt ECSA | $\mathrm{ECSA}_{\mathrm{max}}$ | $68.5$ | $\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}$ | Neyerlin et al. (2007) |
-| Target Agglomerate Porosity | $\varepsilon_{\mathrm{target}}$ | $0.48$ | — | Kleemann et al. (2021) |
-| Ink Viscosity | $\mu$ | $0.045$ | $\mathrm{Pa}\cdot\mathrm{s}$ | Rheometer Measurements |
-| Surface Tension | $\sigma_{\mathrm{ink}}$ | $0.028$ | $\mathrm{N/m}$ | Pendant Drop Method |
-| Critical Drying Rate | $\dot{E}_{\mathrm{crit}}$ | $1.2 \times 10^{-3}$ | $\mathrm{kg/m}^2\mathrm{s}$ | Drying Oven Specs |
+| Nominal Line Speed | $v_0$ | $0.15$ ($15\mathrm{ cm/s}$) | $\mathrm{m/s}$ | Slot-Die Machine Specs |
+| Nominal Ink Viscosity | $\mu_0$ | $0.050$ ($50\mathrm{ cP}$) | $\mathrm{Pa}\cdot\mathrm{s}$ | Rheometer Measurements |
+| Surface Tension | $\sigma_{\mathrm{ink}}$ | $0.035$ | $\mathrm{N/m}$ | Pendant Drop Method |
+| Min Acceptable ECSA | $\mathrm{ECSA}_{\mathrm{min}}$ | $0.70$ | — | Quality Threshold |
+| Nominal Cycle Time | $t_{\mathrm{base}}$ | $12.0$ | $\mathrm{s}$ | Factory Schedule |
 
 ---
 

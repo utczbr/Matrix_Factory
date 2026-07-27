@@ -6,36 +6,40 @@ This document details the continuum mechanics models, Archard tool wear rate, an
 
 ## Physical Process Description
 
-Station 3 models high-speed metal forming of metallic bipolar plate flow channels (stainless steel 316L / titanium foil). The process calculates stamping press force, channel springback, die wear, and micro-crack formation risk.
+Station 3 models high-speed metal forming of metallic bipolar plate flow channels (stainless steel 316L). The process calculates stamping press force, plastic strain work, progressive tool wear, and Normalized Cockcroft–Latham ($C_{\mathrm{crit,NCL}}$) micro-crack risk.
 
 ---
 
 ## Mathematical Formulation
 
-### 1. Cockcroft–Latham Ductile Fracture Damage Criterion
+### 1. Archard Die Tool Wear Model
 
-Material fracture accumulation $C_{\mathrm{crit,NCL}}$ during channel geometry forming is evaluated via the Normalized Cockcroft–Latham integral:
+Progressive stamping die wear ratio $W_{\mathrm{ratio}}$ per stroke is computed using Archard's wear law:
 
-$$C_{\mathrm{crit,NCL}} = \int_0^{\bar{\varepsilon}_f} \frac{\sigma^*}{\bar{\sigma}} \, \mathrm{d}\bar{\varepsilon}$$
-
-where:
-* **$\sigma^*$** — Maximum tensile principal stress ($\mathrm{MPa}$).
-* **$\bar{\sigma}$** — Von Mises equivalent stress ($\mathrm{MPa}$).
-* **$\bar{\varepsilon}$** — Equivalent plastic strain.
-
-If $C_{\mathrm{crit,NCL}} > C_{\mathrm{threshold}} \approx 0.42$, micro-cracking initiates along flow channel ribs, inducing gas leakage risks.
-
-### 2. Archard Die Tool Wear Model
-
-Progressive stamping die volume wear $V_{\mathrm{wear}}$ per stroke is calculated as:
-
-$$V_{\mathrm{wear}} = K_{\mathrm{archard}} \frac{F_{\mathrm{normal}} \cdot s_{\mathrm{sliding}}}{H_{\mathrm{die}}}$$
+$$W_{\mathrm{raw}} = W_0 + K_{\mathrm{wear}} \cdot N_{\mathrm{stroke}} \cdot \left( \frac{F_{\mathrm{press}}}{F_{\mathrm{nominal}}} \right)^{\gamma_{\mathrm{archard}}}$$
 
 where:
-* **$K_{\mathrm{archard}}$** — Dimensionless wear coefficient ($1.4 \times 10^{-4}$).
-* **$F_{\mathrm{normal}}$** — Normal contact load ($\mathrm{kN}$).
-* **$s_{\mathrm{sliding}}$** — Interface sliding distance ($\mathrm{mm}$).
-* **$H_{\mathrm{die}}$** — Die material Vickers hardness ($\mathrm{HV}$).
+* **$W_0$** — Initial die wear ratio.
+* **$N_{\mathrm{stroke}}$** — Cumulative die stroke count.
+* **$\gamma_{\mathrm{archard}} = 1.35$** — Pressure exponent.
+* **$K_{\mathrm{wear,duplex}} = 1.47 \times 10^{-10}\mathrm{mm}^3/(\mathrm{N}\cdot\mathrm{m})$** — Duplex PVD coating wear coefficient (Bitay et al. 2021).
+* **$K_{\mathrm{wear,pvd}} = 3.50 \times 10^{-6}\mathrm{mm}^3/(\mathrm{N}\cdot\mathrm{m})$** — Standard PVD wear coefficient (Fernandes et al. 2017).
+
+### 2. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage
+
+Material plastic strain $\varepsilon_p$ and membrane stress $\sigma_1$ across 60 micro-channels ($A_{\mathrm{total}} = 0.0012\mathrm{ m}^2$) follow SS316L strain hardening:
+
+$$\sigma_{\mathrm{flow}} = K_{\mathrm{strength}} \cdot \varepsilon_p^{n_{\mathrm{hardening}}}$$
+
+where $K_{\mathrm{strength}} = 1280.0\mathrm{ MPa}$ and $n_{\mathrm{hardening}} = 0.43$ (Blandford 2007; Mahabunphachai & Koc 2008).
+
+Plastic work done $W_{\mathrm{plastic}}$ is integrated and normalized against critical threshold $C_{\mathrm{crit,NCL}} = 0.35$ (Modanloo et al. 2018):
+
+$$W_{\mathrm{plastic}} = \frac{\sigma_1 / K_{\mathrm{strength}}}{1 - n_{\mathrm{hardening}}} \cdot \frac{\varepsilon_p^{1 - n_{\mathrm{hardening}}}}{1 - n_{\mathrm{hardening}}}$$
+
+$$\text{damage}_{\mathrm{NCL}} = \frac{W_{\mathrm{plastic}}}{C_{\mathrm{crit,NCL}}}$$
+
+A defect is registered if $\text{damage}_{\mathrm{NCL}} > 1.0$ or wear ratio $W_{\mathrm{ratio}} \ge 0.75$.
 
 ---
 
@@ -43,11 +47,13 @@ where:
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Critical NCL Damage | $C_{\mathrm{threshold}}$ | $0.42$ | — | Kleemann et al. (2021) |
-| Archard Wear Coeff. | $K_{\mathrm{archard}}$ | $1.4 \times 10^{-4}$ | — | Archard (1953) |
-| Die Hardness | $H_{\mathrm{die}}$ | $680$ | $\mathrm{HV}$ | Tool Steel Specs |
-| Sheet Thickness | $t_0$ | $0.10$ | $\mathrm{mm}$ | SS316L Datasheet |
-| Channel Pitch | $P_{\mathrm{channel}}$ | $1.25$ | $\mathrm{mm}$ | Flow Field Geometry |
+| Critical NCL Damage Threshold | $C_{\mathrm{crit,NCL}}$ | $0.35$ | — | Modanloo et al. (2018) |
+| Archard Pressure Exponent | $\gamma_{\mathrm{archard}}$ | $1.35$ | — | Archard (1953) |
+| Duplex Wear Coeff. | $K_{\mathrm{wear,duplex}}$ | $1.47 \times 10^{-10}$ | $\mathrm{mm}^3/(\mathrm{N}\cdot\mathrm{m})$ | Bitay et al. (2021) |
+| Standard PVD Wear Coeff. | $K_{\mathrm{wear,pvd}}$ | $3.50 \times 10^{-6}$ | $\mathrm{mm}^3/(\mathrm{N}\cdot\mathrm{m})$ | Fernandes et al. (2017) |
+| Strength Coefficient 316L | $K_{\mathrm{strength}}$ | $1280.0$ | $\mathrm{MPa}$ | Blandford (2007) |
+| Strain Hardening Exponent 316L | $n_{\mathrm{hardening}}$ | $0.43$ | — | Mahabunphachai & Koc (2008) |
+| Nominal Press Force | $F_{\mathrm{nominal}}$ | $120.0$ | $\mathrm{kN}$ | Stamping Press Specs |
 
 ---
 

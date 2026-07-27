@@ -1,12 +1,12 @@
 # Station 1: MEA Resin Cure Kinetics (Reference)
 
-This document details the mathematical formulations, kinetic equations, and calibration parameters for **Station 1: MEA Preparation & Resin Curing**.
+This document details the mathematical formulations, kinetic equations, and calibration parameters for **Station 1: MEA Preparation & Hot-Press Lamination**.
 
 ---
 
 ## Physical Process Description
 
-Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA). The reaction rate is governed by an autocatalytic phenomenological model that accounts for thermal activation energy and vitrification phenomena.
+Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA) during hot-press lamination. The degree of cure conversion $\alpha \in [0, 1]$ is computed using Kamal–Sourour autocatalytic reaction kinetics. Under-curing ($\alpha < 0.85$) introduces delamination risks, while over-curing ($\alpha > 0.98$) risks thermal degradation and membrane pinhole formation.
 
 ---
 
@@ -14,27 +14,31 @@ Station 1 models the thermal curing of thermosetting resin frames encapsulating 
 
 ### 1. Kamal–Sourour Autocatalytic Curing Kinetics
 
-The rate of cure conversion $\alpha \in [0, 1]$ over time is expressed as:
+The rate of cure conversion $\alpha$ over time is expressed as:
 
 $$\frac{\mathrm{d}\alpha}{\mathrm{d}t} = \left( k_1 + k_2 \alpha^m \right) (1 - \alpha)^n$$
 
-where $k_1$ and $k_2$ follow Arrhenius temperature dependencies:
+where Arrhenius reaction rate constants $k_1$ and $k_2$ at hot-press temperature $T_{\mathrm{press}}$ ($\mathrm{K}$) are defined by:
 
-$$k_1(T) = A_1 \exp\left( -\frac{E_1}{R T} \right)$$
+$$k_1(T) = A_1 \exp\left( -\frac{E_1}{R T_{\mathrm{press}}} \right)$$
 
-$$k_2(T) = A_2 \exp\left( -\frac{E_2}{R T} \right)$$
+$$k_2(T) = A_2 \exp\left( -\frac{E_2}{R T_{\mathrm{press}}} \right)$$
 
-### 2. Glass Transition & Vitrification Derating
+### 2. Defect Risk Functions & Execution Pacing
 
-As curing progresses, the glass transition temperature $T_g(\alpha)$ increases according to DiBenedetto's equation:
+Degree of cure $\alpha$ is integrated via 4th-order Runge–Kutta (RK4) over dwell time $t_{\mathrm{dwell}}$:
 
-$$\frac{T_g - T_{g0}}{T_{g\infty} - T_{g0}} = \frac{\lambda \alpha}{1 - (1 - \lambda)\alpha}$$
+* **Delamination Risk ($\alpha < 0.85$):** 
 
-If $T < T_g(\alpha)$, diffusion control reduces the reaction rate by factor $f_d(\alpha)$:
+$$R_{\mathrm{delam}} = \max\left(0, \frac{\alpha_{\mathrm{min}} - \alpha}{\alpha_{\mathrm{min}}}\right)$$
 
-$$f_d(\alpha) = \frac{1}{1 + \exp\left( C_d (\alpha - \alpha_c) \right)}$$
+* **Pinhole Risk ($\alpha > 0.98$):** 
 
-$$\frac{\mathrm{d}\alpha}{\mathrm{d}t}\Bigg|_{\text{effective}} = \frac{\mathrm{d}\alpha}{\mathrm{d}t} \cdot f_d(\alpha)$$
+$$R_{\mathrm{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\mathrm{max}}}{1 - \alpha_{\mathrm{max}}}\right)$$
+
+Processing variance ratio $V_{\mathrm{ratio}}$ scales execution variability:
+
+$$V_{\mathrm{ratio}} = 1.0 + 0.30 R_{\mathrm{delam}} + 0.25 R_{\mathrm{pinhole}}$$
 
 ---
 
@@ -42,13 +46,16 @@ $$\frac{\mathrm{d}\alpha}{\mathrm{d}t}\Bigg|_{\text{effective}} = \frac{\mathrm{
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Frequency Factor 1 | $A_1$ | $2.4 \times 10^4$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
-| Frequency Factor 2 | $A_2$ | $1.8 \times 10^7$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
-| Activation Energy 1 | $E_1$ | $54.2$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
-| Activation Energy 2 | $E_2$ | $46.8$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
-| Reaction Order $m$ | $m$ | $0.42$ | — | Experimental Fit |
-| Reaction Order $n$ | $n$ | $1.58$ | — | Experimental Fit |
-| DiBenedetto Parameter | $\lambda$ | $0.45$ | — | Material Specs |
+| Frequency Factor 1 | $A_1$ | $1.2 \times 10^4$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
+| Frequency Factor 2 | $A_2$ | $5.5 \times 10^6$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
+| Activation Energy 1 | $E_1$ | $58.2$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
+| Activation Energy 2 | $E_2$ | $68.5$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
+| Reaction Order $m$ | $m$ | $0.48$ | — | Experimental Fit |
+| Reaction Order $n$ | $n$ | $1.52$ | — | Experimental Fit |
+| Nominal Press Temp. | $T_{\mathrm{press}}$ | $433.15$ ($160^\circ\mathrm{C}$) | $\mathrm{K}$ | Hot-Press Specification |
+| Nominal Dwell Time | $t_{\mathrm{dwell}}$ | $180.0$ | $\mathrm{s}$ | Process Recipe |
+| Min Bonding Cure | $\alpha_{\mathrm{min}}$ | $0.85$ | — | Structural Adhesion Limit |
+| Max Safe Cure | $\alpha_{\mathrm{max}}$ | $0.98$ | — | Degradation Limit |
 
 ---
 

@@ -794,10 +794,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-vdi-2230-bolt-torque-tension-friction-equation" class="md-nav__link">
+  <a href="#1-vdi-2230-fastener-torque-tension-relationship" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. VDI 2230 Bolt Torque-Tension Friction Equation
+        1. VDI 2230 Fastener Torque-Tension Relationship
       
     </span>
   </a>
@@ -805,10 +805,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-interfacial-contact-resistance-bruggeman-porosity-derating" class="md-nav__link">
+  <a href="#2-non-linear-gdl-compression-porosity-derating" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Interfacial Contact Resistance &amp; Bruggeman Porosity Derating
+        2. Non-Linear GDL Compression &amp; Porosity Derating
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-interfacial-contact-resistance-model-microstructurepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Interfacial Contact Resistance Model (microstructure.py)
       
     </span>
   </a>
@@ -1563,10 +1574,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-vdi-2230-bolt-torque-tension-friction-equation" class="md-nav__link">
+  <a href="#1-vdi-2230-fastener-torque-tension-relationship" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. VDI 2230 Bolt Torque-Tension Friction Equation
+        1. VDI 2230 Fastener Torque-Tension Relationship
       
     </span>
   </a>
@@ -1574,10 +1585,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-interfacial-contact-resistance-bruggeman-porosity-derating" class="md-nav__link">
+  <a href="#2-non-linear-gdl-compression-porosity-derating" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Interfacial Contact Resistance &amp; Bruggeman Porosity Derating
+        2. Non-Linear GDL Compression &amp; Porosity Derating
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-interfacial-contact-resistance-model-microstructurepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Interfacial Contact Resistance Model (microstructure.py)
       
     </span>
   </a>
@@ -1637,27 +1659,30 @@
 
 
 <h1 id="station-4-stack-assembly-clamping-reference">Station 4: Stack Assembly &amp; Clamping (Reference)</h1>
-<p>This document details the mechanical bolt clamping relationships (VDI 2230), contact stress distribution, and GDL porosity derating models for <strong>Station 4: Stack Clamping &amp; Fastening</strong>.</p>
+<p>This document details the mechanical bolt clamping relationships (VDI 2230), elastic interaction, and non-linear GDL compression models for <strong>Station 4: Stack Clamping &amp; Fastening</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
 <p>Station 4 models the mechanical assembly of fuel cell stacks (repeating units of bipolar plates, GDLs, and MEAs). Tightening torque applied to tie-rods establishes interfacial clamping pressure <span class="arithmatex">\(P_{\mathrm{clamp}}\)</span> (<span class="arithmatex">\(\mathrm{MPa}\)</span>), compressing the Gas Diffusion Layer (GDL) and altering contact electrical resistance <span class="arithmatex">\(R_{\mathrm{contact}}\)</span> and gas transport porosity <span class="arithmatex">\(\varepsilon_{\mathrm{gdl}}\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
-<h3 id="1-vdi-2230-bolt-torque-tension-friction-equation">1. VDI 2230 Bolt Torque-Tension Friction Equation</h3>
-<p>The relationship between applied bolt torque <span class="arithmatex">\(M_A\)</span> (<span class="arithmatex">\(\mathrm{N}\cdot\mathrm{m}\)</span>) and axial clamping force <span class="arithmatex">\(F_M\)</span> (<span class="arithmatex">\(\mathrm{kN}\)</span>) follows standard VDI 2230 guidelines:</p>
-<div class="arithmatex">\[M_A = F_M \left( \frac{p}{2\pi} + 0.577 d_2 \mu_{\mathrm{threads}} + d_b \mu_{\mathrm{head}} \right)\]</div>
-<p>where:
-* <strong><span class="arithmatex">\(p\)</span></strong> — Bolt thread pitch (<span class="arithmatex">\(\mathrm{mm}\)</span>).
-* <strong><span class="arithmatex">\(d_2\)</span></strong> — Pitch diameter (<span class="arithmatex">\(\mathrm{mm}\)</span>).
-* <strong><span class="arithmatex">\(\mu_{\mathrm{threads}}\)</span></strong>, <strong><span class="arithmatex">\(\mu_{\mathrm{head}}\)</span></strong> — Thread and head friction coefficients.</p>
-<h3 id="2-interfacial-contact-resistance-bruggeman-porosity-derating">2. Interfacial Contact Resistance &amp; Bruggeman Porosity Derating</h3>
-<p>Interfacial contact resistance <span class="arithmatex">\(R_{\mathrm{contact}}\)</span> decreases exponentially with clamping pressure <span class="arithmatex">\(P_{\mathrm{clamp}}\)</span>:</p>
-<div class="arithmatex">\[R_{\mathrm{contact}}(P_{\mathrm{clamp}}) = R_{\mathrm{contact},0} \cdot \exp\left( -k_{\mathrm{press}} P_{\mathrm{clamp}} \right) + R_{\mathrm{min}}\]</div>
-<p>where <span class="arithmatex">\(R_{\mathrm{contact},0} = 4.20\mathrm{m}\Omega\cdot\mathrm{cm}^2\)</span>.</p>
-<p>Compacted GDL porosity <span class="arithmatex">\(\varepsilon_{\mathrm{gdl}}\)</span> decreases under mechanical strain <span class="arithmatex">\(\varepsilon_{\mathrm{mech}}\)</span>:</p>
-<div class="arithmatex">\[\varepsilon_{\mathrm{gdl}}(P_{\mathrm{clamp}}) = 1 - (1 - \varepsilon_0) \cdot \left( 1 + \frac{P_{\mathrm{clamp}}}{E_{\mathrm{gdl}}} \right)\]</div>
-<p>Effective gas diffusivity <span class="arithmatex">\(D_{\mathrm{eff}}\)</span> is derated via Bruggeman's relation:</p>
-<div class="arithmatex">\[D_{\mathrm{eff}} = D_0 \cdot \left( \varepsilon_{\mathrm{gdl}}(P_{\mathrm{clamp}}) \right)^{1.5}\]</div>
+<h3 id="1-vdi-2230-fastener-torque-tension-relationship">1. VDI 2230 Fastener Torque-Tension Relationship</h3>
+<p>Applied tightening torque <span class="arithmatex">\(M_A\)</span> (<span class="arithmatex">\(\mathrm{N}\cdot\mathrm{m}\)</span>) to 4 M8 tie-rods converts to axial bolt pre-load force <span class="arithmatex">\(F_M\)</span> (<span class="arithmatex">\(\mathrm{N}\)</span>):</p>
+<div class="arithmatex">\[F_M = \frac{M_A}{\frac{p}{2\pi} + \frac{\mu_{\mathrm{threads}} d_2}{2 \cos\beta} + \mu_{\mathrm{head}} r_{\mathrm{head}}}\]</div>
+<p>where <span class="arithmatex">\(p = 1.25\mathrm{ mm}\)</span>, pitch diameter <span class="arithmatex">\(d_2 = 7.188\mathrm{ mm}\)</span>, under-head radius <span class="arithmatex">\(r_{\mathrm{head}} = 5.125\mathrm{ mm}\)</span>, and flank semi-angle <span class="arithmatex">\(\beta = 30^\circ\)</span>.</p>
+<p>Elastic interaction coupling reduces effective pre-load across adjacent bolts (<span class="arithmatex">\(\alpha_{\mathrm{elastic}} = 0.18\)</span>):</p>
+<div class="arithmatex">\[F_{\mathrm{real}, i} = F_{\mathrm{nom}, i} - 0.18 F_{\mathrm{nom}, i-1}\]</div>
+<p>Clamping pressure <span class="arithmatex">\(P_{\mathrm{clamp}}\)</span> over active stack area <span class="arithmatex">\(A_{\mathrm{stack}} = 0.0225\mathrm{ m}^2\)</span> (<span class="arithmatex">\(150 \times 150\mathrm{ mm}\)</span>) is:</p>
+<div class="arithmatex">\[P_{\mathrm{clamp}} = \frac{\sum_{i=1}^4 \max(0, F_{\mathrm{real}, i})}{A_{\mathrm{stack}}}\]</div>
+<h3 id="2-non-linear-gdl-compression-porosity-derating">2. Non-Linear GDL Compression &amp; Porosity Derating</h3>
+<p>Compacted GDL thickness <span class="arithmatex">\(t_{\mathrm{comp}}\)</span> (<span class="arithmatex">\(\mu\mathrm{m}\)</span>) follows non-linear strain stiffness (<span class="arithmatex">\(E_0 = 2.80\mathrm{ MPa}\)</span>, <span class="arithmatex">\(K_s = 28.5\)</span>; Kleemann et al. 2009; Norouzifard &amp; Bahrami 2014):</p>
+<div class="arithmatex">\[t_{\mathrm{comp}} = t_0 \left( 1 - \frac{P_{\mathrm{clamp}}}{E_0 + K_s P_{\mathrm{clamp}}} \right)\]</div>
+<p>Compacted GDL porosity <span class="arithmatex">\(\varepsilon_{\mathrm{gdl}}\)</span> is derated via mass conservation (<span class="arithmatex">\(t_{\mathrm{solid}} = t_0 (1 - \varepsilon_0)\)</span>):</p>
+<div class="arithmatex">\[\varepsilon_{\mathrm{gdl}} = 1 - (1 - \varepsilon_0) \frac{t_0}{t_{\mathrm{comp}}}\]</div>
+<p>Tangent elastic modulus <span class="arithmatex">\(E_{\mathrm{tangent}}\)</span> scales with pressure:</p>
+<div class="arithmatex">\[E_{\mathrm{tangent}} = E_0 \left( 1 + \frac{K_s}{E_0} P_{\mathrm{clamp}} \right)^2\]</div>
+<h3 id="3-interfacial-contact-resistance-model-microstructurepy">3. Interfacial Contact Resistance Model (<code>microstructure.py</code>)</h3>
+<p>Microstructure contact resistance <span class="arithmatex">\(R_{\mathrm{contact}}\)</span> (<span class="arithmatex">\(\Omega\cdot\mathrm{cm}^2\)</span>) decreases exponentially with clamping pressure (<span class="arithmatex">\(R_{\mathrm{contact},0} = 0.0042\ \Omega\cdot\mathrm{cm}^2\)</span>; Mason et al. 2012):</p>
+<div class="arithmatex">\[R_{\mathrm{contact}}(P_{\mathrm{clamp}}) = R_{\mathrm{contact},0} \cdot \exp\left(-0.45 P_{\mathrm{clamp}}\right) + R_{\mathrm{min}}\]</div>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1672,39 +1697,53 @@
 </thead>
 <tbody>
 <tr>
-<td>Initial Contact Resistance</td>
+<td>Baseline Contact Resistance</td>
 <td><span class="arithmatex">\(R_{\mathrm{contact},0}\)</span></td>
-<td><span class="arithmatex">\(4.20\)</span></td>
-<td><span class="arithmatex">\(\mathrm{m}\Omega\cdot\mathrm{cm}^2\)</span></td>
-<td>Kleemann et al. (2021)</td>
+<td><span class="arithmatex">\(0.0042\)</span> (<span class="arithmatex">\(4.20\mathrm{ m}\Omega\cdot\mathrm{cm}^2\)</span>)</td>
+<td><span class="arithmatex">\(\Omega\cdot\mathrm{cm}^2\)</span></td>
+<td>Mason et al. (2012)</td>
 </tr>
 <tr>
-<td>Nominal Clamping Pressure</td>
-<td><span class="arithmatex">\(P_{\mathrm{clamp}}\)</span></td>
-<td><span class="arithmatex">\(1.25\)</span></td>
+<td>Nominal Bolt Torque</td>
+<td><span class="arithmatex">\(M_A\)</span></td>
+<td><span class="arithmatex">\(46.0\)</span></td>
+<td><span class="arithmatex">\(\mathrm{N}\cdot\mathrm{m}\)</span></td>
+<td>Target Torque (<span class="arithmatex">\(\sim 4.22\mathrm{ MPa}\)</span>)</td>
+</tr>
+<tr>
+<td>Initial GDL Elasticity</td>
+<td><span class="arithmatex">\(E_0\)</span></td>
+<td><span class="arithmatex">\(2.80\)</span></td>
 <td><span class="arithmatex">\(\mathrm{MPa}\)</span></td>
-<td>Assembly Specs</td>
+<td>Kleemann et al. (2009)</td>
 </tr>
 <tr>
-<td>Uncompressed GDL Porosity</td>
+<td>Non-linear Stiffness Parameter</td>
+<td><span class="arithmatex">\(K_s\)</span></td>
+<td><span class="arithmatex">\(28.5\)</span></td>
+<td>—</td>
+<td>Norouzifard &amp; Bahrami (2014)</td>
+</tr>
+<tr>
+<td>Uncompressed Thickness</td>
+<td><span class="arithmatex">\(t_0\)</span></td>
+<td><span class="arithmatex">\(210.0\)</span></td>
+<td><span class="arithmatex">\(\mu\mathrm{m}\)</span></td>
+<td>Toray TGP-H-060 Datasheet</td>
+</tr>
+<tr>
+<td>Initial GDL Porosity</td>
 <td><span class="arithmatex">\(\varepsilon_0\)</span></td>
 <td><span class="arithmatex">\(0.78\)</span></td>
 <td>—</td>
 <td>Toray TGP-H-060 Datasheet</td>
 </tr>
 <tr>
-<td>GDL Compressibility Modulus</td>
-<td><span class="arithmatex">\(E_{\mathrm{gdl}}\)</span></td>
-<td><span class="arithmatex">\(8.50\)</span></td>
-<td><span class="arithmatex">\(\mathrm{MPa}\)</span></td>
-<td>Mechanical Testing</td>
-</tr>
-<tr>
-<td>Tie-rod Thread Friction</td>
-<td><span class="arithmatex">\(\mu_{\mathrm{threads}}\)</span></td>
-<td><span class="arithmatex">\(0.12\)</span></td>
+<td>Elastic Interaction Coeff.</td>
+<td><span class="arithmatex">\(\alpha_{\mathrm{elastic}}\)</span></td>
+<td><span class="arithmatex">\(0.18\)</span></td>
 <td>—</td>
-<td>VDI 2230 Standard</td>
+<td>Fastener Elastic Coupling</td>
 </tr>
 </tbody>
 </table>
@@ -1712,6 +1751,7 @@
 <h2 id="code-reference">Code Reference</h2>
 <ul>
 <li>Python Kernel: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/station4_stack_clamping.py"><code>physical_engine/factory_simulation/station4_stack_clamping.py</code></a></li>
+<li>Microstructure Model: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/microstructure.py"><code>physical_engine/factory_simulation/microstructure.py</code></a></li>
 </ul>
 
 
