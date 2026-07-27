@@ -1564,9 +1564,20 @@
 <h2 id="technical-stack-acceleration-strategy">Technical Stack &amp; Acceleration Strategy</h2>
 <p>The physical engine is implemented in Python 3.11 with Numba JIT acceleration:</p>
 <ul>
-<li><strong>Numba JIT Compilation (<code>@njit(fastmath=True)</code>):</strong> Converts Python numerical ODE/PDE solvers into machine code, achieving 40x–100x execution speeds compared to pure Python loops.</li>
-<li><strong>CoolProp Integration:</strong> Provides high-accuracy thermodynamic fluid property lookups (density, enthalpy, viscosity) for humidified reactant gases (<span class="arithmatex">\(H_2\)</span>, <span class="arithmatex">\(O_2\)</span>, <span class="arithmatex">\(N_2\)</span>, <span class="arithmatex">\(H_2O\)</span>) in Station 5.</li>
-<li><strong>gRPC SimBridge IPC Interface:</strong> High-speed binary IPC channel using Protocol Buffers over TLS, allowing low-latency execution step requests from the Java JVM.</li>
+<li>
+<p><strong>Numba JIT Compilation (<code>@njit</code>):</strong> Converts Python numerical ODE/PDE solvers into machine code. Reported speedups are kernel-specific:</p>
+<ul>
+<li>~10–100× for general JIT-compiled loops vs. pure Python (<code>_numba_ops_core_python.py</code>).</li>
+<li>~10–50× for <code>numba.prange</code>-parallelized interpolation kernels.</li>
+<li>~50–200× specifically for replacing runtime CoolProp calls with the pre-computed LUT layer described below (<code>optimization/lut_manager.py</code>).</li>
+</ul>
+</li>
+<li>
+<p><strong>CoolProp Integration:</strong> Provides thermodynamic fluid property lookups via a bilinear-interpolated Lookup Table (LUT) layer (<code>optimization/lut_manager.py</code>) that falls back to live CoolProp calls for out-of-bounds queries. <code>core/constants.py::StandardConditions.CANONICAL_FLUID_ORDER</code> caches <strong>seven</strong> species: <code>H2, O2, N2, CO2, CH4, CO, H2O</code>. Of these, <strong>H₂, O₂, N₂, and H₂O are actively consumed by the Station 5 physics</strong> (humidified reactant activity via <code>real_gas_activity</code>).</p>
+</li>
+<li>
+<p><strong>gRPC SimBridge IPC Interface:</strong> High-speed binary IPC channel using Protocol Buffers over TLS, allowing low-latency execution step requests from the Java JVM.</p>
+</li>
 </ul>
 <hr />
 <h2 id="station-model-overview">Station Model Overview</h2>
@@ -1593,8 +1604,8 @@
 </tr>
 <tr>
 <td><strong>Station 2: Coating</strong></td>
-<td>Fluid Hydrodynamics &amp; Surface Science</td>
-<td>Slot-die capillary coating, solvent evaporation, ECSA degradation</td>
+<td>Fluid Hydrodynamics</td>
+<td>Slot-die coating deviation model, ECSA degradation</td>
 <td><code>station2_catalyst_deposition.py</code></td>
 </tr>
 <tr>
@@ -1606,14 +1617,14 @@
 <tr>
 <td><strong>Station 4: Assembly</strong></td>
 <td>Solid Mechanics &amp; Contact</td>
-<td>VDI 2230 bolt torque friction, GDL compression &amp; Bruggeman porosity derating</td>
-<td><code>station4_stack_clamping.py</code></td>
+<td>VDI 2230 bolt torque friction, GDL compression &amp; Bruggeman porosity derating, U-shaped interfacial contact resistance</td>
+<td><code>station4_stack_clamping.py</code>, <code>microstructure.py</code></td>
 </tr>
 <tr>
 <td><strong>Station 5: PEMFC Test</strong></td>
 <td>Electrochemistry &amp; Transport</td>
-<td>Butler–Volmer kinetics, Springer membrane hydration, flooded mass transport <span class="arithmatex">\(j_{\text{lim}}\)</span></td>
-<td><code>pemfc_model.py</code></td>
+<td>Nernst potential, Butler–Volmer kinetics, Springer membrane hydration, flooded mass transport <span class="arithmatex">\(j_{\text{lim}}\)</span>, two-lump thermal model (Yonkist-validated)</td>
+<td><code>pemfc_model.py</code>, <code>membrane_hydration.py</code>, <code>stack_thermal_model.py</code></td>
 </tr>
 </tbody>
 </table>
@@ -1621,9 +1632,12 @@
 <h2 id="inter-station-quality-degradation-propagation">Inter-Station Quality Degradation Propagation</h2>
 <p>Physical output states from upstream stations serve as boundary constraints for downstream manufacturing processes:</p>
 <ol>
-<li><strong>Station 3 Ductile Micro-Cracks <span class="arithmatex">\(\rightarrow\)</span> Station 4 Clamping:</strong> Stamping springback and micro-cracks increase local contact stress non-uniformity during clamping.</li>
-<li><strong>Station 4 Clamping Pressure <span class="arithmatex">\(\rightarrow\)</span> Station 5 Polarization:</strong> Interfacial contact pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> determines gas diffusion layer (GDL) contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> and bulk porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span>.</li>
+<li><strong>Station 3 Ductile Micro-Cracks → Station 4 Clamping:</strong> Stamping springback and micro-cracks increase local contact stress non-uniformity during clamping.</li>
+<li><strong>Station 4 Clamping Pressure → Station 5 Polarization:</strong> Interfacial contact pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> determines gas diffusion layer (GDL) contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> and bulk porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span>, both of which are folded directly into the Station 5 solver's effective internal resistance.</li>
 </ol>
+<p>The inter-station coupling mechanism, implemented in <code>sim_bridge_server.py::RunBatchTest</code>, evaluates:</p>
+<div class="arithmatex">\[R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right)\]</div>
+<p>where <span class="arithmatex">\(R_{\text{internal},0}\)</span> is a per-run baseline (default <span class="arithmatex">\(0.06\ \Omega\cdot\text{cm}^2\)</span>), <span class="arithmatex">\(\Delta R_{\text{penalty}}\)</span> is an accumulated defect-rate penalty tracked on the Java/agent side, and <span class="arithmatex">\(R_{\text{contact}}(\cdot)\)</span> is the Station 4 U-shaped contact-resistance model detailed in the <a href="../station-4-assembly/">Station 4 doc</a>. Reactant activities <span class="arithmatex">\(a_{H_2}, a_{O_2}\)</span> are separately derated by an <code>activity_derate_fraction</code>, and the limiting current <span class="arithmatex">\(j_{\text{lim}}\)</span> by a <code>j_lim_derate_fraction</code>, both also sourced from upstream station outcomes. See the <a href="../station-5-pemfc/">Station 5 doc</a> for the full path.</p>
 
 
 
@@ -1686,7 +1700,7 @@
       
         <script src="../../javascripts/mathjax.js"></script>
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
       
     
   </body>

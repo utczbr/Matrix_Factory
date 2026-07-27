@@ -1640,7 +1640,7 @@
 <p>This document details the mathematical formulations, kinetic equations, and calibration parameters for <strong>Station 1: MEA Preparation &amp; Hot-Press Lamination</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
-<p>Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA) during hot-press lamination. The degree of cure conversion <span class="arithmatex">\(\alpha \in [0, 1]\)</span> is computed using Kamal–Sourour autocatalytic reaction kinetics. Under-curing (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>) introduces delamination risks, while over-curing (<span class="arithmatex">\(\alpha &gt; 0.98\)</span>) risks thermal degradation and membrane pinhole formation.</p>
+<p>Station 1 models the thermal curing of thermosetting resin frames encapsulating the Membrane Electrode Assembly (MEA) during hot-press lamination. The degree of cure conversion <span class="arithmatex">\(\alpha \in [0, 1]\)</span> is computed using Kamal–Sourour autocatalytic reaction kinetics. Under-curing (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>) introduces delamination risks, while over-curing (<span class="arithmatex">\(\alpha &gt; 0.98\)</span>) risks thermal degradation and membrane pinhole formation. A component is flagged defective if <span class="arithmatex">\(\alpha &lt; 0.85\)</span> or <span class="arithmatex">\(\alpha &gt; 0.98\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-kamalsourour-autocatalytic-curing-kinetics">1. Kamal–Sourour Autocatalytic Curing Kinetics</h3>
@@ -1649,8 +1649,8 @@
 <p>where Arrhenius reaction rate constants <span class="arithmatex">\(k_1\)</span> and <span class="arithmatex">\(k_2\)</span> at hot-press temperature <span class="arithmatex">\(T_{\text{press}}\)</span> (<span class="arithmatex">\(\text{K}\)</span>) are defined by:</p>
 <div class="arithmatex">\[k_1(T) = A_1 \exp\left(-\frac{E_1}{R T_{\text{press}}}\right)\]</div>
 <div class="arithmatex">\[k_2(T) = A_2 \exp\left(-\frac{E_2}{R T_{\text{press}}}\right)\]</div>
+<p>Degree of cure <span class="arithmatex">\(\alpha\)</span> is integrated via 4th-order Runge–Kutta (RK4), fixed at 100 substeps over dwell time <span class="arithmatex">\(t_{\text{dwell}}\)</span>, with <span class="arithmatex">\(\alpha\)</span> clamped to <span class="arithmatex">\([0, 0.9999]\)</span> after every substep to keep <span class="arithmatex">\((1-\alpha)^n\)</span> from becoming singular as <span class="arithmatex">\(\alpha \to 1\)</span>.</p>
 <h3 id="2-defect-risk-functions-execution-pacing">2. Defect Risk Functions &amp; Execution Pacing</h3>
-<p>Degree of cure <span class="arithmatex">\(\alpha\)</span> is integrated via 4th-order Runge–Kutta (RK4) over dwell time <span class="arithmatex">\(t_{\text{dwell}}\)</span>:</p>
 <ul>
 <li><strong>Delamination Risk (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>):</strong></li>
 </ul>
@@ -1660,7 +1660,10 @@
 </ul>
 <div class="arithmatex">\[R_{\text{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\text{max}}}{1 - \alpha_{\text{max}}}\right)\]</div>
 <p>Processing variance ratio <span class="arithmatex">\(V_{\text{ratio}}\)</span> scales execution variability:</p>
-<div class="arithmatex">\[V_{\text{ratio}} = 1.0 + 0.30 R_{\text{delam}} + 0.25 R_{\text{pinhole}}\]</div>
+<div class="arithmatex">\[V_{\text{ratio}} = 1.0 + 0.30\, R_{\text{delam}} + 0.25\, R_{\text{pinhole}}\]</div>
+<p>Station cycle time <span class="arithmatex">\(t_{\text{proc}}\)</span> scales with deviations from nominal press temperature and dwell time:</p>
+<div class="arithmatex">\[t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.15\, T_{\text{dev}} + 0.10\, t_{\text{dwell,dev}}\right)\]</div>
+<p>where <span class="arithmatex">\(t_{\text{base}} = 5.0\ \text{s}\)</span>, <span class="arithmatex">\(T_{\text{dev}} = |T_{\text{press}} - T_{\text{press,nominal}}| / T_{\text{press,nominal}}\)</span>, and <span class="arithmatex">\(t_{\text{dwell,dev}}\)</span> is defined analogously for dwell time. <span class="arithmatex">\(k_{\text{time}}\)</span> is a global time-acceleration factor (1.0 in accelerated simulation mode, 10.0 in industrial-pace mode).</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1744,6 +1747,13 @@
 <td>—</td>
 <td>Degradation Limit</td>
 </tr>
+<tr>
+<td>Nominal Station Cycle Time</td>
+<td><span class="arithmatex">\(t_{\text{base}}\)</span></td>
+<td><span class="arithmatex">\(5.0\)</span></td>
+<td><span class="arithmatex">\(\text{s}\)</span></td>
+<td><code>factory.jcm</code> process recipe</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -1813,7 +1823,7 @@
       
         <script src="../../javascripts/mathjax.js"></script>
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
       
     
   </body>

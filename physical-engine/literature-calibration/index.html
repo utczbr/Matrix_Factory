@@ -835,6 +835,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Comprehensive Parameter Master Table">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#contact-resistance-primary-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contact Resistance Primary Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1498,6 +1515,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Comprehensive Parameter Master Table">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#contact-resistance-primary-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contact Resistance Primary Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1537,7 +1571,7 @@
 
 
 <h1 id="literature-calibration-empirical-validation">Literature Calibration &amp; Empirical Validation</h1>
-<p>This document provides complete traceability for all physical parameters, kinetic constants, thermodynamic values, and empirical limits used in <strong>Matrix Factory Twin</strong>, linking code parameters to peer-reviewed literature and experimental benchmarks.</p>
+<p>This document provides traceability for the physical parameters, kinetic constants, thermodynamic values, and empirical limits used in <strong>Matrix Factory Twin</strong>, linking code parameters to their primary literature sources.</p>
 <hr />
 <h2 id="comprehensive-parameter-master-table">Comprehensive Parameter Master Table</h2>
 <table>
@@ -1547,7 +1581,8 @@
 <th>Code Symbol</th>
 <th>Nominal Value</th>
 <th>Unit</th>
-<th>Peer-Reviewed Reference &amp; DOI</th>
+<th>Claimed Reference</th>
+<th>Verification</th>
 </tr>
 </thead>
 <tbody>
@@ -1556,107 +1591,151 @@
 <td><code>E1_CURE</code></td>
 <td><span class="arithmatex">\(58.2\)</span></td>
 <td><span class="arithmatex">\(\text{kJ/mol}\)</span></td>
-<td>Fernandes et al. (2018), <em>Polym. Test.</em> <a href="https://doi.org/10.1016/j.polymertesting.2018.03.012">DOI: 10.1016/j.polymertesting.2018.03.012</a></td>
+<td>Fernandes et al. (2018), <em>Polym. Test.</em>, DOI <code>10.1016/j.polymertesting.2018.03.012</code></td>
+<td>Parameter source</td>
 </tr>
 <tr>
 <td><strong>Resin Activation Energy 2</strong></td>
 <td><code>E2_CURE</code></td>
 <td><span class="arithmatex">\(68.5\)</span></td>
 <td><span class="arithmatex">\(\text{kJ/mol}\)</span></td>
-<td>Fernandes et al. (2018), <em>Polym. Test.</em> <a href="https://doi.org/10.1016/j.polymertesting.2018.03.012">DOI: 10.1016/j.polymertesting.2018.03.012</a></td>
+<td>Fernandes et al. (2018), <em>Polym. Test.</em>, DOI <code>10.1016/j.polymertesting.2018.03.012</code></td>
+<td>Parameter source</td>
 </tr>
 <tr>
 <td><strong>Slot-Die Line Speed</strong></td>
 <td><code>V_COAT_NOMINAL</code></td>
 <td><span class="arithmatex">\(0.15\)</span> (<span class="arithmatex">\(15\text{ cm/s}\)</span>)</td>
 <td><span class="arithmatex">\(\text{m/s}\)</span></td>
-<td>Standard Slot-Die Machine Operating Window</td>
+<td>Standard slot-die machine operating window</td>
+<td>Operating specification</td>
 </tr>
 <tr>
 <td><strong>Cockcroft–Latham Threshold</strong></td>
 <td><code>C_CRIT_NCL</code></td>
 <td><span class="arithmatex">\(0.35\)</span></td>
 <td>—</td>
-<td>Modanloo et al. (2018), <em>Int. J. Adv. Manuf. Technol.</em> <a href="https://doi.org/10.1007/s00170-018-2101-y">DOI: 10.1007/s00170-018-2101-y</a></td>
+<td>Modanloo et al. (2018)</td>
+<td>Ductile fracture limit</td>
 </tr>
 <tr>
 <td><strong>316L Strength Coeff.</strong></td>
 <td><code>K_STRENGTH_316L</code></td>
 <td><span class="arithmatex">\(1280.0\)</span></td>
 <td><span class="arithmatex">\(\text{MPa}\)</span></td>
-<td>Blandford (2007) / Mahabunphachai &amp; Koc (2008) <a href="https://doi.org/10.1016/j.jmatprotec.2007.10.052">DOI: 10.1016/j.jmatprotec.2007.10.052</a></td>
+<td>Blandford (2007) / Mahabunphachai &amp; Koc (2008), DOI <code>10.1016/j.jmatprotec.2007.10.052</code></td>
+<td>Material property</td>
 </tr>
 <tr>
 <td><strong>Duplex Coating Wear Coeff.</strong></td>
 <td><code>K_WEAR_DUPLEX</code></td>
 <td><span class="arithmatex">\(1.47 \times 10^{-10}\)</span></td>
 <td><span class="arithmatex">\(\text{mm}^3/(\text{N}\cdot\text{m})\)</span></td>
-<td>Bitay et al. (2021), <em>Coatings</em> <a href="https://doi.org/10.3390/coatings11080912">DOI: 10.3390/coatings11080912</a></td>
+<td>Bitay et al. (2021)</td>
+<td>Die tribology coefficient</td>
 </tr>
 <tr>
 <td><strong>PVD Coating Wear Coeff.</strong></td>
 <td><code>K_WEAR_PVD</code></td>
 <td><span class="arithmatex">\(3.50 \times 10^{-6}\)</span></td>
 <td><span class="arithmatex">\(\text{mm}^3/(\text{N}\cdot\text{m})\)</span></td>
-<td>Fernandes et al. (2017), <em>Wear</em> <a href="https://doi.org/10.1016/j.wear.2017.01.045">DOI: 10.1016/j.wear.2017.01.045</a></td>
+<td>Fernandes et al. (2017)</td>
+<td>Die tribology coefficient</td>
 </tr>
 <tr>
 <td><strong>Archard Wear Law</strong></td>
 <td><code>GAMMA_ARCHARD</code></td>
 <td><span class="arithmatex">\(1.35\)</span></td>
 <td>—</td>
-<td>Archard (1953), <em>J. Appl. Phys.</em> <a href="https://doi.org/10.1063/1.1721448">DOI: 10.1063/1.1721448</a></td>
+<td>Archard (1953), <em>J. Appl. Phys.</em>, DOI <code>10.1063/1.1721448</code></td>
+<td>Verified Archard relation</td>
 </tr>
 <tr>
 <td><strong>GDL Initial Elasticity</strong></td>
 <td><code>GDL_E0_MPA</code></td>
 <td><span class="arithmatex">\(2.80\)</span></td>
 <td><span class="arithmatex">\(\text{MPa}\)</span></td>
-<td>Kleemann et al. (2009), <em>J. Power Sources</em> <a href="https://doi.org/10.1016/j.jpowsour.2009.01.076">DOI: 10.1016/j.jpowsour.2009.01.076</a></td>
+<td>Kleemann et al. (2009), <em>J. Power Sources</em>, DOI <code>10.1016/j.jpowsour.2009.01.076</code></td>
+<td>GDL mechanics</td>
 </tr>
 <tr>
 <td><strong>GDL Non-Linear Stiffness</strong></td>
 <td><code>GDL_KS</code></td>
 <td><span class="arithmatex">\(28.5\)</span></td>
 <td>—</td>
-<td>Norouzifard &amp; Bahrami (2014), <em>Int. J. Hydrogen Energy</em> <a href="https://doi.org/10.1016/j.ijhydene.2014.04.148">DOI: 10.1016/j.ijhydene.2014.04.148</a></td>
+<td>Norouzifard &amp; Bahrami (2014), <em>Int. J. Hydrogen Energy</em>, DOI <code>10.1016/j.ijhydene.2014.04.148</code></td>
+<td>GDL mechanics</td>
 </tr>
 <tr>
-<td><strong>Baseline Contact Res.</strong></td>
+<td><strong>Baseline Contact Res. (coated)</strong></td>
 <td><code>R_CONTACT_0</code></td>
 <td><span class="arithmatex">\(0.0042\)</span> (<span class="arithmatex">\(4.20\text{ m}\Omega\cdot\text{cm}^2\)</span>)</td>
 <td><span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span></td>
-<td>Mason et al. (2012), <em>J. Power Sources</em> <a href="https://doi.org/10.1016/j.jpowsour.2012.06.071">DOI: 10.1016/j.jpowsour.2012.06.071</a></td>
+<td>El-Kharouf, Mason, Brett &amp; Pollet (2012), DOI <code>10.1016/j.jpowsour.2012.06.099</code></td>
+<td>Verified GDL contact resistance</td>
+</tr>
+<tr>
+<td><strong>Baseline Contact Res. (uncoated)</strong></td>
+<td><code>R_CONTACT_UNCOATED</code></td>
+<td><span class="arithmatex">\(0.0185\)</span> (<span class="arithmatex">\(18.50\text{ m}\Omega\cdot\text{cm}^2\)</span>)</td>
+<td><span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span></td>
+<td>El-Kharouf, Mason, Brett &amp; Pollet (2012), DOI <code>10.1016/j.jpowsour.2012.06.099</code></td>
+<td>Verified GDL contact resistance</td>
 </tr>
 <tr>
 <td><strong>ORR Exchange Current</strong></td>
 <td><code>j0_orr</code></td>
 <td><span class="arithmatex">\(2.5 \times 10^{-8}\)</span></td>
 <td><span class="arithmatex">\(\text{A/cm}_{\text{Pt}}^2\)</span></td>
-<td>Gasteiger et al. (2005), <em>Appl. Catal. B</em> <a href="https://doi.org/10.1016/j.apcatb.2004.06.021">DOI: 10.1016/j.apcatb.2004.06.021</a></td>
+<td>Gasteiger et al. (2005), <em>Appl. Catal. B</em>, DOI <code>10.1016/j.apcatb.2004.06.021</code></td>
+<td>ORR kinetic parameter</td>
 </tr>
 <tr>
 <td><strong>ORR Activation Energy</strong></td>
 <td><code>E_act</code></td>
 <td><span class="arithmatex">\(68.5\)</span></td>
 <td><span class="arithmatex">\(\text{kJ/mol}\)</span></td>
-<td>Neyerlin et al. (2006), <em>J. Electrochem. Soc.</em> <a href="https://doi.org/10.1149/1.2266294">DOI: 10.1149/1.2266294</a></td>
+<td>Neyerlin et al. (2006), <em>J. Electrochem. Soc.</em>, DOI <code>10.1149/1.2266294</code></td>
+<td>ORR activation energy</td>
 </tr>
 <tr>
 <td><strong>Nafion Hydration Model</strong></td>
 <td><code>lambda_mem</code></td>
 <td><span class="arithmatex">\(14.0\)</span></td>
 <td>—</td>
-<td>Springer et al. (1991), <em>J. Electrochem. Soc.</em> <a href="https://doi.org/10.1149/1.2085971">DOI: 10.1149/1.2085971</a></td>
+<td>Springer et al. (1991), <em>J. Electrochem. Soc.</em>, DOI <code>10.1149/1.2085971</code></td>
+<td>Sorption isotherm model</td>
+</tr>
+<tr>
+<td><strong>Die Draft/Friction Constants</strong> (<code>μ0</code>, <code>α_f</code>, <code>θ_die</code>, <code>ε_p,scale</code>)</td>
+<td>see <a href="../station-3-stamping/">Station 3</a></td>
+<td>various</td>
+<td>various</td>
+<td>Process Calibration Baseline</td>
+<td>Calibrated fit</td>
+</tr>
+<tr>
+<td><strong>Bruggeman Exponent</strong></td>
+<td><code>BRUGGEMAN_EXP</code></td>
+<td><span class="arithmatex">\(1.5\)</span></td>
+<td>—</td>
+<td>Bruggeman (1935)</td>
+<td>Fibrous porous media standard</td>
 </tr>
 </tbody>
 </table>
+<h3 id="contact-resistance-primary-reference">Contact Resistance Primary Reference</h3>
+<p>Both baseline contact resistance values (<span class="arithmatex">\(R_{\text{contact},0}\)</span> for coated plates and <span class="arithmatex">\(R_{\text{contact,uncoated}}\)</span> for uncoated 316L plates) stem from the characterization dataset in:</p>
+<blockquote>
+<p>El-Kharouf, A.; Mason, T. J.; Brett, D. J. L.; Pollet, B. G. (2012). "Ex-situ characterisation of gas diffusion layers for proton exchange membrane fuel cells." <em>Journal of Power Sources</em>, 218, 393–404. <strong>DOI: <code>10.1016/j.jpowsour.2012.06.099</code>.</strong></p>
+</blockquote>
 <hr />
 <h2 id="validation-calibration-methodology">Validation &amp; Calibration Methodology</h2>
-<p>Parameters were validated through a two-stage calibration process:</p>
+<p>Parameters were validated through a multi-stage calibration process:</p>
 <ol>
-<li><strong>Station-Level Independent Optimization:</strong> Fitting JIT physics kernel outputs against empirical datasets using numerical sanity check functions (<code>run_calibration_sanity_checks()</code>).</li>
-<li><strong>Cross-Station Propagation Bounds:</strong> Verifying that outputs from upstream stations (e.g., Station 3 micro-cracks or Station 4 clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span>) fall within valid physical operational envelopes before entering downstream Station 5 polarization solvers.</li>
+<li><strong>Station-Level Independent Optimization:</strong> Fitting JIT physics kernel outputs against target defect-rate/operating-range specifications using numerical sanity check functions (<code>run_calibration_sanity_checks()</code>), present in each station module.</li>
+<li><strong>Cross-Station Monte Carlo Verification:</strong> <code>physical_engine/scripts/calibrate_stamping_clamping.py</code> runs 10,000-iteration Monte Carlo sweeps for Stations 1–4, checking that nominal conditions stay non-defective and that injected process noise reproduces target defect rates (Station 3 targets 0.20% defect rate, Station 4 targets 0.80%).</li>
+<li><strong>Cross-Station Propagation Bounds:</strong> Verifying that outputs from upstream stations (e.g., Station 3 micro-cracks or Station 4 clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span>) fall within valid physical operational envelopes before entering downstream Station 5 polarization solvers, via the coupling equation documented in <a href="../station-5-pemfc/#6-manufacturing-to-performance-coupling">Station 5 §6</a>.</li>
 </ol>
 
 
@@ -1720,7 +1799,7 @@
       
         <script src="../../javascripts/mathjax.js"></script>
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
       
     
   </body>
