@@ -25,9 +25,9 @@ The cathode Oxygen Reduction Reaction (ORR) activation overpotential $\eta_{\mat
 $$\eta_{\mathrm{act}} = \frac{R T}{\alpha_{\mathrm{ORR}} F} \ln\left( \frac{j + j_{\mathrm{loss}}}{j_0 \cdot \mathrm{ECSA} \cdot L_{\mathrm{Pt}}} \right)$$
 
 where:
-* $\alpha_{\mathrm{ORR}}$ is the cathodic charge transfer coefficient ($\approx 0.50$).
-* $j_0$ is reference exchange current density ($\mathrm{A/cm}_{\mathrm{Pt}}^2$).
-* $\mathrm{ECSA}$ is inherited from Station 2.
+* **$\alpha_{\mathrm{ORR}}$** — Cathodic charge transfer coefficient ($\approx 0.50$).
+* **$j_0$** — Reference exchange current density ($\mathrm{A/cm}_{\mathrm{Pt}}^2$).
+* **$\mathrm{ECSA}$** — Inherited electro-chemical surface area from Station 2.
 
 ### 3. Ohmic Overpotential & Springer Membrane Hydration
 

@@ -19,9 +19,9 @@ Material fracture accumulation $C_{\mathrm{crit,NCL}}$ during channel geometry f
 $$C_{\mathrm{crit,NCL}} = \int_0^{\bar{\varepsilon}_f} \frac{\sigma^*}{\bar{\sigma}} \, \mathrm{d}\bar{\varepsilon}$$
 
 where:
-* $\sigma^*$ is the maximum tensile principal stress ($\mathrm{MPa}$).
-* $\bar{\sigma}$ is the von Mises equivalent stress ($\mathrm{MPa}$).
-* $\bar{\varepsilon}$ is the equivalent plastic strain.
+* **$\sigma^*$** — Maximum tensile principal stress ($\mathrm{MPa}$).
+* **$\bar{\sigma}$** — Von Mises equivalent stress ($\mathrm{MPa}$).
+* **$\bar{\varepsilon}$** — Equivalent plastic strain.
 
 If $C_{\mathrm{crit,NCL}} > C_{\mathrm{threshold}} \approx 0.42$, micro-cracking initiates along flow channel ribs, inducing gas leakage risks.
 
@@ -32,10 +32,10 @@ Progressive stamping die volume wear $V_{\mathrm{wear}}$ per stroke is calculate
 $$V_{\mathrm{wear}} = K_{\mathrm{archard}} \frac{F_{\mathrm{normal}} \cdot s_{\mathrm{sliding}}}{H_{\mathrm{die}}}$$
 
 where:
-* $K_{\mathrm{archard}}$ is the dimensionless wear coefficient ($1.4 \times 10^{-4}$).
-* $F_{\mathrm{normal}}$ is the normal contact load ($\mathrm{kN}$).
-* $s_{\mathrm{sliding}}$ is interface sliding distance ($\mathrm{mm}$).
-* $H_{\mathrm{die}}$ is die material Vickers hardness ($\mathrm{HV}$).
+* **$K_{\mathrm{archard}}$** — Dimensionless wear coefficient ($1.4 \times 10^{-4}$).
+* **$F_{\mathrm{normal}}$** — Normal contact load ($\mathrm{kN}$).
+* **$s_{\mathrm{sliding}}$** — Interface sliding distance ($\mathrm{mm}$).
+* **$H_{\mathrm{die}}$** — Die material Vickers hardness ($\mathrm{HV}$).
 
 ---
 

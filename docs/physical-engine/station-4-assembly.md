@@ -19,9 +19,9 @@ The relationship between applied bolt torque $M_A$ ($\mathrm{N}\cdot\mathrm{m}$)
 $$M_A = F_M \left( \frac{p}{2\pi} + 0.577 d_2 \mu_{\mathrm{threads}} + d_b \mu_{\mathrm{head}} \right)$$
 
 where:
-* $p$ is bolt thread pitch ($\mathrm{mm}$).
-* $d_2$ is pitch diameter ($\mathrm{mm}$).
-* $\mu_{\mathrm{threads}}$ and $\mu_{\mathrm{head}}$ are thread and head friction coefficients.
+* **$p$** — Bolt thread pitch ($\mathrm{mm}$).
+* **$d_2$** — Pitch diameter ($\mathrm{mm}$).
+* **$\mu_{\mathrm{threads}}$**, **$\mu_{\mathrm{head}}$** — Thread and head friction coefficients.
 
 ### 2. Interfacial Contact Resistance & Bruggeman Porosity Derating
 

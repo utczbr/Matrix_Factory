@@ -19,9 +19,9 @@ The stable coating window is constrained by the Capillary number $Ca$:
 $$Ca = \frac{\mu U_{\mathrm{web}}}{\sigma_{\mathrm{ink}}}$$
 
 where:
-* $\mu$ is dynamic ink viscosity ($\mathrm{Pa}\cdot\mathrm{s}$).
-* $U_{\mathrm{web}}$ is web line speed ($\mathrm{m/s}$).
-* $\sigma_{\mathrm{ink}}$ is liquid-vapor surface tension ($\mathrm{N/m}$).
+* **$\mu$** — Dynamic ink viscosity ($\mathrm{Pa}\cdot\mathrm{s}$).
+* **$U_{\mathrm{web}}$** — Web line speed ($\mathrm{m/s}$).
+* **$\sigma_{\mathrm{ink}}$** — Liquid-vapor surface tension ($\mathrm{N/m}$).
 
 Wet film thickness $h_{\mathrm{wet}}$ is governed by mass conservation:
 
