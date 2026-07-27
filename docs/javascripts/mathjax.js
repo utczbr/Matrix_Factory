@@ -11,17 +11,17 @@ window.MathJax = {
   }
 };
 
-document.addEventListener("DOMContentLoaded", function () {
-  if (typeof MathJax !== "undefined" && MathJax.typesetPromise) {
-    MathJax.typesetPromise();
-  }
-});
-
-/* MkDocs Material Instant Navigation listener */
-if (typeof location$ !== "undefined") {
-  location$.subscribe(function () {
+/* MkDocs Material v9+ instant navigation subscriber */
+if (typeof document$ !== "undefined") {
+  document$.subscribe(function () {
     if (typeof MathJax !== "undefined" && MathJax.typesetPromise) {
       MathJax.typesetClear();
+      MathJax.typesetPromise();
+    }
+  });
+} else {
+  document.addEventListener("DOMContentLoaded", function () {
+    if (typeof MathJax !== "undefined" && MathJax.typesetPromise) {
       MathJax.typesetPromise();
     }
   });
