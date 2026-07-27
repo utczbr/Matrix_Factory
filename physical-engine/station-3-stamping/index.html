@@ -788,10 +788,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-normalized-cockcroftlatham-ncl-ductile-fracture-damage" class="md-nav__link">
+  <a href="#3-normalized-cockcroftlatham-ncl-ductile-fracture-damage-integral" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage
+        3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage Integral
       
     </span>
   </a>
@@ -1607,10 +1607,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-normalized-cockcroftlatham-ncl-ductile-fracture-damage" class="md-nav__link">
+  <a href="#3-normalized-cockcroftlatham-ncl-ductile-fracture-damage-integral" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage
+        3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage Integral
       
     </span>
   </a>
@@ -1688,32 +1688,37 @@
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-archard-die-tool-wear-model">1. Archard Die Tool Wear Model</h3>
-<p>Progressive stamping die wear ratio <span class="arithmatex">\(W_{\text{ratio}}\)</span> per stroke is computed using Archard's wear law:</p>
-<div class="arithmatex">\[W_{\text{raw}} = W_0 + K_{\text{wear}} \cdot N_{\text{stroke}} \cdot \left( \frac{F_{\text{press}}}{F_{\text{nominal}}} \right)^{\gamma_{\text{archard}}}\]</div>
+<p>Progressive stamping die wear volume <span class="arithmatex">\(V_{\text{wear}}\)</span> and normalized wear ratio <span class="arithmatex">\(W_{\text{ratio}}\)</span> per stroke are computed using Archard's wear law:</p>
+<div class="arithmatex">\[W_{\text{raw}} = W_0 + \frac{K_{\text{wear}} \cdot (F_{\text{nominal}} \times 10^3) \cdot s_{\text{slide}} \cdot N_{\text{stroke}}}{V_{\text{crit}}} \left( \frac{F_{\text{press}}}{F_{\text{nominal}}} \right)^{\gamma_{\text{archard}}}\]</div>
 <div class="arithmatex">\[W_{\text{ratio}} = \min(0.99999,\ \max(0,\ W_{\text{raw}}))\]</div>
 <p>where:</p>
 <ul>
 <li><strong><span class="arithmatex">\(W_0\)</span></strong> — Initial die wear ratio (input).</li>
 <li><strong><span class="arithmatex">\(N_{\text{stroke}}\)</span></strong> — Cumulative die stroke count.</li>
+<li><strong><span class="arithmatex">\(s_{\text{slide}} = 0.002\text{ m}\)</span> (<span class="arithmatex">\(2.0\text{ mm}\)</span>)</strong> — Sliding contact draw distance per stroke.</li>
+<li><strong><span class="arithmatex">\(V_{\text{crit}} = 0.05\text{ mm}^3\)</span></strong> — Critical allowable die wear volume threshold.</li>
 <li><strong><span class="arithmatex">\(\gamma_{\text{archard}} = 1.35\)</span></strong> — Pressure exponent.</li>
 <li><strong><span class="arithmatex">\(K_{\text{wear}}\)</span></strong> — Either <span class="arithmatex">\(K_{\text{wear,duplex}} = 1.47 \times 10^{-10}\text{ mm}^3/(\text{N}\cdot\text{m})\)</span> if the die uses a duplex PVD coating, or <span class="arithmatex">\(K_{\text{wear,pvd}} = 3.50 \times 10^{-6}\text{ mm}^3/(\text{N}\cdot\text{m})\)</span> for a standard PVD coating.</li>
 </ul>
+<p>The force ratio <span class="arithmatex">\((F_{\text{press}}/F_{\text{nominal}})\)</span>, sliding distance <span class="arithmatex">\(s_{\text{slide}}\)</span>, and critical wear volume <span class="arithmatex">\(V_{\text{crit}}\)</span> normalize Archard's volume loss <span class="arithmatex">\(V_{\text{wear}}\)</span> (<span class="arithmatex">\(\text{mm}^3\)</span>) into a dimensionally consistent dimensionless wear fraction <span class="arithmatex">\(W_{\text{raw}} \in [0, 1]\)</span>.</p>
 <h3 id="2-from-press-force-to-local-stress-state">2. From Press Force to Local Stress State</h3>
 <p>The NCL criterion requires a local plastic strain <span class="arithmatex">\(\varepsilon_p\)</span> and local stress <span class="arithmatex">\(\sigma_1\)</span>, which are derived from <code>press_force_kn</code> and the current wear state via a wear-coupled friction model.</p>
 <p><strong>Wear-coupled local friction.</strong> As the die wears, local friction at the flow-channel radius rises:</p>
 <div class="arithmatex">\[\mu_{\text{local}} = \mu_0 + \alpha_f \cdot W_{\text{ratio}}, \qquad \mu_0 = 0.12,\ \ \alpha_f = 0.45\]</div>
 <p><strong>Plastic strain (empirical process proxy).</strong> Plastic strain scales linearly with normalized press force:</p>
 <div class="arithmatex">\[\varepsilon_p = \varepsilon_{p,\text{scale}} \cdot \frac{F_{\text{press}}}{F_{\text{nominal}}}, \qquad \varepsilon_{p,\text{scale}} = 0.1456\]</div>
-<p><strong>Local stress.</strong> Press force is spread over the total engaged micro-channel area (<span class="arithmatex">\(A_{\text{total}} = 0.0012\ \text{m}^2\)</span> across 60 channels, <span class="arithmatex">\(1.0\text{ mm}\)</span> wide <span class="arithmatex">\(\times\)</span> <span class="arithmatex">\(20.0\text{ mm}\)</span> engaged length each) to obtain a membrane/channel stress, which is friction-augmented with a capstan-type correction using die draft angle <span class="arithmatex">\(\theta_{\text{die}} = 10^\circ\)</span>, and added to the flow stress:</p>
+<p><strong>Local stress &amp; Angular radian conversion.</strong> Press force is spread over the total engaged micro-channel area (<span class="arithmatex">\(A_{\text{total}} = 0.0012\ \text{m}^2\)</span> across 60 channels, <span class="arithmatex">\(1.0\text{ mm}\)</span> wide <span class="arithmatex">\(\times\)</span> <span class="arithmatex">\(20.0\text{ mm}\)</span> engaged length each) to obtain a membrane/channel stress. Friction augmentation across die draft angle <span class="arithmatex">\(\theta_{\text{die}} = 10.0^\circ\)</span> is evaluated using explicit conversion to radians (<span class="arithmatex">\(\theta_{\text{rad}} = \frac{\theta_{\text{die}}\pi}{180} = 0.17453\text{ rad}\)</span>):</p>
 <div class="arithmatex">\[\sigma_{\text{mem}} = \frac{F_{\text{press}} \times 10^3}{A_{\text{total}}} \times 10^{-6} \quad [\text{MPa}]\]</div>
 <div class="arithmatex">\[\sigma_{\text{flow}} = K_{\text{strength}} \cdot \varepsilon_p^{\,n_{\text{hardening}}}\]</div>
-<div class="arithmatex">\[\sigma_1 = \sigma_{\text{mem}} \cdot \exp\!\left(\mu_{\text{local}}\,\theta_{\text{die}}\right) + \sigma_{\text{flow}}\]</div>
+<div class="arithmatex">\[\sigma_1 = \sigma_{\text{mem}} \cdot \exp\!\left(\mu_{\text{local}} \cdot \frac{\theta_{\text{die}}\pi}{180}\right) + \sigma_{\text{flow}}\]</div>
 <p>where <span class="arithmatex">\(K_{\text{strength}} = 1280.0\text{ MPa}\)</span> and <span class="arithmatex">\(n_{\text{hardening}} = 0.43\)</span> (Blandford 2007; Mahabunphachai &amp; Koc 2008).</p>
-<h3 id="3-normalized-cockcroftlatham-ncl-ductile-fracture-damage">3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage</h3>
-<p>Plastic work done <span class="arithmatex">\(W_{\text{plastic}}\)</span> is integrated and normalized against critical threshold <span class="arithmatex">\(C_{\text{crit,NCL}} = 0.35\)</span> (Modanloo et al.):</p>
-<div class="arithmatex">\[W_{\text{plastic}} = \frac{\sigma_1 / K_{\text{strength}}}{1 - n_{\text{hardening}}} \cdot \varepsilon_p^{\,1 - n_{\text{hardening}}}\]</div>
+<h3 id="3-normalized-cockcroftlatham-ncl-ductile-fracture-damage-integral">3. Normalized Cockcroft–Latham (NCL) Ductile Fracture Damage Integral</h3>
+<p>The Normalized Cockcroft–Latham (NCL) ductile damage criterion evaluates normalized plastic work by integrating tensile stress <span class="arithmatex">\(\sigma_1\)</span> over flow stress <span class="arithmatex">\(\sigma_{\text{flow}} = K_{\text{strength}}\varepsilon_p^n\)</span>:</p>
+<div class="arithmatex">\[C_{\text{NCL}} = \int_0^{\varepsilon_p} \frac{\sigma_1}{\sigma_{\text{flow}}} \, d\varepsilon_p = \int_0^{\varepsilon_p} \left( \frac{\sigma_{\text{mem}} e^{\mu_{\text{local}}\theta_{\text{rad}}}}{K_{\text{strength}}} \varepsilon_p^{-n_{\text{hardening}}} + 1 \right) d\varepsilon_p\]</div>
+<p>Evaluating this integral yields the plastic work index <span class="arithmatex">\(W_{\text{plastic}}\)</span>:</p>
+<div class="arithmatex">\[W_{\text{plastic}} = \frac{\sigma_{\text{mem}} \cdot \exp\!\left(\mu_{\text{local}} \cdot \frac{\theta_{\text{die}}\pi}{180}\right)}{K_{\text{strength}}\left(1 - n_{\text{hardening}}\right)} \cdot \varepsilon_p^{1 - n_{\text{hardening}}} + \varepsilon_p\]</div>
 <div class="arithmatex">\[\text{damage}_{\text{NCL}} = \min\left(2.0,\ \max\left(0,\ \frac{W_{\text{plastic}}}{C_{\text{crit,NCL}}}\right)\right)\]</div>
-<p>A defect is registered if <span class="arithmatex">\(\text{damage}_{\text{NCL}} &gt; 1.0\)</span> or <span class="arithmatex">\(W_{\text{ratio}} \ge 0.75\)</span>.</p>
+<p>A component is flagged defective if <span class="arithmatex">\(\text{damage}_{\text{NCL}} &gt; 1.0\)</span> or <span class="arithmatex">\(W_{\text{ratio}} \ge 0.75\)</span>. <span class="arithmatex">\(\text{damage}_{\text{NCL}}\)</span> propagates downstream to Station 4 to scale interfacial contact stress non-uniformity via <span class="arithmatex">\((1 + \beta_{\text{crack}} \cdot \text{damage}_{\text{NCL}})\)</span>.</p>
 <h3 id="4-execution-pacing">4. Execution Pacing</h3>
 <div class="arithmatex">\[t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.12\, F_{\text{dev}} + 0.18\, W_{\text{ratio}}\right), \qquad t_{\text{base}} = 3.0\ \text{s}\]</div>
 <div class="arithmatex">\[\text{var\_ratio} = 1.0 + 0.40\, W_{\text{ratio}} + 0.30\, \text{damage}_{\text{NCL}}^2\]</div>
@@ -1737,6 +1742,20 @@
 <td><span class="arithmatex">\(0.35\)</span></td>
 <td>—</td>
 <td>Modanloo et al. (2018)</td>
+</tr>
+<tr>
+<td>Sliding Contact Distance</td>
+<td><span class="arithmatex">\(s_{\text{slide}}\)</span></td>
+<td><span class="arithmatex">\(0.002\)</span> (<span class="arithmatex">\(2.0\text{ mm}\)</span>)</td>
+<td><span class="arithmatex">\(\text{m}\)</span></td>
+<td>Die draw contact length</td>
+</tr>
+<tr>
+<td>Critical Wear Volume</td>
+<td><span class="arithmatex">\(V_{\text{crit}}\)</span></td>
+<td><span class="arithmatex">\(0.05\)</span></td>
+<td><span class="arithmatex">\(\text{mm}^3\)</span></td>
+<td>Allowable die coating wear volume</td>
 </tr>
 <tr>
 <td>Archard Pressure Exponent</td>
@@ -1806,7 +1825,7 @@
 <td><span class="arithmatex">\(\theta_{\text{die}}\)</span></td>
 <td><span class="arithmatex">\(10.0\)</span></td>
 <td><span class="arithmatex">\(^\circ\)</span></td>
-<td>Die Geometry Spec</td>
+<td>Die Geometry Spec (<span class="arithmatex">\(0.17453\text{ rad}\)</span>)</td>
 </tr>
 <tr>
 <td>Critical Wear Ratio</td>

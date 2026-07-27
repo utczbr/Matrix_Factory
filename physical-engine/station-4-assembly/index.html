@@ -816,10 +816,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-interfacial-contact-resistance-model-microstructurepy" class="md-nav__link">
+  <a href="#3-interfacial-contact-resistance-upstream-micro-crack-propagation-model-microstructurepy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Interfacial Contact Resistance Model (microstructure.py)
+        3. Interfacial Contact Resistance &amp; Upstream Micro-Crack Propagation Model (microstructure.py)
       
     </span>
   </a>
@@ -1618,10 +1618,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-interfacial-contact-resistance-model-microstructurepy" class="md-nav__link">
+  <a href="#3-interfacial-contact-resistance-upstream-micro-crack-propagation-model-microstructurepy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Interfacial Contact Resistance Model (microstructure.py)
+        3. Interfacial Contact Resistance &amp; Upstream Micro-Crack Propagation Model (microstructure.py)
       
     </span>
   </a>
@@ -1706,36 +1706,40 @@
 <p>This document details the mechanical bolt clamping relationships (VDI 2230), elastic interaction, non-linear GDL compression, and interfacial contact resistance models for <strong>Station 4: Stack Clamping &amp; Fastening</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
-<p>Station 4 models the mechanical assembly of fuel cell stacks (repeating units of bipolar plates, GDLs, and MEAs). Tightening torque applied to tie-rods establishes interfacial clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> (<span class="arithmatex">\(\text{MPa}\)</span>), compressing the Gas Diffusion Layer (GDL) and altering contact electrical resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> and gas transport porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span>.</p>
+<p>Station 4 models the mechanical assembly of fuel cell stacks (repeating units of bipolar plates, GDLs, and MEAs). Tightening torque applied to tie-rods establishes interfacial clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> (<span class="arithmatex">\(\text{MPa}\)</span>), compressing the Gas Diffusion Layer (GDL) and altering contact electrical resistance <span class="arithmatex">\(R_{\text{contact}}\)</span>, GDL bulk resistance <span class="arithmatex">\(R_{\text{gdl}}\)</span>, and gas transport porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-vdi-2230-fastener-torque-tension-relationship">1. VDI 2230 Fastener Torque-Tension Relationship</h3>
-<p>Applied tightening torque <span class="arithmatex">\(M_A\)</span> (<span class="arithmatex">\(\text{N}\cdot\text{m}\)</span>) to each of 4 M8 tie-rods converts to axial bolt pre-load force <span class="arithmatex">\(F_M\)</span> (<span class="arithmatex">\(\text{N}\)</span>):</p>
-<div class="arithmatex">\[F_{M,i} = \frac{M_{A,i}}{\dfrac{p}{2\pi} + \dfrac{\mu_{\text{threads},i}\, d_2}{2 \cos\beta} + \mu_{\text{head},i}\, r_{\text{head}}}\]</div>
-<p>where <span class="arithmatex">\(p = 1.25\text{ mm}\)</span>, pitch diameter <span class="arithmatex">\(d_2 = 7.188\text{ mm}\)</span>, under-head radius <span class="arithmatex">\(r_{\text{head}} = 5.125\text{ mm}\)</span>, and flank semi-angle <span class="arithmatex">\(\beta = 30^\circ\)</span>. <span class="arithmatex">\(\mu_{\text{threads},i}\)</span> and <span class="arithmatex">\(\mu_{\text{head},i}\)</span> are <strong>per-bolt</strong> friction coefficients (each defaults to <span class="arithmatex">\(0.15\)</span> if not supplied).</p>
-<p>Elastic interaction coupling reduces effective pre-load across adjacent bolts in a ring (<span class="arithmatex">\(\alpha_{\text{elastic}} = 0.18\)</span>; bolt indices are cyclic, i.e. bolt 1 is coupled to bolt 4):</p>
-<div class="arithmatex">\[F_{\text{real}, i} = F_{\text{nom}, i} - 0.18\, F_{\text{nom}, i-1 \bmod 4}\]</div>
+<p>Applied tightening torque <span class="arithmatex">\(M_{A,i}\)</span> (<span class="arithmatex">\(\text{N}\cdot\text{m}\)</span>) to each of 4 M8 tie-rods (<span class="arithmatex">\(i \in \{1, 2, 3, 4\}\)</span>) converts to nominal axial bolt pre-load force <span class="arithmatex">\(F_{\text{nom},i}\)</span> (<span class="arithmatex">\(\text{N}\)</span>):</p>
+<div class="arithmatex">\[F_{\text{nom},i} = \frac{M_{A,i}}{\dfrac{p}{2\pi} + \dfrac{\mu_{\text{threads},i}\, d_2}{2 \cos\beta} + \mu_{\text{head},i}\, r_{\text{head}}}\]</div>
+<p>where thread pitch <span class="arithmatex">\(p = 1.25\text{ mm}\)</span>, pitch diameter <span class="arithmatex">\(d_2 = 7.188\text{ mm}\)</span>, under-head radius <span class="arithmatex">\(r_{\text{head}} = 5.125\text{ mm}\)</span>, and flank semi-angle <span class="arithmatex">\(\beta = 30^\circ\)</span>. <span class="arithmatex">\(\mu_{\text{threads},i}\)</span> and <span class="arithmatex">\(\mu_{\text{head},i}\)</span> are <strong>per-bolt</strong> friction coefficients (each defaults to <span class="arithmatex">\(0.15\)</span> if not supplied).</p>
+<p>Elastic interaction coupling reduces effective pre-load across adjacent bolts in a ring (<span class="arithmatex">\(\alpha_{\text{elastic}} = 0.18\)</span>). For 1-indexed cyclic ring ordering (<span class="arithmatex">\(i \in \{1, 2, 3, 4\}\)</span>):</p>
+<div class="arithmatex">\[F_{\text{real},1} = F_{\text{nom},1} - 0.18\, F_{\text{nom},4}\]</div>
+<div class="arithmatex">\[F_{\text{real},i} = F_{\text{nom},i} - 0.18\, F_{\text{nom},i-1} \quad \text{for } i \in \{2, 3, 4\}\]</div>
 <p>Clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> over active stack area <span class="arithmatex">\(A_{\text{stack}} = 0.0225\text{ m}^2\)</span> (<span class="arithmatex">\(150 \times 150\text{ mm}\)</span>) is:</p>
 <div class="arithmatex">\[P_{\text{clamp}} = \frac{\sum_{i=1}^4 \max(0, F_{\text{real}, i})}{A_{\text{stack}}}\]</div>
 <h3 id="2-non-linear-gdl-compression-porosity-derating">2. Non-Linear GDL Compression &amp; Porosity Derating</h3>
 <p>Compacted GDL thickness <span class="arithmatex">\(t_{\text{comp}}\)</span> (<span class="arithmatex">\(\mu\text{m}\)</span>) follows non-linear strain stiffness (<span class="arithmatex">\(E_0 = 2.80\text{ MPa}\)</span>, <span class="arithmatex">\(K_s = 28.5\)</span>; Kleemann et al. 2009; Norouzifard &amp; Bahrami 2014):</p>
-<div class="arithmatex">\[t_{\text{comp}} = \max\!\Big(t_{\text{solid}}+1,\ t_0 \left( 1 - \frac{P_{\text{clamp}}}{E_0 + K_s P_{\text{clamp}}} \right)\Big), \qquad t_{\text{solid}} = t_0(1-\varepsilon_0)\]</div>
+<div class="arithmatex">\[t_{\text{comp}} = \max\!\Big(t_{\text{solid}} + 1.0\ \mu\text{m},\ t_0 \left( 1 - \frac{P_{\text{clamp}}}{E_0 + K_s P_{\text{clamp}}} \right)\Big), \qquad t_{\text{solid}} = t_0(1-\varepsilon_0)\]</div>
+<p>where <span class="arithmatex">\(1.0\ \mu\text{m}\)</span> is a lower physical clearance bound added to solid fiber thickness <span class="arithmatex">\(t_{\text{solid}} = t_0(1-\varepsilon_0) = 46.2\ \mu\text{m}\)</span>, preventing division-by-zero or non-physical zero-thickness collapse.</p>
 <p>Compacted GDL porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span> is derated via mass conservation, then clamped to <span class="arithmatex">\([0.01, 0.95]\)</span>:</p>
 <div class="arithmatex">\[\varepsilon_{\text{gdl}} = \max\!\Big(0.01,\ \min\!\big(0.95,\ 1 - (1 - \varepsilon_0) \tfrac{t_0}{t_{\text{comp}}}\big)\Big)\]</div>
 <p>Tangential elastic modulus <span class="arithmatex">\(E_{\text{tangent}}\)</span> scales with pressure:</p>
 <div class="arithmatex">\[E_{\text{tangent}} = E_0 \left( 1 + \frac{K_s}{E_0} P_{\text{clamp}} \right)^2\]</div>
-<h3 id="3-interfacial-contact-resistance-model-microstructurepy">3. Interfacial Contact Resistance Model (<code>microstructure.py</code>)</h3>
-<p>Microstructure contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> (<span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span>) is a <strong>U-shaped penalty centered on a nominal clamping setpoint</strong> <span class="arithmatex">\(P_{\text{nom}} = 4.25\text{ MPa}\)</span> — both under-clamping (loss of micro-contact area) and over-clamping (channel intrusion/fiber crushing) increase resistance relative to the setpoint:</p>
+<h3 id="3-interfacial-contact-resistance-upstream-micro-crack-propagation-model-microstructurepy">3. Interfacial Contact Resistance &amp; Upstream Micro-Crack Propagation Model (<code>microstructure.py</code>)</h3>
+<p>Microstructure contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> (<span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span>) is a <strong>U-shaped penalty centered on a nominal clamping setpoint</strong> <span class="arithmatex">\(P_{\text{nom}} = 4.25\text{ MPa}\)</span>, coupled to Station 3 ductile micro-crack damage (<span class="arithmatex">\(\text{damage}_{\text{NCL}}\)</span>):</p>
 <div class="arithmatex">\[p_{\text{dev}} = \frac{\left|P_{\text{clamp}} - P_{\text{nom}}\right|}{P_{\text{nom}}}\]</div>
-<div class="arithmatex">\[R_{\text{contact}}(P_{\text{clamp}}) = R_{\text{contact},0} \left(1 + 0.35\, p_{\text{dev}} + 0.25\, p_{\text{dev}}^2\right)\]</div>
-<p>with <span class="arithmatex">\(P_{\text{clamp}}\)</span> floored at <span class="arithmatex">\(0.5\text{ MPa}\)</span> before evaluation. Two calibrated reference points are used depending on plate surface treatment:</p>
+<div class="arithmatex">\[R_{\text{contact}}(P_{\text{clamp}}, \text{damage}_{\text{NCL}}) = R_{\text{contact},0} \left(1 + 0.35\, p_{\text{dev}} + 0.25\, p_{\text{dev}}^2\right) \left(1 + \beta_{\text{crack}} \cdot \text{damage}_{\text{NCL}}\right)\]</div>
+<p>with <span class="arithmatex">\(P_{\text{clamp}}\)</span> floored at <span class="arithmatex">\(0.5\text{ MPa}\)</span> before evaluation and micro-crack penalty coefficient <span class="arithmatex">\(\beta_{\text{crack}} = 0.15\)</span> accounting for contact stress non-uniformity caused by stamping springback and micro-cracks. Two calibrated reference points are used depending on plate surface treatment:</p>
 <ul>
 <li><span class="arithmatex">\(R_{\text{contact},0} = 0.0042\ \Omega\cdot\text{cm}^2\)</span> (<span class="arithmatex">\(4.20\ \text{m}\Omega\cdot\text{cm}^2\)</span>) — TiAlN/CrN-coated plate (default).</li>
 <li><span class="arithmatex">\(R_{\text{contact,uncoated}} = 0.0185\ \Omega\cdot\text{cm}^2\)</span> (<span class="arithmatex">\(18.50\ \text{m}\Omega\cdot\text{cm}^2\)</span>) — uncoated 316L reference.</li>
 </ul>
 <p>Both constants trace to El-Kharouf, Mason, Brett &amp; Pollet (2012).</p>
-<p><strong>Bruggeman effective conductivity.</strong> The same module implements the effective-medium relation:</p>
+<p><strong>Bruggeman effective conductivity &amp; Bulk GDL Resistance.</strong> The effective bulk electrical conductivity <span class="arithmatex">\(\sigma_{\text{eff}}\)</span> (<span class="arithmatex">\(\text{S/cm}\)</span>) and bulk GDL resistance <span class="arithmatex">\(R_{\text{gdl}}\)</span> (<span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span>) are calculated via:</p>
 <div class="arithmatex">\[\sigma_{\text{eff}} = \sigma_{\text{bulk}} \left(1 - \varepsilon_{\text{gdl}}\right)^{m}, \qquad m = 1.5 \ \text{(standard Bruggeman exponent, fibrous porous media)}\]</div>
+<div class="arithmatex">\[R_{\text{gdl}}(t_{\text{comp}}, \varepsilon_{\text{gdl}}) = \frac{t_{\text{comp}} \times 10^{-4}\text{ cm}}{\sigma_{\text{eff}}}\]</div>
+<p>where <span class="arithmatex">\(\sigma_{\text{bulk}} = 220.0\text{ S/cm}\)</span> (carbon fiber paper bulk electrical conductivity). <span class="arithmatex">\(R_{\text{gdl}}\)</span> feeds directly into Station 5's effective internal resistance equation.</p>
 <h3 id="4-defect-criteria">4. Defect Criteria</h3>
 <p>A component/assembly is flagged defective if any of the following hold:</p>
 <ul>
@@ -1775,11 +1779,25 @@
 <td>El-Kharouf, Mason, Brett &amp; Pollet (2012)</td>
 </tr>
 <tr>
+<td>Micro-Crack Contact Penalty Coeff.</td>
+<td><span class="arithmatex">\(\beta_{\text{crack}}\)</span></td>
+<td><span class="arithmatex">\(0.15\)</span></td>
+<td>—</td>
+<td>Micro-crack stress non-uniformity factor</td>
+</tr>
+<tr>
 <td>Nominal Clamping Setpoint</td>
 <td><span class="arithmatex">\(P_{\text{nom}}\)</span></td>
 <td><span class="arithmatex">\(4.25\)</span></td>
 <td><span class="arithmatex">\(\text{MPa}\)</span></td>
 <td>Target clamping pressure</td>
+</tr>
+<tr>
+<td>Carbon Fiber Bulk Conductivity</td>
+<td><span class="arithmatex">\(\sigma_{\text{bulk}}\)</span></td>
+<td><span class="arithmatex">\(220.0\)</span></td>
+<td><span class="arithmatex">\(\text{S/cm}\)</span></td>
+<td>Toray TGP-H-060 Datasheet</td>
 </tr>
 <tr>
 <td>Bruggeman Exponent</td>
@@ -1822,6 +1840,13 @@
 <td><span class="arithmatex">\(0.78\)</span></td>
 <td>—</td>
 <td>Toray TGP-H-060 Datasheet</td>
+</tr>
+<tr>
+<td>Lower Compaction Clearance Bound</td>
+<td>—</td>
+<td><span class="arithmatex">\(1.0\)</span></td>
+<td><span class="arithmatex">\(\mu\text{m}\)</span></td>
+<td>Physical minimum clearance bound</td>
 </tr>
 <tr>
 <td>Elastic Interaction Coeff.</td>
