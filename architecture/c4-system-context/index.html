@@ -1576,7 +1576,7 @@
     end
 
     USER --&gt;|Configures Runs &amp; Topologies| MAS
-    MAS &lt;== gRPC IPC ==&gt; PHYS
+    MAS == "gRPC IPC" ==&gt; PHYS
     MAS --&gt;|Persists State Logs| DB
     HUB --&gt;|Streams Metrics over WSS| DASH
     MARKET --&gt;|Energy Price Feeds| MAS</code></pre>
@@ -1584,19 +1584,19 @@
 <h2 id="level-2-container-diagram">Level 2: Container Diagram</h2>
 <p>The Container diagram decomposes the system into executable runtime units and documents their inter-container communication channels.</p>
 <pre class="mermaid"><code>graph TB
-    subgraph Java JVM Container [Java JVM - JaCaMo Runtime]
+    subgraph Java_Container ["Java JVM - JaCaMo Runtime"]
         MAIN["MainSimulator.java (Clock Coordinator)"]
         AGTS["Jason BDI Agents (Supervisor, Order, Resource, AMR)"]
         ART["CArtAgO Artifacts (Database, Telemetry, SimBridge)"]
     end
 
-    subgraph Python Container [Python 3.11 Runtime]
+    subgraph Python_Container ["Python 3.11 Runtime"]
         DAEMON["daemon_launcher.py (gRPC Server)"]
         NUMBA["Numba JIT ODE Solvers (Stations 1-5)"]
         COOL["CoolProp Fluid EOS"]
     end
 
-    subgraph Data Container [Storage &amp; Telemetry]
+    subgraph Data_Container ["Storage &amp; Telemetry"]
         SQLITE[("factory_history.db (SQLite WAL Mode)")]
         WS["WebSocket Telemetry Hub (Port 8081)"]
     end

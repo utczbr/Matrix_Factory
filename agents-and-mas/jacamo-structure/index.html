@@ -1602,10 +1602,10 @@
 <h2 id="cartago-shared-environment-artifacts">CArtAgO Shared Environment Artifacts</h2>
 <p>CArtAgO artifacts encapsulate environment operations, exposing <strong>Observable Properties</strong>, <strong>Signals</strong>, and <strong>Annotated Actions</strong>:</p>
 <pre class="mermaid"><code>graph TD
-    subgraph CArtAgO Workspace
-        DB["DatabaseArtifact&lt;br&gt;(SQLite WAL Queue)"]
-        TEL["TelemetryHub&lt;br&gt;(WSS Port 8081)"]
-        BRIDGE["SimBridgeArtifact&lt;br&gt;(gRPC IPC)"]
+    subgraph Workspace ["CArtAgO Workspace"]
+        DB["DatabaseArtifact (SQLite WAL Queue)"]
+        TEL["TelemetryHub (WSS Port 8081)"]
+        BRIDGE["SimBridgeArtifact (gRPC IPC)"]
     end
 
     AGENT["Jason BDI Agent"] --&gt;|@OPERATION log_event()| DB

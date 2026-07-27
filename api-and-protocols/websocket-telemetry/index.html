@@ -1571,8 +1571,8 @@
 
     Client-&gt;&gt;Auth: POST http://127.0.0.1:8081/telemetry/ticket (Secret Header)
     Auth-&gt;&gt;Auth: Generate HMAC SHA-256 Token (Timestamp + Nonce + Key)
-    Auth--&gt;&gt;Client: 200 OK { "ticket": "a8f9c1b...", "expires_in": 300 }
-    Client-&gt;&gt;WS: Connect ws://127.0.0.1:8081/telemetry?ticket=a8f9c1b...
+    Auth--&gt;&gt;Client: 200 OK Ticket Token Response
+    Client-&gt;&gt;WS: Connect ws://127.0.0.1:8081/telemetry?ticket=token
     WS-&gt;&gt;WS: Validate Ticket &amp; HMAC Signature
     WS--&gt;&gt;Client: 101 Switching Protocols (Stream Active)</code></pre>
 <hr />
