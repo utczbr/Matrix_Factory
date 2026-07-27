@@ -1771,8 +1771,8 @@
 </ul>
 <div class="arithmatex">\[j_0 = j_{0,\text{ref}} \cdot \text{ECSA}_{\text{ratio}} \cdot \exp\left( -\frac{E_{\text{act}}}{R T} \left( 1 - \frac{T}{T_{\text{ref}}} \right) \right)\]</div>
 <h3 id="4-ohmic-overpotential-springer-membrane-hydration">4. Ohmic Overpotential &amp; Springer Membrane Hydration</h3>
-<p>Ohmic overpotential <span class="arithmatex">\(\eta_{\text{ohm}}\)</span> incorporates bulk contact resistance <span class="arithmatex">\(R_{\text{internal}}\)</span> and membrane ionic resistance <span class="arithmatex">\(R_{\text{mem}}\)</span>:</p>
-<div class="arithmatex">\[\eta_{\text{ohm}} = j \cdot \left( R_{\text{internal}} + R_{\text{mem}}(\lambda, T) \right)\]</div>
+<p>Ohmic overpotential <span class="arithmatex">\(\eta_{\text{ohm}}\)</span> incorporates baseline internal resistance <span class="arithmatex">\(R_{\text{internal}}\)</span>, bulk GDL resistance <span class="arithmatex">\(R_{\text{gdl}}\)</span> (from Station 4), and membrane ionic resistance <span class="arithmatex">\(R_{\text{mem}}\)</span>:</p>
+<div class="arithmatex">\[\eta_{\text{ohm}} = j \cdot \left( R_{\text{internal}} + R_{\text{gdl}}(t_{\text{comp}}, \varepsilon_{\text{gdl}}) + R_{\text{mem}}(\lambda, T) \right)\]</div>
 <p>Membrane thickness is <span class="arithmatex">\(t_{\text{mem}} = 50.0\ \mu\text{m}\)</span> (<span class="arithmatex">\(0.005\text{ cm}\)</span>). Conductivity <span class="arithmatex">\(\sigma_{\text{mem}}\)</span> (<span class="arithmatex">\(\text{S/cm}\)</span>) follows Springer's model for water content <span class="arithmatex">\(\lambda \in [1, 14]\)</span>:</p>
 <div class="arithmatex">\[\sigma_{\text{mem}}(\lambda, T) = (0.005139 \lambda - 0.00326) \exp\left( 1268 \left( \frac{1}{303.15} - \frac{1}{T} \right) \right)\]</div>
 <div class="arithmatex">\[R_{\text{mem}} = \frac{t_{\text{mem}}}{\sigma_{\text{mem}}(\lambda, T)}\]</div>
@@ -1786,17 +1786,21 @@
 <p>with <span class="arithmatex">\(B = 0.05\)</span>, <span class="arithmatex">\(j_{\text{lim}} = 2.5\text{ A/cm}^2\)</span> nominal.</p>
 <h3 id="6-manufacturing-to-performance-coupling">6. Manufacturing-to-Performance Coupling</h3>
 <p><code>sim_bridge_server.py::RunBatchTest</code> combines upstream station outputs into the effective internal resistance and reactant conditions actually fed to the polarization solver:</p>
-<div class="arithmatex">\[R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right)\]</div>
+<div class="arithmatex">\[R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right) + R_{\text{gdl}}\!\left(t_{\text{comp}},\, \varepsilon_{\text{gdl}}\right)\]</div>
 <div class="arithmatex">\[a_{H_2}^{\text{eff}} = a_{H_2}\,(1 - \text{derate}), \qquad a_{O_2}^{\text{eff}} = a_{O_2}\,(1 - \text{derate})\]</div>
 <div class="arithmatex">\[j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim,derate}})\right)\]</div>
-<p>where <span class="arithmatex">\(R_{\text{internal},0}\)</span> is a per-run baseline resistance (default <span class="arithmatex">\(0.06\ \Omega\cdot\text{cm}^2\)</span>), <span class="arithmatex">\(\Delta R_{\text{penalty}}\)</span> is a defect-accumulation penalty tracked by the agent layer, <span class="arithmatex">\(R_{\text{contact}}(\cdot)\)</span> is the Station 4 U-shaped contact-resistance model (see <a href="../station-4-assembly/">Station 4</a>), and <span class="arithmatex">\(\text{derate}\)</span>/<span class="arithmatex">\(j_{\text{lim,derate}}\)</span> are upstream-quality-derived fractions clamped to <span class="arithmatex">\([0, 0.95]\)</span> and <span class="arithmatex">\([0, 0.90]\)</span> respectively.</p>
+<p>where <span class="arithmatex">\(R_{\text{internal},0}\)</span> is a per-run baseline resistance (default <span class="arithmatex">\(0.06\ \Omega\cdot\text{cm}^2\)</span>), <span class="arithmatex">\(\Delta R_{\text{penalty}}\)</span> is a defect-accumulation penalty tracked by the agent layer, <span class="arithmatex">\(R_{\text{contact}}(\cdot)\)</span> is the Station 4 U-shaped contact-resistance model, <span class="arithmatex">\(R_{\text{gdl}}(\cdot) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{bulk}}(1-\varepsilon_{\text{gdl}})^m}\)</span> is the GDL bulk electrical resistance (see <a href="../station-4-assembly/">Station 4</a>), and <span class="arithmatex">\(\text{derate}\)</span>/<span class="arithmatex">\(j_{\text{lim,derate}}\)</span> are upstream-quality-derived fractions clamped to <span class="arithmatex">\([0, 0.95]\)</span> and <span class="arithmatex">\([0, 0.90]\)</span> respectively.</p>
 <h3 id="7-thermal-coupling-test-bench-qc-thresholds">7. Thermal Coupling &amp; Test-Bench QC Thresholds</h3>
-<p>Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (<code>stack_thermal_model.py</code>), validated against the <strong>Yonkist number</strong> — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation (<span class="arithmatex">\(Yo = q_{\text{gen}}L^2/(k\,\Delta T)\)</span>; valid when <span class="arithmatex">\(Yo &lt; Bi\)</span>). Heat generation per sweep point is <span class="arithmatex">\(Q_{\text{gen}} = j\cdot N_{\text{cells}}\cdot(\eta_{\text{act}} + \eta_{\text{ohm}})\)</span>.</p>
+<p>Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (<code>stack_thermal_model.py</code>), validated against the <strong>Yonkist number</strong> — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation (<span class="arithmatex">\(Yo = \frac{q_{\text{gen}}L^2}{k\,\Delta T}\)</span>; valid when <span class="arithmatex">\(Yo &lt; Bi\)</span>).</p>
+<p>Total irreversible voltage overpotential and entropic heat generation per unit area <span class="arithmatex">\(Q_{\text{gen}}\)</span> (<span class="arithmatex">\(\text{W/cm}^2\)</span>) is:</p>
+<div class="arithmatex">\[Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)\]</div>
+<p>where <span class="arithmatex">\(E_{\text{entropic}} = \frac{-T \Delta S}{zF} \approx 0.23\text{ V}\)</span> represents reversible entropic heat generation (<span class="arithmatex">\(\Delta S = -163.2\text{ J/(mol}\cdot\text{K)}\)</span> for liquid water formation), ensuring accurate thermal runaway prediction at high current density (<span class="arithmatex">\(j \to j_{\text{lim}}\)</span>).</p>
 <p>The end-of-line test bench flags a stack via a bitmask if any of the following hold during a sweep:</p>
 <ul>
 <li><strong>Ohmic degradation:</strong> per-cell ohmic overpotential <span class="arithmatex">\(\eta_{\text{ohm}} &gt; 0.35\text{ V}\)</span></li>
 <li><strong>Thermal shutdown:</strong> core temperature <span class="arithmatex">\(T &gt; 358.15\text{ K}\)</span> (<span class="arithmatex">\(\approx 85^\circ\text{C}\)</span>)</li>
-<li><strong>Low activation:</strong> <span class="arithmatex">\(\text{ECSA}_{\text{ratio}} &lt; 0.3\)</span>, or <span class="arithmatex">\(a_{H_2} &lt; 0.7\)</span>, or <span class="arithmatex">\(a_{O_2} &lt; 0.7\)</span></li>
+<li><strong>Low activation kinetics:</strong> catalyst surface area utilization <span class="arithmatex">\(\text{ECSA}_{\text{ratio}} &lt; 0.30\)</span></li>
+<li><strong>Reactant gas starvation:</strong> hydrogen or oxygen activity floor breach <span class="arithmatex">\(a_{H_2} &lt; 0.70\)</span> or <span class="arithmatex">\(a_{O_2} &lt; 0.70\)</span></li>
 <li><strong>Mass-transport starvation:</strong> flagged upstream via monotonicity check on the voltage sweep</li>
 <li><strong>Solver non-convergence:</strong> Newton–Raphson current-density solve fails to converge within 50 iterations to <span class="arithmatex">\(10^{-4}\text{ V}\)</span> tolerance</li>
 </ul>
@@ -1870,6 +1874,34 @@
 <td>Per-run baseline</td>
 </tr>
 <tr>
+<td>Stack Characteristic Length</td>
+<td><span class="arithmatex">\(L\)</span></td>
+<td><span class="arithmatex">\(0.05\)</span> (<span class="arithmatex">\(5.0\text{ cm}\)</span>)</td>
+<td><span class="arithmatex">\(\text{m}\)</span></td>
+<td>Stack thermal geometry</td>
+</tr>
+<tr>
+<td>Effective Thermal Conductivity</td>
+<td><span class="arithmatex">\(k_{\text{eff}}\)</span></td>
+<td><span class="arithmatex">\(1.25\)</span></td>
+<td><span class="arithmatex">\(\text{W/(m}\cdot\text{K)}\)</span></td>
+<td>Stack composite thermal property</td>
+</tr>
+<tr>
+<td>Core-Skin Temp. Threshold</td>
+<td><span class="arithmatex">\(\Delta T\)</span></td>
+<td><span class="arithmatex">\(15.0\)</span></td>
+<td><span class="arithmatex">\(\text{K}\)</span></td>
+<td>Yonkist stability criterion</td>
+</tr>
+<tr>
+<td>Reversible Entropic Potential</td>
+<td><span class="arithmatex">\(E_{\text{entropic}}\)</span></td>
+<td><span class="arithmatex">\(0.23\)</span></td>
+<td><span class="arithmatex">\(\text{V}\)</span></td>
+<td>Thermodynamic entropic term (<span class="arithmatex">\(-T\Delta S/zF\)</span>)</td>
+</tr>
+<tr>
 <td>Ohmic Degradation Threshold</td>
 <td>—</td>
 <td><span class="arithmatex">\(0.35\)</span></td>
@@ -1884,11 +1916,18 @@
 <td>QC threshold</td>
 </tr>
 <tr>
-<td>Low-Activation Activity Floor</td>
+<td>Low-Activation ECSA Floor</td>
 <td>—</td>
-<td><span class="arithmatex">\(0.7\)</span></td>
+<td><span class="arithmatex">\(0.30\)</span></td>
 <td>—</td>
 <td>QC threshold</td>
+</tr>
+<tr>
+<td>Reactant Activity Floor</td>
+<td>—</td>
+<td><span class="arithmatex">\(0.70\)</span></td>
+<td>—</td>
+<td>QC threshold (Gas starvation)</td>
 </tr>
 </tbody>
 </table>

@@ -44,10 +44,10 @@ graph LR
 Physical output states from upstream stations serve as boundary constraints for downstream manufacturing processes:
 
 1. **Station 3 Ductile Micro-Cracks → Station 4 Clamping:** Stamping springback and micro-cracks increase local contact stress non-uniformity during clamping.
-2. **Station 4 Clamping Pressure → Station 5 Polarization:** Interfacial contact pressure $P_{\text{clamp}}$ determines gas diffusion layer (GDL) contact resistance $R_{\text{contact}}$ and bulk porosity $\varepsilon_{\text{gdl}}$, both of which are folded directly into the Station 5 solver's effective internal resistance.
+2. **Station 4 Clamping Pressure → Station 5 Polarization:** Interfacial contact pressure $P_{\text{clamp}}$ determines gas diffusion layer (GDL) contact resistance $R_{\text{contact}}$, GDL bulk resistance $R_{\text{gdl}}$, and bulk porosity $\varepsilon_{\text{gdl}}$, all of which are folded directly into the Station 5 solver's effective internal resistance.
 
 The inter-station coupling mechanism, implemented in `sim_bridge_server.py::RunBatchTest`, evaluates:
 
-$$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right)$$
+$$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right) + R_{\text{gdl}}\!\left(t_{\text{comp}},\, \varepsilon_{\text{gdl}}\right)$$
 
-where $R_{\text{internal},0}$ is a per-run baseline (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is an accumulated defect-rate penalty tracked on the Java/agent side, and $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model detailed in the [Station 4 doc](station-4-assembly.md). Reactant activities $a_{H_2}, a_{O_2}$ are separately derated by an `activity_derate_fraction`, and the limiting current $j_{\text{lim}}$ by a `j_lim_derate_fraction`, both also sourced from upstream station outcomes. See the [Station 5 doc](station-5-pemfc.md) for the full path.
+where $R_{\text{internal},0}$ is a per-run baseline (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is an accumulated defect-rate penalty tracked on the Java/agent side, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, and $R_{\text{gdl}}(\cdot)$ is the GDL bulk electrical resistance detailed in the [Station 4 doc](station-4-assembly.md). Reactant activities $a_{H_2}, a_{O_2}$ are separately derated by an `activity_derate_fraction`, and the limiting current $j_{\text{lim}}$ by a `j_lim_derate_fraction`, both also sourced from upstream station outcomes. See the [Station 5 doc](station-5-pemfc.md) for the full path.

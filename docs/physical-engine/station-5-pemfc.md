@@ -42,9 +42,9 @@ $$j_0 = j_{0,\text{ref}} \cdot \text{ECSA}_{\text{ratio}} \cdot \exp\left( -\fra
 
 ### 4. Ohmic Overpotential & Springer Membrane Hydration
 
-Ohmic overpotential $\eta_{\text{ohm}}$ incorporates bulk contact resistance $R_{\text{internal}}$ and membrane ionic resistance $R_{\text{mem}}$:
+Ohmic overpotential $\eta_{\text{ohm}}$ incorporates baseline internal resistance $R_{\text{internal}}$, bulk GDL resistance $R_{\text{gdl}}$ (from Station 4), and membrane ionic resistance $R_{\text{mem}}$:
 
-$$\eta_{\text{ohm}} = j \cdot \left( R_{\text{internal}} + R_{\text{mem}}(\lambda, T) \right)$$
+$$\eta_{\text{ohm}} = j \cdot \left( R_{\text{internal}} + R_{\text{gdl}}(t_{\text{comp}}, \varepsilon_{\text{gdl}}) + R_{\text{mem}}(\lambda, T) \right)$$
 
 Membrane thickness is $t_{\text{mem}} = 50.0\ \mu\text{m}$ ($0.005\text{ cm}$). Conductivity $\sigma_{\text{mem}}$ ($\text{S/cm}$) follows Springer's model for water content $\lambda \in [1, 14]$:
 
@@ -72,23 +72,30 @@ with $B = 0.05$, $j_{\text{lim}} = 2.5\text{ A/cm}^2$ nominal.
 
 `sim_bridge_server.py::RunBatchTest` combines upstream station outputs into the effective internal resistance and reactant conditions actually fed to the polarization solver:
 
-$$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right)$$
+$$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right) + R_{\text{gdl}}\!\left(t_{\text{comp}},\, \varepsilon_{\text{gdl}}\right)$$
 
 $$a_{H_2}^{\text{eff}} = a_{H_2}\,(1 - \text{derate}), \qquad a_{O_2}^{\text{eff}} = a_{O_2}\,(1 - \text{derate})$$
 
 $$j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim,derate}})\right)$$
 
-where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model (see [Station 4](station-4-assembly.md)), and $\text{derate}$/$j_{\text{lim,derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
+where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, $R_{\text{gdl}}(\cdot) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{bulk}}(1-\varepsilon_{\text{gdl}})^m}$ is the GDL bulk electrical resistance (see [Station 4](station-4-assembly.md)), and $\text{derate}$/$j_{\text{lim,derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
 
 ### 7. Thermal Coupling & Test-Bench QC Thresholds
 
-Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (`stack_thermal_model.py`), validated against the **Yonkist number** — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation ($Yo = q_{\text{gen}}L^2/(k\,\Delta T)$; valid when $Yo < Bi$). Heat generation per sweep point is $Q_{\text{gen}} = j\cdot N_{\text{cells}}\cdot(\eta_{\text{act}} + \eta_{\text{ohm}})$.
+Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (`stack_thermal_model.py`), validated against the **Yonkist number** — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation ($Yo = \frac{q_{\text{gen}}L^2}{k\,\Delta T}$; valid when $Yo < Bi$).
+
+Total irreversible voltage overpotential and entropic heat generation per unit area $Q_{\text{gen}}$ ($\text{W/cm}^2$) is:
+
+$$Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)$$
+
+where $E_{\text{entropic}} = \frac{-T \Delta S}{zF} \approx 0.23\text{ V}$ represents reversible entropic heat generation ($\Delta S = -163.2\text{ J/(mol}\cdot\text{K)}$ for liquid water formation), ensuring accurate thermal runaway prediction at high current density ($j \to j_{\text{lim}}$).
 
 The end-of-line test bench flags a stack via a bitmask if any of the following hold during a sweep:
 
 * **Ohmic degradation:** per-cell ohmic overpotential $\eta_{\text{ohm}} > 0.35\text{ V}$
 * **Thermal shutdown:** core temperature $T > 358.15\text{ K}$ ($\approx 85^\circ\text{C}$)
-* **Low activation:** $\text{ECSA}_{\text{ratio}} < 0.3$, or $a_{H_2} < 0.7$, or $a_{O_2} < 0.7$
+* **Low activation kinetics:** catalyst surface area utilization $\text{ECSA}_{\text{ratio}} < 0.30$
+* **Reactant gas starvation:** hydrogen or oxygen activity floor breach $a_{H_2} < 0.70$ or $a_{O_2} < 0.70$
 * **Mass-transport starvation:** flagged upstream via monotonicity check on the voltage sweep
 * **Solver non-convergence:** Newton–Raphson current-density solve fails to converge within 50 iterations to $10^{-4}\text{ V}$ tolerance
 
@@ -106,9 +113,14 @@ The end-of-line test bench flags a stack via a bitmask if any of the following h
 | Limiting Current | $j_{\text{lim}}$ | $2.50$ | $\text{A/cm}^2$ | Polarization Boundary |
 | Concentration Coeff. | $B$ | $0.05$ | — | Fitted Empirical Constant |
 | Baseline Internal Resistance | $R_{\text{internal},0}$ | $0.06$ | $\Omega\cdot\text{cm}^2$ | Per-run baseline |
+| Stack Characteristic Length | $L$ | $0.05$ ($5.0\text{ cm}$) | $\text{m}$ | Stack thermal geometry |
+| Effective Thermal Conductivity | $k_{\text{eff}}$ | $1.25$ | $\text{W/(m}\cdot\text{K)}$ | Stack composite thermal property |
+| Core-Skin Temp. Threshold | $\Delta T$ | $15.0$ | $\text{K}$ | Yonkist stability criterion |
+| Reversible Entropic Potential | $E_{\text{entropic}}$ | $0.23$ | $\text{V}$ | Thermodynamic entropic term ($-T\Delta S/zF$) |
 | Ohmic Degradation Threshold | — | $0.35$ | $\text{V}$ | QC threshold |
 | Thermal Shutdown Threshold | — | $358.15$ ($85^\circ\text{C}$) | $\text{K}$ | QC threshold |
-| Low-Activation Activity Floor | — | $0.7$ | — | QC threshold |
+| Low-Activation ECSA Floor | — | $0.30$ | — | QC threshold |
+| Reactant Activity Floor | — | $0.70$ | — | QC threshold (Gas starvation) |
 
 ---
 
