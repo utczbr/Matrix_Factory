@@ -6,7 +6,7 @@ This document details the hydrodynamic coating equations, solvent drying kinetic
 
 ## Physical Process Description
 
-Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. The process determines catalyst layer thickness uniformity, platinum loading $L_{\text{Pt}}$ ($\text{mg/cm}^2$), and initial active surface area $\text{ECSA}_0$ ($\text{m}^2/\text{g}_{\text{Pt}}$).
+Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. The process determines catalyst layer thickness uniformity, platinum loading $L_{\mathrm{Pt}}$ ($\mathrm{mg/cm}^2$), and initial active surface area $\mathrm{ECSA}_0$ ($\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}$).
 
 ---
 
@@ -16,26 +16,26 @@ Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto po
 
 The stable coating window is constrained by the Capillary number $Ca$:
 
-$$Ca = \frac{\mu U_{\text{web}}}{\sigma_{\text{ink}}}$$
+$$Ca = \frac{\mu U_{\mathrm{web}}}{\sigma_{\mathrm{ink}}}$$
 
 where:
-* $\mu$ is dynamic ink viscosity ($\text{Pa}\cdot\text{s}$).
-* $U_{\text{web}}$ is web line speed ($\text{m/s}$).
-* $\sigma_{\text{ink}}$ is liquid-vapor surface tension ($\text{N/m}$).
+* $\mu$ is dynamic ink viscosity ($\mathrm{Pa}\cdot\mathrm{s}$).
+* $U_{\mathrm{web}}$ is web line speed ($\mathrm{m/s}$).
+* $\sigma_{\mathrm{ink}}$ is liquid-vapor surface tension ($\mathrm{N/m}$).
 
-Wet film thickness $h_{\text{wet}}$ is governed by mass conservation:
+Wet film thickness $h_{\mathrm{wet}}$ is governed by mass conservation:
 
-$$h_{\text{wet}} = \frac{Q_{\text{ink}}}{W_{\text{die}} \cdot U_{\text{web}}}$$
+$$h_{\mathrm{wet}} = \frac{Q_{\mathrm{ink}}}{W_{\mathrm{die}} \cdot U_{\mathrm{web}}}$$
 
 ### 2. Solvent Evaporation & ECSA Formation
 
-Dry thickness $h_{\text{dry}}$ depends on solid volume fraction $\phi_s$:
+Dry thickness $h_{\mathrm{dry}}$ depends on solid volume fraction $\phi_s$:
 
-$$h_{\text{dry}} = h_{\text{wet}} \cdot \phi_s$$
+$$h_{\mathrm{dry}} = h_{\mathrm{wet}} \cdot \phi_s$$
 
-Effective Electro-Chemical Surface Area ($\text{ECSA}$) is modeled as a function of drying rate $\dot{E}_{\text{dry}}$ and agglomerate porosity $\varepsilon_{\text{agg}}$:
+Effective Electro-Chemical Surface Area ($\mathrm{ECSA}$) is modeled as a function of drying rate $\dot{E}_{\mathrm{dry}}$ and agglomerate porosity $\varepsilon_{\mathrm{agg}}$:
 
-$$\text{ECSA} = \text{ECSA}_{\text{max}} \cdot \left[ 1 - \gamma_{\text{dry}} \cdot \left( \frac{\dot{E}_{\text{dry}}}{\dot{E}_{\text{crit}}} - 1 \right)^2 \right] \cdot \left( \frac{\varepsilon_{\text{agg}}}{\varepsilon_{\text{target}}} \right)^{0.5}$$
+$$\mathrm{ECSA} = \mathrm{ECSA}_{\mathrm{max}} \cdot \left[ 1 - \gamma_{\mathrm{dry}} \cdot \left( \frac{\dot{E}_{\mathrm{dry}}}{\dot{E}_{\mathrm{crit}}} - 1 \right)^2 \right] \cdot \left( \frac{\varepsilon_{\mathrm{agg}}}{\varepsilon_{\mathrm{target}}} \right)^{0.5}$$
 
 ---
 
@@ -43,11 +43,11 @@ $$\text{ECSA} = \text{ECSA}_{\text{max}} \cdot \left[ 1 - \gamma_{\text{dry}} \c
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Max Pt ECSA | $\text{ECSA}_{\text{max}}$ | $68.5$ | $\text{m}^2/\text{g}_{\text{Pt}}$ | Neyerlin et al. (2007) |
-| Target Agglomerate Porosity | $\varepsilon_{\text{target}}$ | $0.48$ | — | Kleemann et al. (2021) |
-| Ink Viscosity | $\mu$ | $0.045$ | $\text{Pa}\cdot\text{s}$ | Rheometer Measurements |
-| Surface Tension | $\sigma_{\text{ink}}$ | $0.028$ | $\text{N/m}$ | Pendant Drop Method |
-| Critical Drying Rate | $\dot{E}_{\text{crit}}$ | $1.2 \times 10^{-3}$ | $\text{kg/m}^2\text{s}$ | Drying Oven Specs |
+| Max Pt ECSA | $\mathrm{ECSA}_{\mathrm{max}}$ | $68.5$ | $\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}$ | Neyerlin et al. (2007) |
+| Target Agglomerate Porosity | $\varepsilon_{\mathrm{target}}$ | $0.48$ | — | Kleemann et al. (2021) |
+| Ink Viscosity | $\mu$ | $0.045$ | $\mathrm{Pa}\cdot\mathrm{s}$ | Rheometer Measurements |
+| Surface Tension | $\sigma_{\mathrm{ink}}$ | $0.028$ | $\mathrm{N/m}$ | Pendant Drop Method |
+| Critical Drying Rate | $\dot{E}_{\mathrm{crit}}$ | $1.2 \times 10^{-3}$ | $\mathrm{kg/m}^2\mathrm{s}$ | Drying Oven Specs |
 
 ---
 

@@ -14,19 +14,19 @@ The **Matrix Factory Twin** bridges high-level cognitive decision-making with mu
 
 ```mermaid
 graph TD
-    subgraph Cognitive Layer [JaCaMo / BDI MAS - Java]
+    subgraph Cognitive_Layer ["Cognitive Layer (JaCaMo / BDI MAS - Java)"]
         SUP["Supervisor Agent (2PC Coordinator)"]
         OH["Order Holons (Task Allocation)"]
         RH["Resource Holons (Station Control)"]
         AMR["AMR Fleet Agents"]
     end
 
-    subgraph IPC Bridge [gRPC & Shared Memory]
+    subgraph IPC_Bridge ["IPC Bridge (gRPC & Shared Memory)"]
         GRPC["SimBridge Service (Protobuf over mTLS)"]
         TMC["Time Managed Component (Lock-Stepped NER)"]
     end
 
-    subgraph Physical Engine [Numba JIT Physics - Python]
+    subgraph Physical_Engine ["Physical Engine (Numba JIT Physics - Python)"]
         S1["Station 1: Resin Cure (Kamal-Sourour)"]
         S2["Station 2: Coating & ECSA"]
         S3["Station 3: Stamping (Archard & Cockcroft-Latham)"]

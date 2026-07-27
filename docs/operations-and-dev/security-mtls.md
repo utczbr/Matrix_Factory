@@ -10,7 +10,7 @@ In production or distributed multi-node deployments, the IPC communication betwe
 
 ```mermaid
 graph LR
-    JVM["Java CArtAgO SimBridge<br>(Client Certificate)"] == "TLS 1.3 mTLS (Encrypted gRPC)" ==> DAEMON["Python SimBridge Daemon<br>(Server Certificate)"]
+    JVM["Java CArtAgO SimBridge (Client Certificate)"] == "TLS 1.3 mTLS (Encrypted gRPC)" ==> DAEMON["Python SimBridge Daemon (Server Certificate)"]
 ```
 
 ---

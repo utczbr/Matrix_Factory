@@ -14,28 +14,28 @@ Station 3 models high-speed metal forming of metallic bipolar plate flow channel
 
 ### 1. Cockcroft–Latham Ductile Fracture Damage Criterion
 
-Material fracture accumulation $C_{\text{crit,NCL}}$ during channel geometry forming is evaluated via the Normalized Cockcroft–Latham integral:
+Material fracture accumulation $C_{\mathrm{crit,NCL}}$ during channel geometry forming is evaluated via the Normalized Cockcroft–Latham integral:
 
-$$C_{\text{crit,NCL}} = \int_0^{\bar{\varepsilon}_f} \frac{\sigma^*}{\bar{\sigma}} d\bar{\varepsilon}$$
+$$C_{\mathrm{crit,NCL}} = \int_0^{\bar{\varepsilon}_f} \frac{\sigma^*}{\bar{\sigma}} \, \mathrm{d}\bar{\varepsilon}$$
 
 where:
-* $\sigma^*$ is the maximum tensile principal stress ($\text{MPa}$).
-* $\bar{\sigma}$ is the von Mises equivalent stress ($\text{MPa}$).
+* $\sigma^*$ is the maximum tensile principal stress ($\mathrm{MPa}$).
+* $\bar{\sigma}$ is the von Mises equivalent stress ($\mathrm{MPa}$).
 * $\bar{\varepsilon}$ is the equivalent plastic strain.
 
-If $C_{\text{crit,NCL}} > C_{\text{threshold}} \approx 0.42$, micro-cracking initiates along flow channel ribs, inducing gas leakage risks.
+If $C_{\mathrm{crit,NCL}} > C_{\mathrm{threshold}} \approx 0.42$, micro-cracking initiates along flow channel ribs, inducing gas leakage risks.
 
 ### 2. Archard Die Tool Wear Model
 
-Progressive stamping die volume wear $V_{\text{wear}}$ per stroke is calculated as:
+Progressive stamping die volume wear $V_{\mathrm{wear}}$ per stroke is calculated as:
 
-$$V_{\text{wear}} = K_{\text{archard}} \frac{F_{\text{normal}} \cdot s_{\text{sliding}}}{H_{\text{die}}}$$
+$$V_{\mathrm{wear}} = K_{\mathrm{archard}} \frac{F_{\mathrm{normal}} \cdot s_{\mathrm{sliding}}}{H_{\mathrm{die}}}$$
 
 where:
-* $K_{\text{archard}}$ is the dimensionless wear coefficient ($1.4 \times 10^{-4}$).
-* $F_{\text{normal}}$ is the normal contact load ($\text{kN}$).
-* $s_{\text{sliding}}$ is interface sliding distance ($\text{mm}$).
-* $H_{\text{die}}$ is die material Vickers hardness ($\text{HV}$).
+* $K_{\mathrm{archard}}$ is the dimensionless wear coefficient ($1.4 \times 10^{-4}$).
+* $F_{\mathrm{normal}}$ is the normal contact load ($\mathrm{kN}$).
+* $s_{\mathrm{sliding}}$ is interface sliding distance ($\mathrm{mm}$).
+* $H_{\mathrm{die}}$ is die material Vickers hardness ($\mathrm{HV}$).
 
 ---
 
@@ -43,11 +43,11 @@ where:
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Critical NCL Damage | $C_{\text{threshold}}$ | $0.42$ | — | Kleemann et al. (2021) |
-| Archard Wear Coeff. | $K_{\text{archard}}$ | $1.4 \times 10^{-4}$ | — | Archard (1953) |
-| Die Hardness | $H_{\text{die}}$ | $680$ | $\text{HV}$ | Tool Steel Specs |
-| Sheet Thickness | $t_0$ | $0.10$ | $\text{mm}$ | SS316L Datasheet |
-| Channel Pitch | $P_{\text{channel}}$ | $1.25$ | $\text{mm}$ | Flow Field Geometry |
+| Critical NCL Damage | $C_{\mathrm{threshold}}$ | $0.42$ | — | Kleemann et al. (2021) |
+| Archard Wear Coeff. | $K_{\mathrm{archard}}$ | $1.4 \times 10^{-4}$ | — | Archard (1953) |
+| Die Hardness | $H_{\mathrm{die}}$ | $680$ | $\mathrm{HV}$ | Tool Steel Specs |
+| Sheet Thickness | $t_0$ | $0.10$ | $\mathrm{mm}$ | SS316L Datasheet |
+| Channel Pitch | $P_{\mathrm{channel}}$ | $1.25$ | $\mathrm{mm}$ | Flow Field Geometry |
 
 ---
 

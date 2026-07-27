@@ -22,7 +22,7 @@ graph TD
     end
 
     USER -->|Configures Runs & Topologies| MAS
-    MAS <== gRPC IPC ==> PHYS
+    MAS == "gRPC IPC" ==> PHYS
     MAS -->|Persists State Logs| DB
     HUB -->|Streams Metrics over WSS| DASH
     MARKET -->|Energy Price Feeds| MAS
@@ -36,19 +36,19 @@ The Container diagram decomposes the system into executable runtime units and do
 
 ```mermaid
 graph TB
-    subgraph Java JVM Container [Java JVM - JaCaMo Runtime]
+    subgraph Java_Container ["Java JVM - JaCaMo Runtime"]
         MAIN["MainSimulator.java (Clock Coordinator)"]
         AGTS["Jason BDI Agents (Supervisor, Order, Resource, AMR)"]
         ART["CArtAgO Artifacts (Database, Telemetry, SimBridge)"]
     end
 
-    subgraph Python Container [Python 3.11 Runtime]
+    subgraph Python_Container ["Python 3.11 Runtime"]
         DAEMON["daemon_launcher.py (gRPC Server)"]
         NUMBA["Numba JIT ODE Solvers (Stations 1-5)"]
         COOL["CoolProp Fluid EOS"]
     end
 
-    subgraph Data Container [Storage & Telemetry]
+    subgraph Data_Container ["Storage & Telemetry"]
         SQLITE[("factory_history.db (SQLite WAL Mode)")]
         WS["WebSocket Telemetry Hub (Port 8081)"]
     end

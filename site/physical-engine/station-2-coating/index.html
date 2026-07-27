@@ -1640,23 +1640,23 @@
 <p>This document details the hydrodynamic coating equations, solvent drying kinetics, and Electro-Chemical Surface Area (ECSA) predictions for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
-<p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. The process determines catalyst layer thickness uniformity, platinum loading <span class="arithmatex">\(L_{\text{Pt}}\)</span> (<span class="arithmatex">\(\text{mg/cm}^2\)</span>), and initial active surface area <span class="arithmatex">\(\text{ECSA}_0\)</span> (<span class="arithmatex">\(\text{m}^2/\text{g}_{\text{Pt}}\)</span>).</p>
+<p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. The process determines catalyst layer thickness uniformity, platinum loading <span class="arithmatex">\(L_{\mathrm{Pt}}\)</span> (<span class="arithmatex">\(\mathrm{mg/cm}^2\)</span>), and initial active surface area <span class="arithmatex">\(\mathrm{ECSA}_0\)</span> (<span class="arithmatex">\(\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}\)</span>).</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-slot-die-coating-hydrodynamics-capillary-number">1. Slot-Die Coating Hydrodynamics &amp; Capillary Number</h3>
 <p>The stable coating window is constrained by the Capillary number <span class="arithmatex">\(Ca\)</span>:</p>
-<div class="arithmatex">\[Ca = \frac{\mu U_{\text{web}}}{\sigma_{\text{ink}}}\]</div>
+<div class="arithmatex">\[Ca = \frac{\mu U_{\mathrm{web}}}{\sigma_{\mathrm{ink}}}\]</div>
 <p>where:
-* <span class="arithmatex">\(\mu\)</span> is dynamic ink viscosity (<span class="arithmatex">\(\text{Pa}\cdot\text{s}\)</span>).
-* <span class="arithmatex">\(U_{\text{web}}\)</span> is web line speed (<span class="arithmatex">\(\text{m/s}\)</span>).
-* <span class="arithmatex">\(\sigma_{\text{ink}}\)</span> is liquid-vapor surface tension (<span class="arithmatex">\(\text{N/m}\)</span>).</p>
-<p>Wet film thickness <span class="arithmatex">\(h_{\text{wet}}\)</span> is governed by mass conservation:</p>
-<div class="arithmatex">\[h_{\text{wet}} = \frac{Q_{\text{ink}}}{W_{\text{die}} \cdot U_{\text{web}}}\]</div>
+* <span class="arithmatex">\(\mu\)</span> is dynamic ink viscosity (<span class="arithmatex">\(\mathrm{Pa}\cdot\mathrm{s}\)</span>).
+* <span class="arithmatex">\(U_{\mathrm{web}}\)</span> is web line speed (<span class="arithmatex">\(\mathrm{m/s}\)</span>).
+* <span class="arithmatex">\(\sigma_{\mathrm{ink}}\)</span> is liquid-vapor surface tension (<span class="arithmatex">\(\mathrm{N/m}\)</span>).</p>
+<p>Wet film thickness <span class="arithmatex">\(h_{\mathrm{wet}}\)</span> is governed by mass conservation:</p>
+<div class="arithmatex">\[h_{\mathrm{wet}} = \frac{Q_{\mathrm{ink}}}{W_{\mathrm{die}} \cdot U_{\mathrm{web}}}\]</div>
 <h3 id="2-solvent-evaporation-ecsa-formation">2. Solvent Evaporation &amp; ECSA Formation</h3>
-<p>Dry thickness <span class="arithmatex">\(h_{\text{dry}}\)</span> depends on solid volume fraction <span class="arithmatex">\(\phi_s\)</span>:</p>
-<div class="arithmatex">\[h_{\text{dry}} = h_{\text{wet}} \cdot \phi_s\]</div>
-<p>Effective Electro-Chemical Surface Area (<span class="arithmatex">\(\text{ECSA}\)</span>) is modeled as a function of drying rate <span class="arithmatex">\(\dot{E}_{\text{dry}}\)</span> and agglomerate porosity <span class="arithmatex">\(\varepsilon_{\text{agg}}\)</span>:</p>
-<div class="arithmatex">\[\text{ECSA} = \text{ECSA}_{\text{max}} \cdot \left[ 1 - \gamma_{\text{dry}} \cdot \left( \frac{\dot{E}_{\text{dry}}}{\dot{E}_{\text{crit}}} - 1 \right)^2 \right] \cdot \left( \frac{\varepsilon_{\text{agg}}}{\varepsilon_{\text{target}}} \right)^{0.5}\]</div>
+<p>Dry thickness <span class="arithmatex">\(h_{\mathrm{dry}}\)</span> depends on solid volume fraction <span class="arithmatex">\(\phi_s\)</span>:</p>
+<div class="arithmatex">\[h_{\mathrm{dry}} = h_{\mathrm{wet}} \cdot \phi_s\]</div>
+<p>Effective Electro-Chemical Surface Area (<span class="arithmatex">\(\mathrm{ECSA}\)</span>) is modeled as a function of drying rate <span class="arithmatex">\(\dot{E}_{\mathrm{dry}}\)</span> and agglomerate porosity <span class="arithmatex">\(\varepsilon_{\mathrm{agg}}\)</span>:</p>
+<div class="arithmatex">\[\mathrm{ECSA} = \mathrm{ECSA}_{\mathrm{max}} \cdot \left[ 1 - \gamma_{\mathrm{dry}} \cdot \left( \frac{\dot{E}_{\mathrm{dry}}}{\dot{E}_{\mathrm{crit}}} - 1 \right)^2 \right] \cdot \left( \frac{\varepsilon_{\mathrm{agg}}}{\varepsilon_{\mathrm{target}}} \right)^{0.5}\]</div>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1672,14 +1672,14 @@
 <tbody>
 <tr>
 <td>Max Pt ECSA</td>
-<td><span class="arithmatex">\(\text{ECSA}_{\text{max}}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{ECSA}_{\mathrm{max}}\)</span></td>
 <td><span class="arithmatex">\(68.5\)</span></td>
-<td><span class="arithmatex">\(\text{m}^2/\text{g}_{\text{Pt}}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{m}^2/\mathrm{g}_{\mathrm{Pt}}\)</span></td>
 <td>Neyerlin et al. (2007)</td>
 </tr>
 <tr>
 <td>Target Agglomerate Porosity</td>
-<td><span class="arithmatex">\(\varepsilon_{\text{target}}\)</span></td>
+<td><span class="arithmatex">\(\varepsilon_{\mathrm{target}}\)</span></td>
 <td><span class="arithmatex">\(0.48\)</span></td>
 <td>—</td>
 <td>Kleemann et al. (2021)</td>
@@ -1688,21 +1688,21 @@
 <td>Ink Viscosity</td>
 <td><span class="arithmatex">\(\mu\)</span></td>
 <td><span class="arithmatex">\(0.045\)</span></td>
-<td><span class="arithmatex">\(\text{Pa}\cdot\text{s}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{Pa}\cdot\mathrm{s}\)</span></td>
 <td>Rheometer Measurements</td>
 </tr>
 <tr>
 <td>Surface Tension</td>
-<td><span class="arithmatex">\(\sigma_{\text{ink}}\)</span></td>
+<td><span class="arithmatex">\(\sigma_{\mathrm{ink}}\)</span></td>
 <td><span class="arithmatex">\(0.028\)</span></td>
-<td><span class="arithmatex">\(\text{N/m}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{N/m}\)</span></td>
 <td>Pendant Drop Method</td>
 </tr>
 <tr>
 <td>Critical Drying Rate</td>
-<td><span class="arithmatex">\(\dot{E}_{\text{crit}}\)</span></td>
+<td><span class="arithmatex">\(\dot{E}_{\mathrm{crit}}\)</span></td>
 <td><span class="arithmatex">\(1.2 \times 10^{-3}\)</span></td>
-<td><span class="arithmatex">\(\text{kg/m}^2\text{s}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{kg/m}^2\mathrm{s}\)</span></td>
 <td>Drying Oven Specs</td>
 </tr>
 </tbody>

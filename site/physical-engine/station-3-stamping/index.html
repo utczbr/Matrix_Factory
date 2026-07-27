@@ -1644,21 +1644,21 @@
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-cockcroftlatham-ductile-fracture-damage-criterion">1. Cockcroft–Latham Ductile Fracture Damage Criterion</h3>
-<p>Material fracture accumulation <span class="arithmatex">\(C_{\text{crit,NCL}}\)</span> during channel geometry forming is evaluated via the Normalized Cockcroft–Latham integral:</p>
-<div class="arithmatex">\[C_{\text{crit,NCL}} = \int_0^{\bar{\varepsilon}_f} \frac{\sigma^*}{\bar{\sigma}} d\bar{\varepsilon}\]</div>
+<p>Material fracture accumulation <span class="arithmatex">\(C_{\mathrm{crit,NCL}}\)</span> during channel geometry forming is evaluated via the Normalized Cockcroft–Latham integral:</p>
+<div class="arithmatex">\[C_{\mathrm{crit,NCL}} = \int_0^{\bar{\varepsilon}_f} \frac{\sigma^*}{\bar{\sigma}} \, \mathrm{d}\bar{\varepsilon}\]</div>
 <p>where:
-* <span class="arithmatex">\(\sigma^*\)</span> is the maximum tensile principal stress (<span class="arithmatex">\(\text{MPa}\)</span>).
-* <span class="arithmatex">\(\bar{\sigma}\)</span> is the von Mises equivalent stress (<span class="arithmatex">\(\text{MPa}\)</span>).
+* <span class="arithmatex">\(\sigma^*\)</span> is the maximum tensile principal stress (<span class="arithmatex">\(\mathrm{MPa}\)</span>).
+* <span class="arithmatex">\(\bar{\sigma}\)</span> is the von Mises equivalent stress (<span class="arithmatex">\(\mathrm{MPa}\)</span>).
 * <span class="arithmatex">\(\bar{\varepsilon}\)</span> is the equivalent plastic strain.</p>
-<p>If <span class="arithmatex">\(C_{\text{crit,NCL}} &gt; C_{\text{threshold}} \approx 0.42\)</span>, micro-cracking initiates along flow channel ribs, inducing gas leakage risks.</p>
+<p>If <span class="arithmatex">\(C_{\mathrm{crit,NCL}} &gt; C_{\mathrm{threshold}} \approx 0.42\)</span>, micro-cracking initiates along flow channel ribs, inducing gas leakage risks.</p>
 <h3 id="2-archard-die-tool-wear-model">2. Archard Die Tool Wear Model</h3>
-<p>Progressive stamping die volume wear <span class="arithmatex">\(V_{\text{wear}}\)</span> per stroke is calculated as:</p>
-<div class="arithmatex">\[V_{\text{wear}} = K_{\text{archard}} \frac{F_{\text{normal}} \cdot s_{\text{sliding}}}{H_{\text{die}}}\]</div>
+<p>Progressive stamping die volume wear <span class="arithmatex">\(V_{\mathrm{wear}}\)</span> per stroke is calculated as:</p>
+<div class="arithmatex">\[V_{\mathrm{wear}} = K_{\mathrm{archard}} \frac{F_{\mathrm{normal}} \cdot s_{\mathrm{sliding}}}{H_{\mathrm{die}}}\]</div>
 <p>where:
-* <span class="arithmatex">\(K_{\text{archard}}\)</span> is the dimensionless wear coefficient (<span class="arithmatex">\(1.4 \times 10^{-4}\)</span>).
-* <span class="arithmatex">\(F_{\text{normal}}\)</span> is the normal contact load (<span class="arithmatex">\(\text{kN}\)</span>).
-* <span class="arithmatex">\(s_{\text{sliding}}\)</span> is interface sliding distance (<span class="arithmatex">\(\text{mm}\)</span>).
-* <span class="arithmatex">\(H_{\text{die}}\)</span> is die material Vickers hardness (<span class="arithmatex">\(\text{HV}\)</span>).</p>
+* <span class="arithmatex">\(K_{\mathrm{archard}}\)</span> is the dimensionless wear coefficient (<span class="arithmatex">\(1.4 \times 10^{-4}\)</span>).
+* <span class="arithmatex">\(F_{\mathrm{normal}}\)</span> is the normal contact load (<span class="arithmatex">\(\mathrm{kN}\)</span>).
+* <span class="arithmatex">\(s_{\mathrm{sliding}}\)</span> is interface sliding distance (<span class="arithmatex">\(\mathrm{mm}\)</span>).
+* <span class="arithmatex">\(H_{\mathrm{die}}\)</span> is die material Vickers hardness (<span class="arithmatex">\(\mathrm{HV}\)</span>).</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1674,37 +1674,37 @@
 <tbody>
 <tr>
 <td>Critical NCL Damage</td>
-<td><span class="arithmatex">\(C_{\text{threshold}}\)</span></td>
+<td><span class="arithmatex">\(C_{\mathrm{threshold}}\)</span></td>
 <td><span class="arithmatex">\(0.42\)</span></td>
 <td>—</td>
 <td>Kleemann et al. (2021)</td>
 </tr>
 <tr>
 <td>Archard Wear Coeff.</td>
-<td><span class="arithmatex">\(K_{\text{archard}}\)</span></td>
+<td><span class="arithmatex">\(K_{\mathrm{archard}}\)</span></td>
 <td><span class="arithmatex">\(1.4 \times 10^{-4}\)</span></td>
 <td>—</td>
 <td>Archard (1953)</td>
 </tr>
 <tr>
 <td>Die Hardness</td>
-<td><span class="arithmatex">\(H_{\text{die}}\)</span></td>
+<td><span class="arithmatex">\(H_{\mathrm{die}}\)</span></td>
 <td><span class="arithmatex">\(680\)</span></td>
-<td><span class="arithmatex">\(\text{HV}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{HV}\)</span></td>
 <td>Tool Steel Specs</td>
 </tr>
 <tr>
 <td>Sheet Thickness</td>
 <td><span class="arithmatex">\(t_0\)</span></td>
 <td><span class="arithmatex">\(0.10\)</span></td>
-<td><span class="arithmatex">\(\text{mm}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{mm}\)</span></td>
 <td>SS316L Datasheet</td>
 </tr>
 <tr>
 <td>Channel Pitch</td>
-<td><span class="arithmatex">\(P_{\text{channel}}\)</span></td>
+<td><span class="arithmatex">\(P_{\mathrm{channel}}\)</span></td>
 <td><span class="arithmatex">\(1.25\)</span></td>
-<td><span class="arithmatex">\(\text{mm}\)</span></td>
+<td><span class="arithmatex">\(\mathrm{mm}\)</span></td>
 <td>Flow Field Geometry</td>
 </tr>
 </tbody>

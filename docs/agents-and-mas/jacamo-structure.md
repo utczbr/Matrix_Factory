@@ -41,10 +41,10 @@ CArtAgO artifacts encapsulate environment operations, exposing **Observable Prop
 
 ```mermaid
 graph TD
-    subgraph CArtAgO Workspace
-        DB["DatabaseArtifact<br>(SQLite WAL Queue)"]
-        TEL["TelemetryHub<br>(WSS Port 8081)"]
-        BRIDGE["SimBridgeArtifact<br>(gRPC IPC)"]
+    subgraph Workspace ["CArtAgO Workspace"]
+        DB["DatabaseArtifact (SQLite WAL Queue)"]
+        TEL["TelemetryHub (WSS Port 8081)"]
+        BRIDGE["SimBridgeArtifact (gRPC IPC)"]
     end
 
     AGENT["Jason BDI Agent"] -->|@OPERATION log_event()| DB

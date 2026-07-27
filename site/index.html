@@ -1585,19 +1585,19 @@
 <h2 id="executive-abstract">Executive Abstract</h2>
 <p>The <strong>Matrix Factory Twin</strong> bridges high-level cognitive decision-making with multi-physics numerical solvers across hydrogen fuel-cell manufacturing lines (PEMFC stack production). By coupling Jason BDI agents operating under holonic control structures (PROSA and ADACOR) with Numba JIT physical solvers via a high-speed gRPC IPC bridge, the twin enables real-time simulation of resin curing, catalyst coating, bipolar plate stamping, stack clamping, and electro-chemical fuel cell testing.</p>
 <pre class="mermaid"><code>graph TD
-    subgraph Cognitive Layer [JaCaMo / BDI MAS - Java]
+    subgraph Cognitive_Layer ["Cognitive Layer (JaCaMo / BDI MAS - Java)"]
         SUP["Supervisor Agent (2PC Coordinator)"]
         OH["Order Holons (Task Allocation)"]
         RH["Resource Holons (Station Control)"]
         AMR["AMR Fleet Agents"]
     end
 
-    subgraph IPC Bridge [gRPC &amp; Shared Memory]
+    subgraph IPC_Bridge ["IPC Bridge (gRPC &amp; Shared Memory)"]
         GRPC["SimBridge Service (Protobuf over mTLS)"]
         TMC["Time Managed Component (Lock-Stepped NER)"]
     end
 
-    subgraph Physical Engine [Numba JIT Physics - Python]
+    subgraph Physical_Engine ["Physical Engine (Numba JIT Physics - Python)"]
         S1["Station 1: Resin Cure (Kamal-Sourour)"]
         S2["Station 2: Coating &amp; ECSA"]
         S3["Station 3: Stamping (Archard &amp; Cockcroft-Latham)"]

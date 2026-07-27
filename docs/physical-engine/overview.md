@@ -18,10 +18,10 @@ The physical engine is implemented in Python 3.11 with Numba JIT acceleration:
 
 ```mermaid
 graph LR
-    S1["Station 1<br>Resin Cure"] --> S2["Station 2<br>Catalyst Coating"]
-    S2 --> S3["Station 3<br>Plate Stamping"]
-    S3 --> S4["Station 4<br>Stack Assembly"]
-    S4 --> S5["Station 5<br>PEMFC Test Bench"]
+    S1["Station 1: Resin Cure"] --> S2["Station 2: Catalyst Coating"]
+    S2 --> S3["Station 3: Plate Stamping"]
+    S3 --> S4["Station 4: Stack Assembly"]
+    S4 --> S5["Station 5: PEMFC Test Bench"]
 ```
 
 | Station | Primary Physical Domain | Key Mathematical Models | Accelerated Module |

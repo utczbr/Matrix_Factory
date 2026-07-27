@@ -1564,17 +1564,17 @@
 <h2 id="the-dual-layer-architecture">The Dual-Layer Architecture</h2>
 <p>Matrix Factory Twin separates manufacturing execution into two distinct layers:</p>
 <pre class="mermaid"><code>graph LR
-    subgraph Cognitive Layer [Cognitive Control Layer]
-        A[Jason BDI Agents] --&gt;|Artifact Actions| B[CArtAgO Shared Environment]
+    subgraph Cognitive_Layer ["Cognitive Control Layer"]
+        A["Jason BDI Agents"] --&gt;|Artifact Actions| B["CArtAgO Shared Environment"]
         B --&gt;|Percepts &amp; Beliefs| A
     end
 
-    subgraph Physical Layer [Physical Numerical Layer]
-        C[Numba JIT Kernels] --&gt;|ODE Integration| D[Station Models 1-5]
+    subgraph Physical_Layer ["Physical Numerical Layer"]
+        C["Numba JIT Kernels"] --&gt;|ODE Integration| D["Station Models 1-5"]
         D --&gt;|Thermodynamics &amp; Kinetics| C
     end
 
-    Cognitive Layer &lt;== gRPC mTLS IPC ==&gt; Physical Layer</code></pre>
+    Cognitive_Layer == "gRPC mTLS IPC" ==&gt; Physical_Layer</code></pre>
 <ol>
 <li><strong>Cognitive Layer (Java / JaCaMo):</strong></li>
 <li><strong>Jason BDI Reasoning:</strong> Agents reason over beliefs, desires, and plans.</li>

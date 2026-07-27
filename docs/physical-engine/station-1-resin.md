@@ -16,7 +16,7 @@ Station 1 models the thermal curing of thermosetting resin frames encapsulating 
 
 The rate of cure conversion $\alpha \in [0, 1]$ over time is expressed as:
 
-$$\frac{d\alpha}{dt} = \left( k_1 + k_2 \alpha^m \right) (1 - \alpha)^n$$
+$$\frac{\mathrm{d}\alpha}{\mathrm{d}t} = \left( k_1 + k_2 \alpha^m \right) (1 - \alpha)^n$$
 
 where $k_1$ and $k_2$ follow Arrhenius temperature dependencies:
 
@@ -34,7 +34,7 @@ If $T < T_g(\alpha)$, diffusion control reduces the reaction rate by factor $f_d
 
 $$f_d(\alpha) = \frac{1}{1 + \exp\left( C_d (\alpha - \alpha_c) \right)}$$
 
-$$\left.\frac{d\alpha}{dt}\right|_{\text{effective}} = \frac{d\alpha}{dt} \cdot f_d(\alpha)$$
+$$\frac{\mathrm{d}\alpha}{\mathrm{d}t}\Bigg|_{\text{effective}} = \frac{\mathrm{d}\alpha}{\mathrm{d}t} \cdot f_d(\alpha)$$
 
 ---
 
@@ -42,10 +42,10 @@ $$\left.\frac{d\alpha}{dt}\right|_{\text{effective}} = \frac{d\alpha}{dt} \cdot 
 
 | Parameter / Variable | Symbol | Nominal Value | Unit | Calibration Source / DOI |
 | --- | --- | --- | --- | --- |
-| Frequency Factor 1 | $A_1$ | $2.4 \times 10^4$ | $\text{s}^{-1}$ | Fernandes et al. (2018) |
-| Frequency Factor 2 | $A_2$ | $1.8 \times 10^7$ | $\text{s}^{-1}$ | Fernandes et al. (2018) |
-| Activation Energy 1 | $E_1$ | $54.2$ | $\text{kJ/mol}$ | Fernandes et al. (2018) |
-| Activation Energy 2 | $E_2$ | $46.8$ | $\text{kJ/mol}$ | Fernandes et al. (2018) |
+| Frequency Factor 1 | $A_1$ | $2.4 \times 10^4$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
+| Frequency Factor 2 | $A_2$ | $1.8 \times 10^7$ | $\mathrm{s}^{-1}$ | Fernandes et al. (2018) |
+| Activation Energy 1 | $E_1$ | $54.2$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
+| Activation Energy 2 | $E_2$ | $46.8$ | $\mathrm{kJ/mol}$ | Fernandes et al. (2018) |
 | Reaction Order $m$ | $m$ | $0.42$ | — | Experimental Fit |
 | Reaction Order $n$ | $n$ | $1.58$ | — | Experimental Fit |
 | DiBenedetto Parameter | $\lambda$ | $0.45$ | — | Material Specs |

@@ -10,17 +10,17 @@ Matrix Factory Twin separates manufacturing execution into two distinct layers:
 
 ```mermaid
 graph LR
-    subgraph Cognitive Layer [Cognitive Control Layer]
-        A[Jason BDI Agents] -->|Artifact Actions| B[CArtAgO Shared Environment]
+    subgraph Cognitive_Layer ["Cognitive Control Layer"]
+        A["Jason BDI Agents"] -->|Artifact Actions| B["CArtAgO Shared Environment"]
         B -->|Percepts & Beliefs| A
     end
 
-    subgraph Physical Layer [Physical Numerical Layer]
-        C[Numba JIT Kernels] -->|ODE Integration| D[Station Models 1-5]
+    subgraph Physical_Layer ["Physical Numerical Layer"]
+        C["Numba JIT Kernels"] -->|ODE Integration| D["Station Models 1-5"]
         D -->|Thermodynamics & Kinetics| C
     end
 
-    Cognitive Layer <== gRPC mTLS IPC ==> Physical Layer
+    Cognitive_Layer == "gRPC mTLS IPC" ==> Physical_Layer
 ```
 
 1. **Cognitive Layer (Java / JaCaMo):**
