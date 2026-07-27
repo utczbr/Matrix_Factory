@@ -28,7 +28,7 @@ This document provides traceability for the physical parameters, kinetic constan
 | **ORR Activation Energy** | `E_act` | $68.5$ | $\text{kJ/mol}$ | Neyerlin et al. (2006), *J. Electrochem. Soc.*, DOI `10.1149/1.2266294` | ORR activation energy |
 | **Nafion Hydration Model** | `lambda_mem` | $14.0$ | — | Springer et al. (1991), *J. Electrochem. Soc.*, DOI `10.1149/1.2085971` | Sorption isotherm model |
 | **Stack Characteristic Length** | `L_STACK` | $0.05$ ($5.0\text{ cm}$) | $\text{m}$ | Stack thermal geometry | Geometric parameter |
-| **Effective Thermal Conductivity** | `K_EFF_THERMAL` | $1.25$ | $\text{W/(m}\cdot\text{K)}$ | Stack composite thermal property | Thermal property |
+| **Effective Thermal Conductivity** | `K_EFF_THERMAL` | $1.25$ | $\text{W/(m} \cdot \text{K)}$ | Stack composite thermal property | Thermal property |
 | **Core-Skin Temp. Threshold** | `DELTA_T_YONKIST` | $15.0$ | $\text{K}$ | Yonkist stability criterion | Thermal stability bound |
 | **Reversible Entropic Potential** | `E_ENTROPIC` | $0.23$ | $\text{V}$ | Thermodynamic entropic term ($-T\Delta S/zF$) | Reversible heat term |
 | **Die Draft/Friction Constants** (`μ0`, `α_f`, `θ_die`, `ε_p,scale`) | see [Station 3](station-3-stamping.md) | various | various | Process Calibration Baseline | Calibrated fit |

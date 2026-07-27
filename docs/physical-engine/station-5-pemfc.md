@@ -54,7 +54,7 @@ $$R_{\text{mem}} = \frac{t_{\text{mem}}}{\sigma_{\text{mem}}(\lambda, T)}$$
 
 Equilibrium water content $\lambda$ as a function of water activity $a_w$ follows the Springer sorption isotherm:
 
-$$\lambda(a_w) = \begin{cases} 0.043 + 17.81\,a_w - 39.85\,a_w^2 + 36.0\,a_w^3, & a_w \le 1.0 \\[4pt] 14.0 + 1.4\,(a_w - 1.0), & 1.0 < a_w \le 3.0 \end{cases}$$
+$$\lambda(a_w) = \begin{cases} 0.043 + 17.81\,a_w - 39.85\,a_w^2 + 36.0\,a_w^3, & a_w \le 1.0 \\ 14.0 + 1.4\,(a_w - 1.0), & 1.0 < a_w \le 3.0 \end{cases}$$
 
 clamped to $\lambda \in [1.0, 14.0]$.
 
@@ -76,9 +76,9 @@ $$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + 
 
 $$a_{H_2}^{\text{eff}} = a_{H_2}\,(1 - \text{derate}), \qquad a_{O_2}^{\text{eff}} = a_{O_2}\,(1 - \text{derate})$$
 
-$$j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim,derate}})\right)$$
+$$j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim\_derate}})\right)$$
 
-where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, $R_{\text{gdl}}(\cdot) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{bulk}}(1-\varepsilon_{\text{gdl}})^m}$ is the GDL bulk electrical resistance (see [Station 4](station-4-assembly.md)), and $\text{derate}$/$j_{\text{lim,derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
+where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, $R_{\text{gdl}}(\cdot) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{bulk}}(1-\varepsilon_{\text{gdl}})^m}$ is the GDL bulk electrical resistance (see [Station 4](station-4-assembly.md)), and $\text{derate}$/$j_{\text{lim\_derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
 
 ### 7. Thermal Coupling & Test-Bench QC Thresholds
 
@@ -88,7 +88,7 @@ Total irreversible voltage overpotential and entropic heat generation per unit a
 
 $$Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)$$
 
-where $E_{\text{entropic}} = \frac{-T \Delta S}{zF} \approx 0.23\text{ V}$ represents reversible entropic heat generation ($\Delta S = -163.2\text{ J/(mol}\cdot\text{K)}$ for liquid water formation), ensuring accurate thermal runaway prediction at high current density ($j \to j_{\text{lim}}$).
+where $E_{\text{entropic}} = \frac{-T \Delta S}{zF} \approx 0.23\text{ V}$ represents reversible entropic heat generation ($\Delta S = -163.2\text{ J/(mol} \cdot \text{K)}$ for liquid water formation), ensuring accurate thermal runaway prediction at high current density ($j \to j_{\text{lim}}$).
 
 The end-of-line test bench flags a stack via a bitmask if any of the following hold during a sweep:
 
@@ -114,7 +114,7 @@ The end-of-line test bench flags a stack via a bitmask if any of the following h
 | Concentration Coeff. | $B$ | $0.05$ | — | Fitted Empirical Constant |
 | Baseline Internal Resistance | $R_{\text{internal},0}$ | $0.06$ | $\Omega\cdot\text{cm}^2$ | Per-run baseline |
 | Stack Characteristic Length | $L$ | $0.05$ ($5.0\text{ cm}$) | $\text{m}$ | Stack thermal geometry |
-| Effective Thermal Conductivity | $k_{\text{eff}}$ | $1.25$ | $\text{W/(m}\cdot\text{K)}$ | Stack composite thermal property |
+| Effective Thermal Conductivity | $k_{\text{eff}}$ | $1.25$ | $\text{W/(m} \cdot \text{K)}$ | Stack composite thermal property |
 | Core-Skin Temp. Threshold | $\Delta T$ | $15.0$ | $\text{K}$ | Yonkist stability criterion |
 | Reversible Entropic Potential | $E_{\text{entropic}}$ | $0.23$ | $\text{V}$ | Thermodynamic entropic term ($-T\Delta S/zF$) |
 | Ohmic Degradation Threshold | — | $0.35$ | $\text{V}$ | QC threshold |
