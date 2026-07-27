@@ -1645,22 +1645,22 @@
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-kamalsourour-autocatalytic-curing-kinetics">1. Kamal–Sourour Autocatalytic Curing Kinetics</h3>
 <p>The rate of cure conversion <span class="arithmatex">\(\alpha\)</span> over time is expressed as:</p>
-<div class="arithmatex">\[\frac{\mathrm{d}\alpha}{\mathrm{d}t} = \left( k_1 + k_2 \alpha^m \right) (1 - \alpha)^n\]</div>
-<p>where Arrhenius reaction rate constants <span class="arithmatex">\(k_1\)</span> and <span class="arithmatex">\(k_2\)</span> at hot-press temperature <span class="arithmatex">\(T_{\mathrm{press}}\)</span> (<span class="arithmatex">\(\mathrm{K}\)</span>) are defined by:</p>
-<div class="arithmatex">\[k_1(T) = A_1 \exp\left( -\frac{E_1}{R T_{\mathrm{press}}} \right)\]</div>
-<div class="arithmatex">\[k_2(T) = A_2 \exp\left( -\frac{E_2}{R T_{\mathrm{press}}} \right)\]</div>
+<div class="arithmatex">\[\frac{d\alpha}{dt} = (k_1 + k_2 \alpha^m) (1 - \alpha)^n\]</div>
+<p>where Arrhenius reaction rate constants <span class="arithmatex">\(k_1\)</span> and <span class="arithmatex">\(k_2\)</span> at hot-press temperature <span class="arithmatex">\(T_{\text{press}}\)</span> (<span class="arithmatex">\(\text{K}\)</span>) are defined by:</p>
+<div class="arithmatex">\[k_1(T) = A_1 \exp\left(-\frac{E_1}{R T_{\text{press}}}\right)\]</div>
+<div class="arithmatex">\[k_2(T) = A_2 \exp\left(-\frac{E_2}{R T_{\text{press}}}\right)\]</div>
 <h3 id="2-defect-risk-functions-execution-pacing">2. Defect Risk Functions &amp; Execution Pacing</h3>
-<p>Degree of cure <span class="arithmatex">\(\alpha\)</span> is integrated via 4th-order Runge–Kutta (RK4) over dwell time <span class="arithmatex">\(t_{\mathrm{dwell}}\)</span>:</p>
+<p>Degree of cure <span class="arithmatex">\(\alpha\)</span> is integrated via 4th-order Runge–Kutta (RK4) over dwell time <span class="arithmatex">\(t_{\text{dwell}}\)</span>:</p>
 <ul>
-<li><strong>Delamination Risk (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>):</strong> </li>
+<li><strong>Delamination Risk (<span class="arithmatex">\(\alpha &lt; 0.85\)</span>):</strong></li>
 </ul>
-<div class="arithmatex">\[R_{\mathrm{delam}} = \max\left(0, \frac{\alpha_{\mathrm{min}} - \alpha}{\alpha_{\mathrm{min}}}\right)\]</div>
+<div class="arithmatex">\[R_{\text{delam}} = \max\left(0, \frac{\alpha_{\text{min}} - \alpha}{\alpha_{\text{min}}}\right)\]</div>
 <ul>
-<li><strong>Pinhole Risk (<span class="arithmatex">\(\alpha &gt; 0.98\)</span>):</strong> </li>
+<li><strong>Pinhole Risk (<span class="arithmatex">\(\alpha &gt; 0.98\)</span>):</strong></li>
 </ul>
-<div class="arithmatex">\[R_{\mathrm{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\mathrm{max}}}{1 - \alpha_{\mathrm{max}}}\right)\]</div>
-<p>Processing variance ratio <span class="arithmatex">\(V_{\mathrm{ratio}}\)</span> scales execution variability:</p>
-<div class="arithmatex">\[V_{\mathrm{ratio}} = 1.0 + 0.30 R_{\mathrm{delam}} + 0.25 R_{\mathrm{pinhole}}\]</div>
+<div class="arithmatex">\[R_{\text{pinhole}} = \max\left(0, \frac{\alpha - \alpha_{\text{max}}}{1 - \alpha_{\text{max}}}\right)\]</div>
+<p>Processing variance ratio <span class="arithmatex">\(V_{\text{ratio}}\)</span> scales execution variability:</p>
+<div class="arithmatex">\[V_{\text{ratio}} = 1.0 + 0.30 R_{\text{delam}} + 0.25 R_{\text{pinhole}}\]</div>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1678,28 +1678,28 @@
 <td>Frequency Factor 1</td>
 <td><span class="arithmatex">\(A_1\)</span></td>
 <td><span class="arithmatex">\(1.2 \times 10^4\)</span></td>
-<td><span class="arithmatex">\(\mathrm{s}^{-1}\)</span></td>
+<td><span class="arithmatex">\(\text{s}^{-1}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Frequency Factor 2</td>
 <td><span class="arithmatex">\(A_2\)</span></td>
 <td><span class="arithmatex">\(5.5 \times 10^6\)</span></td>
-<td><span class="arithmatex">\(\mathrm{s}^{-1}\)</span></td>
+<td><span class="arithmatex">\(\text{s}^{-1}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Activation Energy 1</td>
 <td><span class="arithmatex">\(E_1\)</span></td>
 <td><span class="arithmatex">\(58.2\)</span></td>
-<td><span class="arithmatex">\(\mathrm{kJ/mol}\)</span></td>
+<td><span class="arithmatex">\(\text{kJ/mol}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
 <td>Activation Energy 2</td>
 <td><span class="arithmatex">\(E_2\)</span></td>
 <td><span class="arithmatex">\(68.5\)</span></td>
-<td><span class="arithmatex">\(\mathrm{kJ/mol}\)</span></td>
+<td><span class="arithmatex">\(\text{kJ/mol}\)</span></td>
 <td>Fernandes et al. (2018)</td>
 </tr>
 <tr>
@@ -1718,28 +1718,28 @@
 </tr>
 <tr>
 <td>Nominal Press Temp.</td>
-<td><span class="arithmatex">\(T_{\mathrm{press}}\)</span></td>
-<td><span class="arithmatex">\(433.15\)</span> (<span class="arithmatex">\(160^\circ\mathrm{C}\)</span>)</td>
-<td><span class="arithmatex">\(\mathrm{K}\)</span></td>
+<td><span class="arithmatex">\(T_{\text{press}}\)</span></td>
+<td><span class="arithmatex">\(433.15\)</span> (<span class="arithmatex">\(160^\circ\text{C}\)</span>)</td>
+<td><span class="arithmatex">\(\text{K}\)</span></td>
 <td>Hot-Press Specification</td>
 </tr>
 <tr>
 <td>Nominal Dwell Time</td>
-<td><span class="arithmatex">\(t_{\mathrm{dwell}}\)</span></td>
+<td><span class="arithmatex">\(t_{\text{dwell}}\)</span></td>
 <td><span class="arithmatex">\(180.0\)</span></td>
-<td><span class="arithmatex">\(\mathrm{s}\)</span></td>
+<td><span class="arithmatex">\(\text{s}\)</span></td>
 <td>Process Recipe</td>
 </tr>
 <tr>
 <td>Min Bonding Cure</td>
-<td><span class="arithmatex">\(\alpha_{\mathrm{min}}\)</span></td>
+<td><span class="arithmatex">\(\alpha_{\text{min}}\)</span></td>
 <td><span class="arithmatex">\(0.85\)</span></td>
 <td>—</td>
 <td>Structural Adhesion Limit</td>
 </tr>
 <tr>
 <td>Max Safe Cure</td>
-<td><span class="arithmatex">\(\alpha_{\mathrm{max}}\)</span></td>
+<td><span class="arithmatex">\(\alpha_{\text{max}}\)</span></td>
 <td><span class="arithmatex">\(0.98\)</span></td>
 <td>—</td>
 <td>Degradation Limit</td>
