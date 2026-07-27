@@ -1,4 +1,4 @@
-# Station 4: Stack Assembly & Clamping (Reference)
+# Station 4: Stack Assembly & Clamping
 
 This document details the mechanical bolt clamping relationships (VDI 2230), elastic interaction, and non-linear GDL compression models for **Station 4: Stack Clamping & Fastening**.
 

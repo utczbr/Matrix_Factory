@@ -1,4 +1,4 @@
-# Station 3: Bipolar Plate Stamping (Reference)
+# Station 3: Bipolar Plate Stamping
 
 This document details the continuum mechanics models, Archard tool wear rate, and Normalized Cockcroft–Latham ductile damage criterion for **Station 3: Bipolar Plate Stamping**.
 

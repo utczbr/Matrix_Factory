@@ -1,4 +1,4 @@
-# Literature Calibration & DOI References (Reference)
+# Literature Calibration & Empirical Validation
 
 This document provides complete traceability for all physical parameters, kinetic constants, thermodynamic values, and empirical limits used in **Matrix Factory Twin**, linking code parameters to peer-reviewed literature and experimental benchmarks.
 

@@ -1,4 +1,4 @@
-# Station 5: PEMFC Electrochemistry & Testing (Reference)
+# Station 5: PEMFC Electrochemistry & Test Bench
 
 This document presents the non-linear electrochemistry, Butler–Volmer reaction kinetics, Springer membrane hydration model, and polarization curve equations for **Station 5: Quality Testing & PEMFC Performance Verification**.
 

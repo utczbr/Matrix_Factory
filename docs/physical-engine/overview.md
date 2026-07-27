@@ -1,4 +1,4 @@
-# Physical Engine Architecture (Reference)
+# Physical Engine Overview & Numba Bridge
 
 This document describes the high-performance physical simulation engine underpinning **Matrix Factory Twin**, detailing its Numba JIT compilation strategy, CoolProp equation-of-state coupling, and gRPC communication layer.
 

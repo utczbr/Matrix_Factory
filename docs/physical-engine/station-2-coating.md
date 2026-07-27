@@ -1,4 +1,4 @@
-# Station 2: Catalyst Coating & ECSA Models (Reference)
+# Station 2: Catalyst Layer Deposition
 
 This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area ($\text{ECSA}$) yield model for **Station 2: Catalyst Layer Deposition**.
 

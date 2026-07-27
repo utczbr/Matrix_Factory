@@ -1,4 +1,4 @@
-# Station 1: MEA Resin Cure Kinetics (Reference)
+# Station 1: MEA Preparation & Hot-Press Lamination
 
 This document details the mathematical formulations, kinetic equations, and calibration parameters for **Station 1: MEA Preparation & Hot-Press Lamination**.
 

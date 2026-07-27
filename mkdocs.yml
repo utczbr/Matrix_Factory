@@ -52,33 +52,33 @@ nav:
   - Home: index.md
   - Getting Started:
       - Quickstart Guide: getting-started/quickstart.md
-      - Architecture Overview: getting-started/architecture-overview.md
+      - System Architecture Overview: getting-started/architecture-overview.md
   - Architecture:
-      - C4 System Context: architecture/c4-system-context.md
-      - Time Synchronization Engine: architecture/time-sync-engine.md
-      - Holonic Control & 2PC Switching: architecture/holonic-control.md
+      - C4 System Context & Container Model: architecture/c4-system-context.md
+      - Time Synchronization & Lock-Stepped NER Engine: architecture/time-sync-engine.md
+      - Holonic Control & 2PC Regime Switching: architecture/holonic-control.md
   - Physical Engine & Physics:
-      - Overview & Numba Bridge: physical-engine/overview.md
-      - Station 1 - Resin Cure Kinetics: physical-engine/station-1-resin.md
-      - Station 2 - Catalyst Coating & ECSA: physical-engine/station-2-coating.md
+      - Physical Engine Overview & Numba Bridge: physical-engine/overview.md
+      - Station 1 - MEA Preparation & Hot-Press Lamination: physical-engine/station-1-resin.md
+      - Station 2 - Catalyst Layer Deposition: physical-engine/station-2-coating.md
       - Station 3 - Bipolar Plate Stamping: physical-engine/station-3-stamping.md
-      - Station 4 - Assembly & Clamping: physical-engine/station-4-assembly.md
-      - Station 5 - PEMFC Electrochemistry: physical-engine/station-5-pemfc.md
-      - Literature Calibration & DOIs: physical-engine/literature-calibration.md
+      - Station 4 - Stack Assembly & Clamping: physical-engine/station-4-assembly.md
+      - Station 5 - PEMFC Electrochemistry & Test Bench: physical-engine/station-5-pemfc.md
+      - Literature Calibration & Empirical Validation: physical-engine/literature-calibration.md
   - Multi-Agent System (MAS):
       - JaCaMo & CArtAgO Infrastructure: agents-and-mas/jacamo-structure.md
-      - Supervisor Agent: agents-and-mas/supervisor-agent.md
-      - Order & Resource Holons: agents-and-mas/order-resource-holons.md
-      - AMR Fleet Agents: agents-and-mas/amr-agents.md
+      - Supervisor Agent & 2PC Coordinator: agents-and-mas/supervisor-agent.md
+      - Order & Resource Holons — Contract-Net Bidding: agents-and-mas/order-resource-holons.md
+      - AMR Fleet Agents & Intralogistics: agents-and-mas/amr-agents.md
   - API & Protocols:
-      - gRPC SimBridge & Protobuf: api-and-protocols/grpc-protobuf.md
-      - WebSocket Telemetry & HMAC Auth: api-and-protocols/websocket-telemetry.md
-      - Database Schema & Async Queue: api-and-protocols/database-schema.md
+      - gRPC SimBridge & Protobuf Specifications: api-and-protocols/grpc-protobuf.md
+      - WebSocket TelemetryHub & HMAC Security: api-and-protocols/websocket-telemetry.md
+      - Database Schema & Asynchronous Queue: api-and-protocols/database-schema.md
   - Operations & DevOps:
-      - Monte Carlo Parallel Fan-out: operations-and-dev/monte-carlo-scale.md
-      - mTLS & Security Configuration: operations-and-dev/security-mtls.md
+      - Monte Carlo Parallel Scaling: operations-and-dev/monte-carlo-scale.md
+      - Security & mTLS Configuration: operations-and-dev/security-mtls.md
       - Testing & Verification Protocols: operations-and-dev/testing-calibration.md
   - Artifact Evaluation:
-      - 5-Min Reproduction Guide: artifact-evaluation/quick-repro.md
-      - Claim-to-Code Matrix: artifact-evaluation/claim-matrix.md
-  - Citation: citation.md
+      - 5-Minute Quick Reproduction Guide: artifact-evaluation/quick-repro.md
+      - Claim-to-Code Traceability Matrix: artifact-evaluation/claim-matrix.md
+  - Citation & Archival Info: citation.md
