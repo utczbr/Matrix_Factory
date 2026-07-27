@@ -826,6 +826,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#4-defect-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Defect Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-execution-pacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Execution Pacing
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1606,6 +1628,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#4-defect-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Defect Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-execution-pacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Execution Pacing
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1659,30 +1703,50 @@
 
 
 <h1 id="station-4-stack-assembly-clamping">Station 4: Stack Assembly &amp; Clamping</h1>
-<p>This document details the mechanical bolt clamping relationships (VDI 2230), elastic interaction, and non-linear GDL compression models for <strong>Station 4: Stack Clamping &amp; Fastening</strong>.</p>
+<p>This document details the mechanical bolt clamping relationships (VDI 2230), elastic interaction, non-linear GDL compression, and interfacial contact resistance models for <strong>Station 4: Stack Clamping &amp; Fastening</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
 <p>Station 4 models the mechanical assembly of fuel cell stacks (repeating units of bipolar plates, GDLs, and MEAs). Tightening torque applied to tie-rods establishes interfacial clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> (<span class="arithmatex">\(\text{MPa}\)</span>), compressing the Gas Diffusion Layer (GDL) and altering contact electrical resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> and gas transport porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
 <h3 id="1-vdi-2230-fastener-torque-tension-relationship">1. VDI 2230 Fastener Torque-Tension Relationship</h3>
-<p>Applied tightening torque <span class="arithmatex">\(M_A\)</span> (<span class="arithmatex">\(\text{N}\cdot\text{m}\)</span>) to 4 M8 tie-rods converts to axial bolt pre-load force <span class="arithmatex">\(F_M\)</span> (<span class="arithmatex">\(\text{N}\)</span>):</p>
-<div class="arithmatex">\[F_M = \frac{M_A}{\frac{p}{2\pi} + \frac{\mu_{\text{threads}} d_2}{2 \cos\beta} + \mu_{\text{head}} r_{\text{head}}}\]</div>
-<p>where <span class="arithmatex">\(p = 1.25\text{ mm}\)</span>, pitch diameter <span class="arithmatex">\(d_2 = 7.188\text{ mm}\)</span>, under-head radius <span class="arithmatex">\(r_{\text{head}} = 5.125\text{ mm}\)</span>, and flank semi-angle <span class="arithmatex">\(\beta = 30^\circ\)</span>.</p>
-<p>Elastic interaction coupling reduces effective pre-load across adjacent bolts (<span class="arithmatex">\(\alpha_{\text{elastic}} = 0.18\)</span>):</p>
-<div class="arithmatex">\[F_{\text{real}, i} = F_{\text{nom}, i} - 0.18 F_{\text{nom}, i-1}\]</div>
+<p>Applied tightening torque <span class="arithmatex">\(M_A\)</span> (<span class="arithmatex">\(\text{N}\cdot\text{m}\)</span>) to each of 4 M8 tie-rods converts to axial bolt pre-load force <span class="arithmatex">\(F_M\)</span> (<span class="arithmatex">\(\text{N}\)</span>):</p>
+<div class="arithmatex">\[F_{M,i} = \frac{M_{A,i}}{\dfrac{p}{2\pi} + \dfrac{\mu_{\text{threads},i}\, d_2}{2 \cos\beta} + \mu_{\text{head},i}\, r_{\text{head}}}\]</div>
+<p>where <span class="arithmatex">\(p = 1.25\text{ mm}\)</span>, pitch diameter <span class="arithmatex">\(d_2 = 7.188\text{ mm}\)</span>, under-head radius <span class="arithmatex">\(r_{\text{head}} = 5.125\text{ mm}\)</span>, and flank semi-angle <span class="arithmatex">\(\beta = 30^\circ\)</span>. <span class="arithmatex">\(\mu_{\text{threads},i}\)</span> and <span class="arithmatex">\(\mu_{\text{head},i}\)</span> are <strong>per-bolt</strong> friction coefficients (each defaults to <span class="arithmatex">\(0.15\)</span> if not supplied).</p>
+<p>Elastic interaction coupling reduces effective pre-load across adjacent bolts in a ring (<span class="arithmatex">\(\alpha_{\text{elastic}} = 0.18\)</span>; bolt indices are cyclic, i.e. bolt 1 is coupled to bolt 4):</p>
+<div class="arithmatex">\[F_{\text{real}, i} = F_{\text{nom}, i} - 0.18\, F_{\text{nom}, i-1 \bmod 4}\]</div>
 <p>Clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> over active stack area <span class="arithmatex">\(A_{\text{stack}} = 0.0225\text{ m}^2\)</span> (<span class="arithmatex">\(150 \times 150\text{ mm}\)</span>) is:</p>
 <div class="arithmatex">\[P_{\text{clamp}} = \frac{\sum_{i=1}^4 \max(0, F_{\text{real}, i})}{A_{\text{stack}}}\]</div>
 <h3 id="2-non-linear-gdl-compression-porosity-derating">2. Non-Linear GDL Compression &amp; Porosity Derating</h3>
 <p>Compacted GDL thickness <span class="arithmatex">\(t_{\text{comp}}\)</span> (<span class="arithmatex">\(\mu\text{m}\)</span>) follows non-linear strain stiffness (<span class="arithmatex">\(E_0 = 2.80\text{ MPa}\)</span>, <span class="arithmatex">\(K_s = 28.5\)</span>; Kleemann et al. 2009; Norouzifard &amp; Bahrami 2014):</p>
-<div class="arithmatex">\[t_{\text{comp}} = t_0 \left( 1 - \frac{P_{\text{clamp}}}{E_0 + K_s P_{\text{clamp}}} \right)\]</div>
-<p>Compacted GDL porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span> is derated via mass conservation (<span class="arithmatex">\(t_{\text{solid}} = t_0 (1 - \varepsilon_0)\)</span>):</p>
-<div class="arithmatex">\[\varepsilon_{\text{gdl}} = 1 - (1 - \varepsilon_0) \frac{t_0}{t_{\text{comp}}}\]</div>
-<p>Tangent elastic modulus <span class="arithmatex">\(E_{\text{tangent}}\)</span> scales with pressure:</p>
+<div class="arithmatex">\[t_{\text{comp}} = \max\!\Big(t_{\text{solid}}+1,\ t_0 \left( 1 - \frac{P_{\text{clamp}}}{E_0 + K_s P_{\text{clamp}}} \right)\Big), \qquad t_{\text{solid}} = t_0(1-\varepsilon_0)\]</div>
+<p>Compacted GDL porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span> is derated via mass conservation, then clamped to <span class="arithmatex">\([0.01, 0.95]\)</span>:</p>
+<div class="arithmatex">\[\varepsilon_{\text{gdl}} = \max\!\Big(0.01,\ \min\!\big(0.95,\ 1 - (1 - \varepsilon_0) \tfrac{t_0}{t_{\text{comp}}}\big)\Big)\]</div>
+<p>Tangential elastic modulus <span class="arithmatex">\(E_{\text{tangent}}\)</span> scales with pressure:</p>
 <div class="arithmatex">\[E_{\text{tangent}} = E_0 \left( 1 + \frac{K_s}{E_0} P_{\text{clamp}} \right)^2\]</div>
 <h3 id="3-interfacial-contact-resistance-model-microstructurepy">3. Interfacial Contact Resistance Model (<code>microstructure.py</code>)</h3>
-<p>Microstructure contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> (<span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span>) decreases exponentially with clamping pressure (<span class="arithmatex">\(R_{\text{contact},0} = 0.0042\ \Omega\cdot\text{cm}^2\)</span>; Mason et al. 2012):</p>
-<div class="arithmatex">\[R_{\text{contact}}(P_{\text{clamp}}) = R_{\text{contact},0} \cdot \exp\left(-0.45 P_{\text{clamp}}\right) + R_{\text{min}}\]</div>
+<p>Microstructure contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span> (<span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span>) is a <strong>U-shaped penalty centered on a nominal clamping setpoint</strong> <span class="arithmatex">\(P_{\text{nom}} = 4.25\text{ MPa}\)</span> — both under-clamping (loss of micro-contact area) and over-clamping (channel intrusion/fiber crushing) increase resistance relative to the setpoint:</p>
+<div class="arithmatex">\[p_{\text{dev}} = \frac{\left|P_{\text{clamp}} - P_{\text{nom}}\right|}{P_{\text{nom}}}\]</div>
+<div class="arithmatex">\[R_{\text{contact}}(P_{\text{clamp}}) = R_{\text{contact},0} \left(1 + 0.35\, p_{\text{dev}} + 0.25\, p_{\text{dev}}^2\right)\]</div>
+<p>with <span class="arithmatex">\(P_{\text{clamp}}\)</span> floored at <span class="arithmatex">\(0.5\text{ MPa}\)</span> before evaluation. Two calibrated reference points are used depending on plate surface treatment:</p>
+<ul>
+<li><span class="arithmatex">\(R_{\text{contact},0} = 0.0042\ \Omega\cdot\text{cm}^2\)</span> (<span class="arithmatex">\(4.20\ \text{m}\Omega\cdot\text{cm}^2\)</span>) — TiAlN/CrN-coated plate (default).</li>
+<li><span class="arithmatex">\(R_{\text{contact,uncoated}} = 0.0185\ \Omega\cdot\text{cm}^2\)</span> (<span class="arithmatex">\(18.50\ \text{m}\Omega\cdot\text{cm}^2\)</span>) — uncoated 316L reference.</li>
+</ul>
+<p>Both constants trace to El-Kharouf, Mason, Brett &amp; Pollet (2012).</p>
+<p><strong>Bruggeman effective conductivity.</strong> The same module implements the effective-medium relation:</p>
+<div class="arithmatex">\[\sigma_{\text{eff}} = \sigma_{\text{bulk}} \left(1 - \varepsilon_{\text{gdl}}\right)^{m}, \qquad m = 1.5 \ \text{(standard Bruggeman exponent, fibrous porous media)}\]</div>
+<h3 id="4-defect-criteria">4. Defect Criteria</h3>
+<p>A component/assembly is flagged defective if any of the following hold:</p>
+<ul>
+<li><strong>Under-clamped:</strong> <span class="arithmatex">\(P_{\text{clamp}} &lt; 3.0\text{ MPa}\)</span></li>
+<li><strong>Over-clamped:</strong> <span class="arithmatex">\(P_{\text{clamp}} &gt; 5.5\text{ MPa}\)</span></li>
+<li><strong>Torque imbalance:</strong> the unbiased sample standard deviation of the four applied torques exceeds <span class="arithmatex">\(1.2\text{ N}\cdot\text{m}\)</span> (Station 4 accelerated timing) or <span class="arithmatex">\(1.8\text{ N}\cdot\text{m}\)</span> (otherwise)</li>
+</ul>
+<h3 id="5-execution-pacing">5. Execution Pacing</h3>
+<div class="arithmatex">\[t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.08\, \tau_{\text{std}}\right), \qquad t_{\text{base}} = 24.0\text{ s (Station 4)} \text{ or } 3.0\text{ s (otherwise)}\]</div>
+<div class="arithmatex">\[\text{var\_ratio} = 1.0 + 0.35\, p_{\text{dev}} + 0.25\, \tau_{\text{std}}\]</div>
+<p>where <span class="arithmatex">\(\tau_{\text{std}}\)</span> is the unbiased torque standard deviation, and <span class="arithmatex">\(p_{\text{dev}}\)</span> is measured against the <span class="arithmatex">\(4.25\text{ MPa}\)</span> setpoint.</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1697,18 +1761,39 @@
 </thead>
 <tbody>
 <tr>
-<td>Baseline Contact Resistance</td>
+<td>Baseline Contact Resistance (coated)</td>
 <td><span class="arithmatex">\(R_{\text{contact},0}\)</span></td>
 <td><span class="arithmatex">\(0.0042\)</span> (<span class="arithmatex">\(4.20\text{ m}\Omega\cdot\text{cm}^2\)</span>)</td>
 <td><span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span></td>
-<td>Mason et al. (2012)</td>
+<td>El-Kharouf, Mason, Brett &amp; Pollet (2012)</td>
+</tr>
+<tr>
+<td>Baseline Contact Resistance (uncoated 316L)</td>
+<td><span class="arithmatex">\(R_{\text{contact,uncoated}}\)</span></td>
+<td><span class="arithmatex">\(0.0185\)</span> (<span class="arithmatex">\(18.50\text{ m}\Omega\cdot\text{cm}^2\)</span>)</td>
+<td><span class="arithmatex">\(\Omega\cdot\text{cm}^2\)</span></td>
+<td>El-Kharouf, Mason, Brett &amp; Pollet (2012)</td>
+</tr>
+<tr>
+<td>Nominal Clamping Setpoint</td>
+<td><span class="arithmatex">\(P_{\text{nom}}\)</span></td>
+<td><span class="arithmatex">\(4.25\)</span></td>
+<td><span class="arithmatex">\(\text{MPa}\)</span></td>
+<td>Target clamping pressure</td>
+</tr>
+<tr>
+<td>Bruggeman Exponent</td>
+<td><span class="arithmatex">\(m\)</span></td>
+<td><span class="arithmatex">\(1.5\)</span></td>
+<td>—</td>
+<td>Standard value for fibrous porous media</td>
 </tr>
 <tr>
 <td>Nominal Bolt Torque</td>
 <td><span class="arithmatex">\(M_A\)</span></td>
 <td><span class="arithmatex">\(46.0\)</span></td>
 <td><span class="arithmatex">\(\text{N}\cdot\text{m}\)</span></td>
-<td>Target Torque (<span class="arithmatex">\(\sim 4.22\text{ MPa}\)</span>)</td>
+<td>Target Torque (~4.25 MPa)</td>
 </tr>
 <tr>
 <td>Initial GDL Elasticity</td>
@@ -1744,6 +1829,27 @@
 <td><span class="arithmatex">\(0.18\)</span></td>
 <td>—</td>
 <td>Fastener Elastic Coupling</td>
+</tr>
+<tr>
+<td>Under-Clamp Threshold</td>
+<td>—</td>
+<td><span class="arithmatex">\(3.0\)</span></td>
+<td><span class="arithmatex">\(\text{MPa}\)</span></td>
+<td>Quality Threshold</td>
+</tr>
+<tr>
+<td>Over-Clamp Threshold</td>
+<td>—</td>
+<td><span class="arithmatex">\(5.5\)</span></td>
+<td><span class="arithmatex">\(\text{MPa}\)</span></td>
+<td>Quality Threshold</td>
+</tr>
+<tr>
+<td>Torque Imbalance Threshold</td>
+<td>—</td>
+<td><span class="arithmatex">\(1.2\)</span> / <span class="arithmatex">\(1.8\)</span></td>
+<td><span class="arithmatex">\(\text{N}\cdot\text{m}\)</span></td>
+<td>Quality Threshold (Station-4 / other)</td>
 </tr>
 </tbody>
 </table>
@@ -1815,7 +1921,7 @@
       
         <script src="../../javascripts/mathjax.js"></script>
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
       
     
   </body>

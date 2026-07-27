@@ -738,10 +738,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-process-deviations-hydrodynamic-variance" class="md-nav__link">
+  <a href="#1-process-deviations-non-uniformity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Process Deviations &amp; Hydrodynamic Variance
+        1. Process Deviations &amp; Non-Uniformity
       
     </span>
   </a>
@@ -753,6 +753,17 @@
     <span class="md-ellipsis">
       
         2. Effective ECSA Yield &amp; Quality Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-execution-pacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Execution Pacing
       
     </span>
   </a>
@@ -1563,10 +1574,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-process-deviations-hydrodynamic-variance" class="md-nav__link">
+  <a href="#1-process-deviations-non-uniformity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Process Deviations &amp; Hydrodynamic Variance
+        1. Process Deviations &amp; Non-Uniformity
       
     </span>
   </a>
@@ -1578,6 +1589,17 @@
     <span class="md-ellipsis">
       
         2. Effective ECSA Yield &amp; Quality Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-execution-pacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Execution Pacing
       
     </span>
   </a>
@@ -1637,22 +1659,26 @@
 
 
 <h1 id="station-2-catalyst-layer-deposition">Station 2: Catalyst Layer Deposition</h1>
-<p>This document details the hydrodynamic coating non-uniformity equations and Electro-Chemical Surface Area (<span class="arithmatex">\(\text{ECSA}\)</span>) yield model for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
+<p>This document details the coating non-uniformity equations and Electro-Chemical Surface Area (<span class="arithmatex">\(\text{ECSA}\)</span>) yield model for <strong>Station 2: Catalyst Layer Deposition</strong>.</p>
 <hr />
 <h2 id="physical-process-description">Physical Process Description</h2>
 <p>Station 2 models slot-die coating of Platinum/Carbon (Pt/C) catalyst ink onto polymer electrolyte membranes. Process deviations in coating line speed <span class="arithmatex">\(v_{\text{coat}}\)</span> and ink slurry dynamic viscosity <span class="arithmatex">\(\mu_{\text{slurry}}\)</span> alter ink film uniformity, establishing effective catalyst utilization <span class="arithmatex">\(\text{ECSA}_{\text{ratio}}\)</span>.</p>
 <hr />
 <h2 id="mathematical-formulation">Mathematical Formulation</h2>
-<h3 id="1-process-deviations-hydrodynamic-variance">1. Process Deviations &amp; Hydrodynamic Variance</h3>
+<h3 id="1-process-deviations-non-uniformity">1. Process Deviations &amp; Non-Uniformity</h3>
 <p>Process parameter deviations relative to nominal setpoints <span class="arithmatex">\(v_0 = 0.15\text{ m/s}\)</span> and <span class="arithmatex">\(\mu_0 = 0.050\text{ Pa}\cdot\text{s}\)</span> are evaluated as:</p>
 <div class="arithmatex">\[v_{\text{dev}} = \frac{|v_{\text{coat}} - v_0|}{v_0}\]</div>
 <div class="arithmatex">\[\mu_{\text{dev}} = \frac{|\mu_{\text{slurry}} - \mu_0|}{\mu_0}\]</div>
-<p>Hydrodynamic catalyst loading variance index <span class="arithmatex">\(\text{loading\_variance}\)</span> combines quadratic and cross-coupling deviations:</p>
+<p>Catalyst loading variance index <span class="arithmatex">\(\text{loading\_variance}\)</span> combines quadratic and cross-coupling deviations:</p>
 <div class="arithmatex">\[\text{loading\_variance} = 0.35 v_{\text{dev}}^2 + 0.25 \mu_{\text{dev}}^2 + 0.15 v_{\text{dev}} \mu_{\text{dev}}\]</div>
 <h3 id="2-effective-ecsa-yield-quality-criteria">2. Effective ECSA Yield &amp; Quality Criteria</h3>
 <p>Effective catalyst surface area yield <span class="arithmatex">\(\text{ECSA}_{\text{ratio}} \in [0.10, 1.00]\)</span> is computed as:</p>
 <div class="arithmatex">\[\text{ECSA}_{\text{ratio}} = \max\left(0.10, \min\left(1.00, 1.0 - 0.45 \cdot \text{loading\_variance} - 0.20 v_{\text{dev}}\right)\right)\]</div>
 <p>A component is flagged defective if <span class="arithmatex">\(\text{ECSA}_{\text{ratio}} &lt; 0.70\)</span> or <span class="arithmatex">\(\text{loading\_variance} &gt; 0.30\)</span>.</p>
+<h3 id="3-execution-pacing">3. Execution Pacing</h3>
+<div class="arithmatex">\[t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.12\, v_{\text{dev}} + 0.10\, \mu_{\text{dev}}\right)\]</div>
+<div class="arithmatex">\[\text{var\_ratio} = 1.0 + 0.40 \cdot \text{loading\_variance}\]</div>
+<p>with <span class="arithmatex">\(t_{\text{base}} = 12.0\ \text{s}\)</span>.</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>
@@ -1681,11 +1707,11 @@
 <td>Rheometer Measurements</td>
 </tr>
 <tr>
-<td>Surface Tension</td>
+<td>Surface Tension <em>(declared constant)</em></td>
 <td><span class="arithmatex">\(\sigma_{\text{ink}}\)</span></td>
 <td><span class="arithmatex">\(0.035\)</span></td>
 <td><span class="arithmatex">\(\text{N/m}\)</span></td>
-<td>Pendant Drop Method</td>
+<td>Ink formulation constant</td>
 </tr>
 <tr>
 <td>Min Acceptable ECSA</td>
@@ -1770,7 +1796,7 @@
       
         <script src="../../javascripts/mathjax.js"></script>
       
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
       
     
   </body>
