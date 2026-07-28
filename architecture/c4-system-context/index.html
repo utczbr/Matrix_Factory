@@ -1576,7 +1576,7 @@
     end
 
     USER --&gt;|Configures Runs &amp; Topologies| MAS
-    MAS == "gRPC IPC" ==&gt; PHYS
+    MAS ==&gt;|gRPC IPC| PHYS
     MAS --&gt;|Persists State Logs| DB
     HUB --&gt;|Streams Metrics over WSS| DASH
     MARKET --&gt;|Energy Price Feeds| MAS</code></pre>
@@ -1603,7 +1603,7 @@
 
     MAIN --&gt; AGTS
     AGTS &lt;--&gt; ART
-    ART == "gRPC / Protobuf over mTLS (Port 50051)" ==&gt; DAEMON
+    ART ==&gt;|gRPC / Protobuf over mTLS (Port 50051)| DAEMON
     DAEMON --&gt; NUMBA
     NUMBA --&gt; COOL
     ART --&gt; SQLITE

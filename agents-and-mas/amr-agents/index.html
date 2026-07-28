@@ -1597,8 +1597,8 @@
     LOADING --&gt; MOVING_TO_DROP : Material Loaded
     MOVING_TO_DROP --&gt; UNLOADING : Arrived at Destination Station
     UNLOADING --&gt; IDLE : Material Transferred
-    IDLE -.-&gt; CHARGING : SoC &lt; 20% (Planned)
-    CHARGING -.-&gt; IDLE : SoC &gt; 90% (Planned)</code></pre>
+    IDLE -.-&gt; CHARGING : SoC below 20% (Planned)
+    CHARGING -.-&gt; IDLE : SoC above 90% (Planned)</code></pre>
 <hr />
 <h2 id="battery-state-of-charge-soc-derating-model-design-specification">Battery State of Charge (SoC) Derating Model (Design Specification)</h2>
 <p>Battery depletion during transport is specified to depend on payload mass <span class="arithmatex">\(m_{\mathrm{load}}\)</span> (<span class="arithmatex">\(\mathrm{kg}\)</span>) and travel distance <span class="arithmatex">\(d\)</span> (<span class="arithmatex">\(\mathrm{m}\)</span>):</p>

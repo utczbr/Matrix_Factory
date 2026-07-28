@@ -1581,7 +1581,7 @@
     Main-&gt;&gt;MAS: Broadcast step(tick_t)
     MAS-&gt;&gt;Artifact: Perform station_step action
     Artifact-&gt;&gt;Physics: gRPC StepRequest(station_id, dt)
-    Physics-&gt;&gt;Physics: Numba JIT ODE Integration (t_t -&gt; t_t+dt)
+    Physics-&gt;&gt;Physics: Numba JIT ODE Integration (t_t to t_t+dt)
     Physics--&gt;&gt;Artifact: StepResponse(state_vector, next_event_delta)
     Artifact--&gt;&gt;MAS: Return observable property update
     MAS--&gt;&gt;Main: Signal completion &amp; register NER(t_next)
