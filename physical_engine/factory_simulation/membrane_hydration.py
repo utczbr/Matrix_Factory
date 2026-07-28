@@ -65,6 +65,23 @@ def _equilibrium_water_content(a_water: float) -> float:
     return float(max(1.0, min(14.0, lam)))
 
 
+TAU_SORPTION_S = 12.0     # wetting (uptake) time constant — faster
+TAU_DESORPTION_S = 45.0   # drying (release) time constant — slower, per Ge et al. asymmetry
+
+
+@njit(nogil=True, cache=True)
+def step_membrane_hydration(lambda_current: float, activity_water: float, dt: float) -> float:
+    """Step dynamic membrane hydration state using first-order relaxation ODE.
+
+    dλ/dt = (λ_eq - λ) / τ
+    """
+    lambda_eq = _equilibrium_water_content(activity_water)
+    tau = TAU_SORPTION_S if lambda_eq > lambda_current else TAU_DESORPTION_S
+    dlambda_dt = (lambda_eq - lambda_current) / tau
+    lambda_new = lambda_current + dt * dlambda_dt
+    return float(min(14.0, max(1.0, lambda_new)))
+
+
 @njit(nogil=True, cache=True)
 def compute_membrane_resistance(
     lambda_val: float,
@@ -83,3 +100,4 @@ def compute_membrane_resistance(
     """
     sigma = _springer_membrane_conductivity(lambda_val, T_k)
     return float(delta_mem_cm / sigma)
+

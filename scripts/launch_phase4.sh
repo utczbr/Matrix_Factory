@@ -7,6 +7,15 @@ BASE_PORT="${BASE_PORT:-50051}"
 JVM_CORES="${JVM_CORES:-0,1}"
 PHASE4_JCM_DIR="${PHASE4_JCM_DIR:-build/phase4_jcm}"
 
+: "${GRPC_SECURE_MODE:=true}"
+: "${TELEMETRY_REQUIRE_TICKET:=true}"
+CERT_DIR="${GRPC_CERT_DIR:-certs}"
+if [ "$GRPC_SECURE_MODE" = "true" ] && [ ! -d "$CERT_DIR" ]; then
+  ./scripts/generate_certs.sh "$CERT_DIR"
+fi
+export GRPC_SECURE_MODE TELEMETRY_REQUIRE_TICKET
+
+
 cleanup() {
   if [[ -n "${LAUNCHER_PID:-}" ]]; then
     kill "${LAUNCHER_PID}" 2>/dev/null || true

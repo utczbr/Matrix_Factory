@@ -89,6 +89,9 @@ public class AMRArtifact extends Artifact {
         }
     }
 
+    private java.util.SplittableRandom fleetRng;
+    private double mtbfSeconds = Double.MAX_VALUE;
+
     private static final class AMRSim {
         String amrId;
         int homeX, homeY;
@@ -97,6 +100,8 @@ public class AMRArtifact extends Artifact {
         float progress;             // [0,1] progress from (x,y) to (nextX,nextY)
         double secPerCell = 0.5;    // travel speed
         double dwellRemaining = 0;  // seconds paused at a waypoint
+        double downtimeRemainingS = 0;
+        java.util.SplittableRandom rng;
         java.util.List<int[]> path = new java.util.ArrayList<>();
         int pathIndex = 0;
         AMRStatusEnum status = AMRStatusEnum.AMR_IDLE;
@@ -106,15 +111,6 @@ public class AMRArtifact extends Artifact {
         int blockedTicks = 0;
         String pendingDest = null;
         int completedJobCount = 0;
-        // ROOT CAUSE FIX (AMRs "going around and around" / stations stuck on
-        // "waiting for item to arrive"): with N AMRs and more than N orders
-        // in flight, order_holon.asl's hash-based AMR pick (I = R*10000 mod N)
-        // routinely assigns two different orders to the same physical AMR.
-        // requestTransport() used to overwrite `destinations` unconditionally,
-        // silently abandoning whichever order was already in transit — that
-        // order's station then waits forever for an amr_arrived that will
-        // never come. Now a second request for a busy AMR is queued here and
-        // started only once the AMR is actually free again.
         java.util.Queue<TransportJob> jobQueue = new java.util.LinkedList<>();
     }
 
@@ -126,17 +122,17 @@ public class AMRArtifact extends Artifact {
         this.runId = runId;
         this.gridCols = cols;
         this.gridRows = rows;
-        // §1.4: raise HORIZON_TICKS to gridCols + gridRows + margin so paths
-        // up to the max possible Manhattan distance are never truncated.
         this.HORIZON_TICKS = gridCols + gridRows + 4;
         this.reservedBy = new String[gridCols][gridRows][HORIZON_TICKS];
         RunManager.getSimulator(runId).amrArtifact = this;
+
+        this.fleetRng = new java.util.SplittableRandom(("amr-fleet-" + runId).hashCode() ^ runId);
 
         fleet = new AMRSim[count];
         for (int i = 0; i < count; i++) {
             AMRSim a = new AMRSim();
             a.amrId = "AMR-" + (i + 1);
-            // Docks along the bottom row, matching factory_layout.json's amr_docks.
+            a.rng = fleetRng.split();
             a.homeX = 1 + i;
             a.homeY = gridRows - 1;
             a.x = a.homeX;
@@ -149,6 +145,25 @@ public class AMRArtifact extends Artifact {
         }
         publishSnapshot();
     }
+
+    @OPERATION
+    public void setMtbfSeconds(double mtbfSeconds) {
+        this.mtbfSeconds = mtbfSeconds;
+        log("AMR fleet MTBF set to " + mtbfSeconds + " seconds.");
+    }
+
+    @OPERATION
+    public void triggerBreakdown(String amrId, double downtimeSeconds) {
+        if (fleet == null) return;
+        for (AMRSim a : fleet) {
+            if (a.amrId.equals(amrId)) {
+                a.status = AMRStatusEnum.AMR_BLOCKED;
+                a.downtimeRemainingS = downtimeSeconds;
+                log("Manual breakdown triggered for " + amrId + " for " + downtimeSeconds + "s");
+            }
+        }
+    }
+
 
     /**
      * Physical multi-waypoint transport for an AMR already chosen by the
@@ -196,7 +211,8 @@ public class AMRArtifact extends Artifact {
         // anything and isn't committed to a pickup is free to be redirected
         // immediately, mid-path, straight to its next real destination —
         // it never needs to touch the dock first.
-        return a.carryingOrderId.isEmpty() && a.pendingOrderId.isEmpty();
+        return a.downtimeRemainingS <= 0 && a.carryingOrderId.isEmpty() && a.pendingOrderId.isEmpty();
+
     }
 
     private void startJob(AMRSim a, TransportJob job) {
@@ -633,10 +649,31 @@ public class AMRArtifact extends Artifact {
     }
 
     private void stepAMR(AMRSim a, double dt) {
+        if (a.downtimeRemainingS > 0) {
+            a.downtimeRemainingS -= dt;
+            if (a.downtimeRemainingS <= 0) {
+                a.downtimeRemainingS = 0;
+                a.status = AMRStatusEnum.AMR_IDLE;
+                log("AMR " + a.amrId + " breakdown resolved; status reset to IDLE.");
+            }
+            return;
+        }
+
+        if (mtbfSeconds < Double.MAX_VALUE && a.status == AMRStatusEnum.AMR_MOVING) {
+            double pFailThisTick = dt / mtbfSeconds;
+            if (a.rng != null && a.rng.nextDouble() < pFailThisTick) {
+                a.status = AMRStatusEnum.AMR_BLOCKED;
+                a.downtimeRemainingS = 30.0 + a.rng.nextDouble() * 90.0;
+                log("AMR " + a.amrId + " breakdown occurred! Repair ETA: " + a.downtimeRemainingS + "s");
+                return;
+            }
+        }
+
         if (a.dwellRemaining > 0) {
             a.dwellRemaining -= dt;
             return;
         }
+
 
         if (a.path.isEmpty() || a.pathIndex >= a.path.size()) {
             if (!a.carryingOrderId.isEmpty() && a.destinations.isEmpty()) {
@@ -820,8 +857,10 @@ public class AMRArtifact extends Artifact {
                     (int) a.nextX, (int) a.nextY,
                     a.progress,
                     a.status,
-                    a.carryingOrderId
+                    a.carryingOrderId,
+                    a.downtimeRemainingS > 0
             );
+
         }
         currentPositions = snap;
     }

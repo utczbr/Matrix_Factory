@@ -9,7 +9,33 @@
   <- .print("Supervisor agent started");
      +active_schema(prosa);
      +suspended_holons([]);
-     !register_active_holons.
+     !register_active_holons;
+     startTimer("defect_drift_poll", 5000, self).
+
++timer_expired("defect_drift_poll", _)
+  <- !monitor_defect_drift;
+     startTimer("defect_drift_poll", 5000, self).
+
++!monitor_defect_drift
+  : true
+  <- for ( .member(Station, ["station_1", "station_2", "station_3", "station_4"]) ) {
+        getRecentDefectRate(Station, 20, Rate)[artifact_name("database"), wsp("factory_ws")];
+        if (Rate > 0.30) {
+            .print("High defect rate on ", Station, ": ", Rate, " — applying corrective setpoint");
+            !correct_setpoint(Station);
+        }
+     }.
+
++!correct_setpoint("station_1")
+  <- .send(station_1, tell, adjust_setpoint("t_press_k", 433.15)).
++!correct_setpoint("station_2")
+  <- .send(station_2, tell, adjust_setpoint("v_coat_m_s", 0.15)).
++!correct_setpoint("station_3")
+  <- .send(station_3, tell, adjust_setpoint("press_force_kn", 120.0)).
++!correct_setpoint("station_4")
+  <- .send(station_4, tell, adjust_setpoint("torque_bolt_0", 46.0)).
++!correct_setpoint(_).
+
 
 +!register_active_holons
   <- +active_order_holons([order_1, order_2, order_3, order_4, order_5]);

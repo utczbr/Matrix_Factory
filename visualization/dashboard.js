@@ -747,9 +747,30 @@ function lerpColor(hexA, hexB, t) {
     const bl = Math.round(a.b + (b.b - a.b) * t);
     return `rgb(${r},${g},${bl})`;
 }
-function hexToRgb(hex) {
-    const n = parseInt(hex.replace('#', ''), 16);
-    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+async function sendControlAction(actionData) {
+    try {
+        const host = window.location.hostname || 'localhost';
+        const ticketRes = await fetch(`http://${host}:8081/control/ticket?run_id=${currentRunId}`);
+        const { ticket } = await ticketRes.json();
+        const res = await fetch(`http://${host}:8081/control/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticket, runId: currentRunId, ...actionData })
+        });
+        const data = await res.json();
+        console.log("Control Action response:", data);
+    } catch (e) {
+        console.error("Failed to send control action:", e);
+    }
 }
 
+document.getElementById('btnSpikeS1')?.addEventListener('click', () => {
+    sendControlAction({ type: 'station_setpoint', stationId: 'S1', param: 't_press_k', value: 443.15 });
+});
+
+document.getElementById('btnBreakdownAMR1')?.addEventListener('click', () => {
+    sendControlAction({ type: 'amr_breakdown', amrId: 'AMR-1', downtimeSeconds: 60.0 });
+});
+
 init();
+

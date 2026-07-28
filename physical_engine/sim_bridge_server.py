@@ -113,6 +113,12 @@ from physical_engine.factory_simulation.h2_tank import TankArray
 from physical_engine.factory_simulation.compressor import CompressorStage
 import physical_engine.factory_simulation.microstructure as microstructure
 
+from physical_engine.factory_simulation import station1_mea_preparation as st1
+from physical_engine.factory_simulation import station2_catalyst_deposition as st2
+from physical_engine.factory_simulation import station3_bipolar_plate_stamping as st3
+from physical_engine.factory_simulation import station4_stack_clamping as st4
+
+
 # ---------------------------------------------------------------------------
 # Failure flags bitmask (matches BatchTestResponse.failure_flags in .proto).
 # All flag values are imported from pemfc_model.py, which is now the single
@@ -428,8 +434,67 @@ class SimBridgeServicer:
                 failure_flags=SOLVER_DID_NOT_CONVERGE,
             )
 
+    def SimulateStationProcess(self, request, context=None):
+        if not _PB2_AVAILABLE:
+            raise RuntimeError("Proto stubs not compiled.")
+        kind = request.WhichOneof("params")
+        if request.station_id == "S1" and kind == "station1":
+            p = request.station1
+            t_press = p.t_press_k if p.HasField("t_press_k") else st1.T_PRESS_NOMINAL_K
+            dwell_time = p.dwell_time_s if p.HasField("dwell_time_s") else st1.DWELL_TIME_NOMINAL_S
+            proc_time_s, is_def, var_ratio, alpha, delam, pinhole = st1.simulate_stage1_mea_prep_safe(
+                t_press,
+                dwell_time,
+                request.k_time or st1.K_TIME_ACCELERATED,
+            )
+            return sim_bridge_pb2.StationProcessResponse(
+                proc_time_s=proc_time_s, is_defective=is_def, var_ratio=var_ratio,
+                alpha_final=alpha, delamination_risk=delam, pinhole_risk=pinhole,
+            )
+        if request.station_id == "S2" and kind == "station2":
+            p = request.station2
+            v_coat = p.v_coat_m_s if p.HasField("v_coat_m_s") else st2.V_COAT_NOMINAL_M_S
+            mu_slurry = p.mu_slurry_pa_s if p.HasField("mu_slurry_pa_s") else st2.MU_SLURRY_NOMINAL_PA_S
+            proc_time_s, is_def, var_ratio, ecsa = st2.simulate_stage2_catalyst_deposition_safe(
+                v_coat,
+                mu_slurry,
+                request.k_time or st2.K_TIME_ACCELERATED,
+            )
+            return sim_bridge_pb2.StationProcessResponse(
+                proc_time_s=proc_time_s, is_defective=is_def, var_ratio=var_ratio, ecsa_ratio=ecsa,
+            )
+        if request.station_id == "S3" and kind == "station3":
+            p = request.station3
+            press_force = p.press_force_kn if p.HasField("press_force_kn") else st3.F_NOM_S3
+            die_stroke = p.die_stroke_count if p.HasField("die_stroke_count") else 0
+            w0 = p.w0_initial_wear if p.HasField("w0_initial_wear") else 0.0
+            use_duplex = p.use_duplex_coating if p.HasField("use_duplex_coating") else False
+            proc_time_s, is_def, var_ratio, damage = st3.simulate_stage1_stamping_safe(
+                press_force, die_stroke, w0, use_duplex, request.k_time or st3.K_TIME_ACCELERATED,
+            )
+            return sim_bridge_pb2.StationProcessResponse(
+                proc_time_s=proc_time_s, is_defective=is_def, var_ratio=var_ratio, damage_index=damage,
+            )
+        if request.station_id == "S4" and kind == "station4":
+            p = request.station4
+            torques = list(p.applied_torques_nm) if len(p.applied_torques_nm) == 4 else [st4.TORQUE_NOMINAL_NM] * 4
+            frictions = list(p.friction_coefficients) if len(p.friction_coefficients) == 8 else [0.15] * 8
+            proc_time_s, is_def, var_ratio, porosity, e_tan, p_clamp = st4.simulate_stage2_clamping_safe(
+                torques, frictions, True, request.k_time or st4.K_TIME_ACCELERATED,
+            )
+            return sim_bridge_pb2.StationProcessResponse(
+                proc_time_s=proc_time_s, is_defective=is_def, var_ratio=var_ratio,
+                gdl_porosity=porosity, e_tangent_mpa=e_tan, p_clamp_mpa=p_clamp,
+            )
+        msg = f"unsupported station_id/params combination: {request.station_id}/{kind}"
+        if context is not None:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, msg)
+        else:
+            raise ValueError(msg)
+
 
 def serve(
+
     port: int = 50051,
     max_workers: int | None = None,
     num_cells: int = 200,

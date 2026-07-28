@@ -14,6 +14,11 @@
      +my_station(Me);
      releaseStation("").
 
++adjust_setpoint(Param, Value)[source(Sender)]
+  <- adjustSetpoint(Param, Value);
+     .print("setpoint ", Param, " -> ", Value, " (from ", Sender, ")").
+
+
 // ── CNP Reservation State-Machine (Phase 2) ──────────────────────────────
 
 // Plan: Respond to CFP with transactional reservation

@@ -28,10 +28,12 @@ node_modules/
 scratch/
 *.db-shm
 *.db-wal
-components_to_implement/
+components_legacy/
 #.physical_engine/
 report (1).tex
 factory_*.jcm
 factory.jcm.template.tmp
 certs/
 *.key
+*.crt
+*.pem

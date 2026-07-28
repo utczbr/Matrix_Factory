@@ -93,9 +93,18 @@ public class MainSimulator {
     }
 
     public MainSimulator(int runId, int port, String jcmPath) {
+        if ("production".equalsIgnoreCase(System.getenv("MATRIX_FACTORY_ENV"))) {
+            if (!"true".equalsIgnoreCase(System.getenv("GRPC_SECURE_MODE"))
+                || !"true".equalsIgnoreCase(System.getenv("TELEMETRY_REQUIRE_TICKET"))) {
+                throw new IllegalStateException(
+                    "Refusing to start: GRPC_SECURE_MODE and TELEMETRY_REQUIRE_TICKET "
+                    + "must both be true when MATRIX_FACTORY_ENV=production");
+            }
+        }
         this.runId = runId;
         this.jcmPath = jcmPath;
         this.grpcBridge = new GrpcClientBridge(port);
+
 
         try {
             String jcmContent = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(jcmPath)));
@@ -129,6 +138,8 @@ public class MainSimulator {
     public String getJcmPath() {
         return jcmPath;
     }
+
+
 
     public static void main(String[] args) {
         java.util.List<String> posArgs = new java.util.ArrayList<>();
@@ -366,7 +377,9 @@ public class MainSimulator {
                         .setMovementProgress(snap.movementProgress())
                         .setStatus(snap.status())
                         .setCarryingOrderId(snap.carryingOrderId())
+                        .setAmrBreakdownActive(snap.breakdownActive())
                         .build());
+
             }
         }
 

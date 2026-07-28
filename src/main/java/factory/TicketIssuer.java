@@ -58,23 +58,20 @@ public final class TicketIssuer {
     /**
      * Parsed ticket claims.
      */
-    public record Claims(String sub, int runId, long iat, long exp, String jti) {
+    public record Claims(String sub, int runId, long iat, long exp, String jti, String scope) {
         public boolean isExpired() {
             return System.currentTimeMillis() > exp;
         }
     }
 
-    /**
-     * Mint a new short-lived ticket for the given client/run pair.
-     *
-     * @param clientToken  opaque client identifier (e.g. session id)
-     * @param runId        the run the ticket grants access to
-     * @return a compact signed ticket string
-     */
     public static String issue(String clientToken, int runId) {
+        return issue(clientToken, runId, "telemetry");
+    }
+
+    public static String issue(String clientToken, int runId, String scope) {
         long now = System.currentTimeMillis();
         String jti = UUID.randomUUID().toString();
-        String payload = clientToken + "|" + runId + "|" + now + "|" + (now + TICKET_TTL_MS) + "|" + jti;
+        String payload = clientToken + "|" + runId + "|" + now + "|" + (now + TICKET_TTL_MS) + "|" + jti + "|" + scope;
 
         String encodedPayload = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
@@ -83,13 +80,6 @@ public final class TicketIssuer {
         return encodedPayload + "." + signature;
     }
 
-    /**
-     * Verify and parse a ticket. Returns null if the signature is invalid
-     * or any claim is malformed.
-     *
-     * @param ticket the compact ticket string
-     * @return parsed claims, or null on verification failure
-     */
     public static Claims verifyAndParse(String ticket) {
         if (ticket == null || !ticket.contains(".")) return null;
 
@@ -106,18 +96,21 @@ public final class TicketIssuer {
             String payload = new String(
                     Base64.getUrlDecoder().decode(encodedPayload), StandardCharsets.UTF_8);
             String[] parts = payload.split("\\|");
-            if (parts.length != 5) return null;
+            if (parts.length < 5) return null;
 
+            String scope = parts.length >= 6 ? parts[5] : "telemetry";
             return new Claims(
                     parts[0],
                     Integer.parseInt(parts[1]),
                     Long.parseLong(parts[2]),
                     Long.parseLong(parts[3]),
-                    parts[4]);
+                    parts[4],
+                    scope);
         } catch (Exception e) {
             return null;
         }
     }
+
 
     private static String sign(String data) {
         try {

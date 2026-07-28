@@ -22,8 +22,10 @@ Reference: doc2 §4.4, doc5 Phase 1
 from __future__ import annotations
 
 import logging
+import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -213,3 +215,89 @@ class StackThermalModel:
         self._last_Bi = 0.0
         self._last_valid = True
         self._last_Q_output = 0.0
+
+
+import numba
+
+@numba.njit(nogil=True, cache=True)
+def step_stack_thermal_nd_jit(
+    T_cell: np.ndarray,
+    q_gen_per_cell: float,
+    coolant_inlet_t_k: float,
+    coolant_mass_flow_kg_s: float,
+    dt: float,
+    C_cell: float = 250.0,
+    cp_coolant: float = 4184.0,
+    hA_cell_ext: float = 0.5,
+    hA_inter_cell: float = 10.0,
+) -> tuple[np.ndarray, float]:
+    """Vectorized N-cell thermal step along coolant flow path."""
+    n_cells = len(T_cell)
+    T_new = np.empty_like(T_cell)
+
+    T_coolant = coolant_inlet_t_k
+    q_removed_total = 0.0
+
+    for i in range(n_cells):
+        q_coolant = (T_cell[i] - T_coolant) * hA_cell_ext
+        q_removed_total += q_coolant
+
+        q_cond_left = (T_cell[i - 1] - T_cell[i]) * hA_inter_cell if i > 0 else 0.0
+        q_cond_right = (T_cell[i + 1] - T_cell[i]) * hA_inter_cell if i < n_cells - 1 else 0.0
+
+        dT_dt = (q_gen_per_cell + q_cond_left + q_cond_right - q_coolant) / C_cell
+        T_new[i] = T_cell[i] + dt * dT_dt
+
+        if coolant_mass_flow_kg_s > 1e-6:
+            T_coolant += q_coolant / (coolant_mass_flow_kg_s * cp_coolant)
+
+    return T_new, q_removed_total
+
+
+class StackThermalModelND:
+    """1D chain of N thermal nodes along the coolant flow path.
+    N=2 reduces to (approximately) the core/skin model and is default."""
+
+    def __init__(
+        self,
+        n_cells: int = 2,
+        T_initial: float = 298.15,
+        C_cell: float = 250.0,
+        cp_coolant: float = 4184.0,
+        hA_cell_ext: float = 0.5,
+        hA_inter_cell: float = 10.0,
+    ) -> None:
+        self.n_cells = n_cells
+        self.T_initial = T_initial
+        self.T_cell = np.full(n_cells, T_initial, dtype=np.float64)
+        self.C_cell = C_cell
+        self.cp_coolant = cp_coolant
+        self.hA_cell_ext = hA_cell_ext
+        self.hA_inter_cell = hA_inter_cell
+        self._last_Q_output = 0.0
+
+    def step(
+        self,
+        dt: float,
+        Q_gen_total_w: float,
+        coolant_inlet_t_k: float,
+        coolant_mass_flow_kg_s: float = 0.05,
+    ) -> np.ndarray:
+        q_gen_per_cell = Q_gen_total_w / float(self.n_cells)
+        self.T_cell, self._last_Q_output = step_stack_thermal_nd_jit(
+            self.T_cell,
+            q_gen_per_cell,
+            coolant_inlet_t_k,
+            coolant_mass_flow_kg_s,
+            dt,
+            self.C_cell,
+            self.cp_coolant,
+            self.hA_cell_ext,
+            self.hA_inter_cell,
+        )
+        return self.T_cell
+
+    def reset(self) -> None:
+        self.T_cell = np.full(self.n_cells, self.T_initial, dtype=np.float64)
+        self._last_Q_output = 0.0
+

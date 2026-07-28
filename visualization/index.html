@@ -168,7 +168,14 @@
 
             <h3 style="margin-top:18px;">AMR Fleet</h3>
             <div id="amrList">Waiting for telemetry…</div>
+
+            <h3 style="margin-top:18px;">Fault Injection</h3>
+            <div id="interventionControls" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                <button id="btnSpikeS1" style="background:#854d0e; color:#fef08a; border:1px solid #ca8a04; border-radius:4px; padding:6px; font-weight:600; cursor:pointer;">Spike S1 Press Temp (+20K)</button>
+                <button id="btnBreakdownAMR1" style="background:#991b1b; color:#fecaca; border:1px solid #dc2626; border-radius:4px; padding:6px; font-weight:600; cursor:pointer;">Breakdown AMR-1 (60s)</button>
+            </div>
         </div>
+
     </div>
 
     <script src="dashboard.js?v=6"></script>

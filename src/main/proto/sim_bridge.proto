@@ -24,7 +24,11 @@ service SimBridge {
 
   // Warmup validation
   rpc HealthCheck (Empty) returns (HealthStatus);
+
+  // Station process simulation interface for Stations 1-4
+  rpc SimulateStationProcess (StationProcessRequest) returns (StationProcessResponse);
 }
+
 
 // Time synchronization barrier messages
 message TimeStep {
@@ -106,6 +110,52 @@ message HealthStatus {
   bool ready = 1;
 }
 
+message Station1Params {
+  optional double t_press_k = 1;
+  optional double dwell_time_s = 2;
+}
+message Station2Params {
+  optional double v_coat_m_s = 1;
+  optional double mu_slurry_pa_s = 2;
+}
+message Station3Params {
+  optional double press_force_kn = 1;
+  optional int32 die_stroke_count = 2;
+  optional double w0_initial_wear = 3;
+  optional bool use_duplex_coating = 4;
+}
+message Station4Params {
+  repeated double applied_torques_nm = 1;     // length 4
+  repeated double friction_coefficients = 2;  // length 8: [mu_thread x4, mu_bearing x4]
+}
+
+message StationProcessRequest {
+  string station_id = 1;   // "S1".."S4"
+  string order_id = 2;     // for logging/correlation only
+  double k_time = 3;       // K_TIME_ACCELERATED=1.0 or K_TIME_INDUSTRIAL=10.0
+  oneof params {
+    Station1Params station1 = 10;
+    Station2Params station2 = 11;
+    Station3Params station3 = 12;
+    Station4Params station4 = 13;
+  }
+}
+
+message StationProcessResponse {
+  double proc_time_s = 1;
+  bool is_defective = 2;
+  double var_ratio = 3;
+  // populated depending on which station_id was requested; zero otherwise
+  double alpha_final = 10;         // S1
+  double delamination_risk = 11;   // S1
+  double pinhole_risk = 12;        // S1
+  double ecsa_ratio = 20;          // S2
+  double damage_index = 30;        // S3
+  double gdl_porosity = 40;        // S4
+  double e_tangent_mpa = 41;       // S4
+  double p_clamp_mpa = 42;         // S4
+}
+
 enum AMRStatusEnum {
   AMR_IDLE      = 0;
   AMR_MOVING    = 1;
@@ -131,7 +181,9 @@ message AMRState {
   float       movement_progress = 6;
   AMRStatusEnum status          = 7;
   string      carrying_order_id = 8;
+  bool        amr_breakdown_active = 9;
 }
+
 
 message StationState {
   string         station_id          = 1;

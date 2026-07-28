@@ -107,6 +107,11 @@ public class GrpcClientBridge {
         return blockingStub.advanceTime(req);
     }
 
+    public SimBridgeProto.StationProcessResponse simulateStationProcess(SimBridgeProto.StationProcessRequest req) {
+        return blockingStub.withDeadlineAfter(10, TimeUnit.SECONDS).simulateStationProcess(req);
+    }
+
+
     public ManagedChannel getChannel() {
         return channel;
     }

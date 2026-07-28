@@ -234,3 +234,15 @@ def test_live_run_batch_test_thermal_coupling():
     response = servicer.RunBatchTest(MockRequest(), None)
     assert response.passed
     assert servicer._thermal.T_core > T_init
+
+
+def test_stack_thermal_nd_endplate_vs_center():
+    """At N=100 nodes under sustained load, inlet end-plate cell 0 runs cooler than center cell 50."""
+    from physical_engine.factory_simulation.stack_thermal_model import StackThermalModelND
+    model = StackThermalModelND(n_cells=100, T_initial=298.15)
+    for _ in range(100):
+        model.step(dt=0.1, Q_gen_total_w=2000.0, coolant_inlet_t_k=298.15, coolant_mass_flow_kg_s=0.02)
+
+    assert model.T_cell[50] > model.T_cell[0]
+
+

@@ -94,10 +94,14 @@ public class DatabaseArtifact extends Artifact {
                 s.execute("CREATE TABLE IF NOT EXISTS EnergyTelemetry(" +
                           "run_id INTEGER, sim_time REAL, energy_price_eur_mwh REAL, " +
                           "compressor_power_kw REAL)");
+                s.execute("CREATE TABLE IF NOT EXISTS watchdog_events(" +
+                          "run_id INTEGER, order_id TEXT, station_id TEXT, " +
+                          "fired_at_sim_time REAL, schema_at_fire TEXT)");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("DatabaseArtifact init failed", e);
         }
+
         drainThread = new Thread(this::drainLoop, "database-artifact-drain");
         drainThread.setDaemon(true);
         drainThread.start();
@@ -173,6 +177,42 @@ public class DatabaseArtifact extends Artifact {
         qualityProfilesCache.asMap().remove(stackId);
         mechanisticSignalsCache.asMap().remove(stackId);
     }
+
+    @OPERATION
+    public void recordWatchdogFired(int runId, String orderId, String stationId, double simTime, String schema) {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "INSERT INTO watchdog_events(run_id, order_id, station_id, fired_at_sim_time, schema_at_fire) VALUES(?, ?, ?, ?, ?)")) {
+            pstmt.setInt(1, runId);
+            pstmt.setString(2, orderId);
+            pstmt.setString(3, stationId);
+            pstmt.setDouble(4, simTime);
+            pstmt.setString(5, schema);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            log("DatabaseArtifact: recordWatchdogFired failed: " + e.getMessage());
+        }
+    }
+
+    @OPERATION
+    public void getRecentDefectRate(String stationId, int windowSize, OpFeedbackParam<Double> rate) {
+        String sql = "SELECT AVG(CASE WHEN defect != 0 THEN 1.0 ELSE 0.0 END) FROM (" +
+                     "SELECT defect FROM StationQuality WHERE station_id = ? ORDER BY rowid DESC LIMIT ?" +
+                     ")";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, stationId);
+            pstmt.setInt(2, windowSize);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    rate.set(rs.getDouble(1));
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            log("DatabaseArtifact: getRecentDefectRate failed: " + e.getMessage());
+        }
+        rate.set(0.0);
+    }
+
 
     /**
      * Legacy alias for {@link #peekQualityProfile}.

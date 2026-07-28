@@ -64,6 +64,8 @@ __all__ = [
     "batch_polarization_sweep_thermal",
     "_effective_j0",
     "_thermal_step_jit",
+    "step_liquid_saturation",
+    "effective_diffusivity",
     "PEMFCConstants",
     "OHMIC_DEGRADATION",
     "MASS_TRANSPORT_STARVATION",
@@ -71,6 +73,7 @@ __all__ = [
     "LOW_ACTIVATION",
     "SOLVER_DID_NOT_CONVERGE",
 ]
+
 
 # ---------------------------------------------------------------------------
 # Failure flag bitmask (doc4 §2 — BatchTestResponse.failure_flags)
@@ -209,8 +212,40 @@ def _effective_j0(
     return j0_ref * ecsa_clamped * arrhenius
 
 
+GDL_SATURATION_CAPACITY: float = 0.35   # max liquid saturation before channel blockage dominates
+D0_O2_GDL: float = 2.2e-5               # m^2/s, dry-GDL O2 diffusivity reference
+
+
+@njit(nogil=True, cache=True)
+def step_liquid_saturation(
+    s_current: float,
+    current_density_a_cm2: float,
+    m_dot_air_removal: float,
+    dt: float,
+) -> float:
+    """Compute liquid water saturation in the cathode GDL.
+
+    d s / dt = (w_prod - w_rem) / GDL_SATURATION_CAPACITY
+    """
+    F_CONST = 96485.33212
+    REMOVAL_COEF = 1e-4
+    water_production = (current_density_a_cm2 * 1e4) / (2.0 * F_CONST)  # mol/(m^2 s)
+    water_removal = m_dot_air_removal * REMOVAL_COEF
+    ds_dt = (water_production - water_removal) / GDL_SATURATION_CAPACITY
+    s_new = s_current + dt * ds_dt
+    return float(min(0.99, max(0.0, s_new)))
+
+
+@njit(nogil=True, cache=True)
+def effective_diffusivity(epsilon: float, s: float) -> float:
+    """Bruggeman-type correction for liquid-water blockage of GDL gas transport."""
+    s_clamped = min(0.99, max(0.0, s))
+    return float(D0_O2_GDL * epsilon * ((1.0 - s_clamped) ** 1.5))
+
+
 @njit(nogil=True, cache=True)
 def _thermal_step_jit(
+
     T_core: float,
     T_skin: float,
     dt: float,
