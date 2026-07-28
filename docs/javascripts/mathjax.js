@@ -1,7 +1,7 @@
 window.MathJax = {
   tex: {
-    inlineMath: [["\\(", "\\)"], ["$", "$"]],
-    displayMath: [["\\[", "\\]"], ["$$", "$$"]],
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
     processEscapes: true,
     processEnvironments: true
   },
@@ -16,12 +16,16 @@ document$.subscribe(({ body }) => {
     if (MathJax.startup && MathJax.startup.promise) {
       MathJax.startup.promise
         .then(() => {
+          MathJax.startup.output.clearCache();
           MathJax.typesetClear([body]);
+          MathJax.texReset();
           return MathJax.typesetPromise([body]);
         })
         .catch((err) => console.error("MathJax typeset error:", err));
     } else {
+      MathJax.startup.output.clearCache();
       MathJax.typesetClear([body]);
+      MathJax.texReset();
       MathJax.typesetPromise([body]);
     }
   }
