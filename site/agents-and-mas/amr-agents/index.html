@@ -1020,10 +1020,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#battery-state-of-charge-soc-derating-model" class="md-nav__link">
+  <a href="#battery-state-of-charge-soc-derating-model-design-specification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Battery State of Charge (SoC) Derating Model
+        Battery State of Charge (SoC) Derating Model (Design Specification)
       
     </span>
   </a>
@@ -1534,10 +1534,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#battery-state-of-charge-soc-derating-model" class="md-nav__link">
+  <a href="#battery-state-of-charge-soc-derating-model-design-specification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Battery State of Charge (SoC) Derating Model
+        Battery State of Charge (SoC) Derating Model (Design Specification)
       
     </span>
   </a>
@@ -1581,7 +1581,9 @@
 
 
 <h1 id="amr-fleet-agents-logistics-reference">AMR Fleet Agents &amp; Logistics (Reference)</h1>
-<p>This document describes the dispatch, path routing, battery state-of-charge (SoC) modeling, and material movement logic of <strong>Autonomous Mobile Robot (AMR)</strong> fleet agents (<code>amr_agent.asl</code>).</p>
+<blockquote>
+<p><strong>Implementation status note:</strong> The state-machine <code>CHARGING</code> transitions and battery State of Charge (SoC) derating model detailed below represent design specifications for future work. Currently, <code>amr_agent.asl</code> and <code>AMRArtifact.java</code> handle dispatch, collision locking, and grid routing, but do not track battery depletion or perform charging cycles.</p>
+</blockquote>
 <hr />
 <h2 id="agent-role-transport-logistics">Agent Role &amp; Transport Logistics</h2>
 <p>AMR Fleet Agents handle intralogistics transport of in-process MEAs, bipolar plate stacks, and finished fuel cell units between buffer storage racks and station processing cells (Stations 1 <span class="arithmatex">\(\rightarrow\)</span> 5).</p>
@@ -1595,11 +1597,11 @@
     LOADING --&gt; MOVING_TO_DROP : Material Loaded
     MOVING_TO_DROP --&gt; UNLOADING : Arrived at Destination Station
     UNLOADING --&gt; IDLE : Material Transferred
-    IDLE --&gt; CHARGING : SoC &lt; 20%
-    CHARGING --&gt; IDLE : SoC &gt; 90%</code></pre>
+    IDLE -.-&gt; CHARGING : SoC &lt; 20% (Planned)
+    CHARGING -.-&gt; IDLE : SoC &gt; 90% (Planned)</code></pre>
 <hr />
-<h2 id="battery-state-of-charge-soc-derating-model">Battery State of Charge (SoC) Derating Model</h2>
-<p>Battery depletion during transport depends on payload mass <span class="arithmatex">\(m_{\mathrm{load}}\)</span> (<span class="arithmatex">\(\mathrm{kg}\)</span>) and travel distance <span class="arithmatex">\(d\)</span> (<span class="arithmatex">\(\mathrm{m}\)</span>):</p>
+<h2 id="battery-state-of-charge-soc-derating-model-design-specification">Battery State of Charge (SoC) Derating Model (Design Specification)</h2>
+<p>Battery depletion during transport is specified to depend on payload mass <span class="arithmatex">\(m_{\mathrm{load}}\)</span> (<span class="arithmatex">\(\mathrm{kg}\)</span>) and travel distance <span class="arithmatex">\(d\)</span> (<span class="arithmatex">\(\mathrm{m}\)</span>):</p>
 <div class="arithmatex">\[\mathrm{SoC}_{t+1} = \mathrm{SoC}_t - \frac{\left( P_{\mathrm{idle}} + \mu_{\mathrm{roll}} (m_{\mathrm{robot}} + m_{\mathrm{load}}) g v_{\mathrm{amr}} \right) \cdot \Delta t}{E_{\mathrm{battery,max}}}\]</div>
 <p>where:
 * <span class="arithmatex">\(m_{\mathrm{robot}} = 120\mathrm{kg}\)</span>.
@@ -1609,7 +1611,8 @@
 <hr />
 <h2 id="code-reference">Code Reference</h2>
 <ul>
-<li>Agent Source File: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/amr_agent.asl"><code>src/agt/amr_agent.asl</code></a></li>
+<li>Agent Source File: <a href="file:///home/stuart/Documentos/matrix_factory_twin/src/agt/amr_agent.asl"><code>src/agt/amr_agent.asl</code></a></li>
+<li>Java Artifact: <a href="file:///home/stuart/Documentos/matrix_factory_twin/src/main/java/factory/AMRArtifact.java"><code>src/main/java/factory/AMRArtifact.java</code></a></li>
 </ul>
 
 

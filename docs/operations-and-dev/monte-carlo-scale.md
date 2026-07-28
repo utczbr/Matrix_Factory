@@ -14,48 +14,42 @@ Running multi-seed Monte Carlo simulation ensembles typically incurs massive JVM
 
 ### 1. Generating Multi-Seed Project Definitions
 
-Use the template generation script to spawn isolated `.jcm` configuration files:
+JaCaMo Phase 4 mode operates on `.jcm` project definitions (such as `factory.jcm` or Phase 4 template files) where agent names and artifact workspaces are dynamically scoped per run ID ($0 \dots N-1$).
 
-```bash
-python3 experiments/generate_monte_carlo_jcm.py --runs=30 --base-port=50051
-```
-
-This generates `factory_1.jcm` through `factory_30.jcm`, assigning unique port offsets ($50051 + i$) for each gRPC physical daemon bridge.
+> **Note:** If regenerating custom `.jcm` topology definitions, confirm the generator script path with the JaCaMo project maintainer.
 
 ### 2. Spawning Parallel Physical Daemons
 
 Launch Python daemon instances pinned to CPU cores using `daemon_launcher.py`:
 
 ```bash
-# Launch daemon array across 30 ports
-python3 physical_engine/daemon_launcher.py --multi-run=30 --start-port=50051 &
+# Launch 30 physical daemon processes starting at port 50051
+python3 physical_engine/daemon_launcher.py \
+  --run-start-id 0 --run-count 30 --base-port 50051 --jvm-reserved-cores 2 &
 ```
 
 ### 3. Launching the Multi-Run Batch
 
-Execute the parallel Monte Carlo runner via Gradle:
+Execute the parallel Phase 4 Monte Carlo runner via Gradle:
 
 ```bash
-./gradlew runMonteCarloBatch --args="--num-seeds=30 --max-ticks=5000 --parallel-threads=8"
+./gradlew run --args="--phase4 --run-count=30 --base-port=50051 --run-start-id=0 --max-ticks=5000 --phase4-jcm-dir=."
 ```
 
 ---
 
 ## Log & Result Aggregation
 
-Simulation logs and SQLite database outputs are partitioned by run ID:
+Simulation logs and quality metrics are logged asynchronously to `factory_history.db` SQLite WAL tables (`Orders`, `StationQuality`, `EnergyTelemetry`), indexed by `run_id`.
 
-```text
-analysis/results/
-├── run_seed_001.csv
-├── run_seed_002.csv
-├── ...
-├── run_seed_030.csv
-└── aggregated_monte_carlo_stats.json
+To execute comparative analysis (e.g., PROSA vs. ADACOR baseline under energy price spikes):
+
+```bash
+python3 experiments/run_prosa_vs_adacor.py
 ```
 
 To run statistical significance tests (Shapiro-Wilk, Mann-Whitney U, 95% Confidence Intervals) across the generated batch:
 
 ```bash
-python3 experiments/analyze_results.py analysis/results/aggregated_monte_carlo_stats.json
+python3 experiments/analyze_results.py analysis/prosa_vs_adacor_summary.csv
 ```

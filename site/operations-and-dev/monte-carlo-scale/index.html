@@ -1644,31 +1644,28 @@
 <hr />
 <h2 id="step-by-step-execution-guide">Step-by-Step Execution Guide</h2>
 <h3 id="1-generating-multi-seed-project-definitions">1. Generating Multi-Seed Project Definitions</h3>
-<p>Use the template generation script to spawn isolated <code>.jcm</code> configuration files:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python3<span class="w"> </span>experiments/generate_monte_carlo_jcm.py<span class="w"> </span>--runs<span class="o">=</span><span class="m">30</span><span class="w"> </span>--base-port<span class="o">=</span><span class="m">50051</span>
-</code></pre></div>
-<p>This generates <code>factory_1.jcm</code> through <code>factory_30.jcm</code>, assigning unique port offsets (<span class="arithmatex">\(50051 + i\)</span>) for each gRPC physical daemon bridge.</p>
+<p>JaCaMo Phase 4 mode operates on <code>.jcm</code> project definitions (such as <code>factory.jcm</code> or Phase 4 template files) where agent names and artifact workspaces are dynamically scoped per run ID (<span class="arithmatex">\(0 \dots N-1\)</span>).</p>
+<blockquote>
+<p><strong>Note:</strong> If regenerating custom <code>.jcm</code> topology definitions, confirm the generator script path with the JaCaMo project maintainer.</p>
+</blockquote>
 <h3 id="2-spawning-parallel-physical-daemons">2. Spawning Parallel Physical Daemons</h3>
 <p>Launch Python daemon instances pinned to CPU cores using <code>daemon_launcher.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Launch daemon array across 30 ports</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python3<span class="w"> </span>physical_engine/daemon_launcher.py<span class="w"> </span>--multi-run<span class="o">=</span><span class="m">30</span><span class="w"> </span>--start-port<span class="o">=</span><span class="m">50051</span><span class="w"> </span><span class="p">&amp;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Launch 30 physical daemon processes starting at port 50051</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python3<span class="w"> </span>physical_engine/daemon_launcher.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--run-start-id<span class="w"> </span><span class="m">0</span><span class="w"> </span>--run-count<span class="w"> </span><span class="m">30</span><span class="w"> </span>--base-port<span class="w"> </span><span class="m">50051</span><span class="w"> </span>--jvm-reserved-cores<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
 <h3 id="3-launching-the-multi-run-batch">3. Launching the Multi-Run Batch</h3>
-<p>Execute the parallel Monte Carlo runner via Gradle:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./gradlew<span class="w"> </span>runMonteCarloBatch<span class="w"> </span>--args<span class="o">=</span><span class="s2">&quot;--num-seeds=30 --max-ticks=5000 --parallel-threads=8&quot;</span>
+<p>Execute the parallel Phase 4 Monte Carlo runner via Gradle:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>./gradlew<span class="w"> </span>run<span class="w"> </span>--args<span class="o">=</span><span class="s2">&quot;--phase4 --run-count=30 --base-port=50051 --run-start-id=0 --max-ticks=5000 --phase4-jcm-dir=.&quot;</span>
 </code></pre></div>
 <hr />
 <h2 id="log-result-aggregation">Log &amp; Result Aggregation</h2>
-<p>Simulation logs and SQLite database outputs are partitioned by run ID:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>analysis/results/
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>├── run_seed_001.csv
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>├── run_seed_002.csv
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>├── ...
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>├── run_seed_030.csv
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>└── aggregated_monte_carlo_stats.json
+<p>Simulation logs and quality metrics are logged asynchronously to <code>factory_history.db</code> SQLite WAL tables (<code>Orders</code>, <code>StationQuality</code>, <code>EnergyTelemetry</code>), indexed by <code>run_id</code>.</p>
+<p>To execute comparative analysis (e.g., PROSA vs. ADACOR baseline under energy price spikes):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python3<span class="w"> </span>experiments/run_prosa_vs_adacor.py
 </code></pre></div>
 <p>To run statistical significance tests (Shapiro-Wilk, Mann-Whitney U, 95% Confidence Intervals) across the generated batch:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python3<span class="w"> </span>experiments/analyze_results.py<span class="w"> </span>analysis/results/aggregated_monte_carlo_stats.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span>experiments/analyze_results.py<span class="w"> </span>analysis/prosa_vs_adacor_summary.csv
 </code></pre></div>
 
 

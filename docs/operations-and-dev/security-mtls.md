@@ -25,56 +25,52 @@ cd certs
 
 # 1. Generate Root Certificate Authority (CA)
 openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
-  -keyout ca-key.pem -out ca-cert.pem \
+  -keyout ca.key -out ca.crt \
   -subj "/C=US/ST=State/L=City/O=MatrixFactory/CN=MatrixFactoryRootCA"
 
 # 2. Generate Server Key & CSR (Python Daemon)
 openssl req -newkey rsa:2048 -nodes \
-  -keyout server-key.pem -out server-req.pem \
+  -keyout server.key -out server.csr \
   -subj "/C=US/ST=State/L=City/O=MatrixFactory/CN=localhost"
 
 # Sign Server Certificate with Root CA
-openssl x509 -req -in server-req.pem -days 365 \
-  -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial \
-  -out server-cert.pem
+openssl x509 -req -in server.csr -days 365 \
+  -CA ca.crt -CAkey ca.key -CAcreateserial \
+  -out server.crt
 
 # 3. Generate Client Key & CSR (Java JVM)
 openssl req -newkey rsa:2048 -nodes \
-  -keyout client-key.pem -out client-req.pem \
+  -keyout client.key -out client.csr \
   -subj "/C=US/ST=State/L=City/O=MatrixFactory/CN=JavaMASClient"
 
 # Sign Client Certificate with Root CA
-openssl x509 -req -in client-req.pem -days 365 \
-  -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial \
-  -out client-cert.pem
+openssl x509 -req -in client.csr -days 365 \
+  -CA ca.crt -CAkey ca.key -CAcreateserial \
+  -out client.crt
 ```
 
 ---
 
 ## Step 2: Enabling Secure Mode in Python Daemon
 
-Pass the TLS flags when starting the Python physical daemon:
+Set the environment variables pointing to your certificate directory (`GRPC_CERT_DIR` defaults to `certs` and expects `ca.crt`, `server.crt`, `server.key`):
 
 ```bash
-python3 physical_engine/daemon_launcher.py \
-  --port 50051 \
-  --secure \
-  --ca-cert certs/ca-cert.pem \
-  --server-cert certs/server-cert.pem \
-  --server-key certs/server-key.pem
+export GRPC_SECURE_MODE=true
+export GRPC_CERT_DIR=certs
+
+python3 physical_engine/sim_bridge_server.py --port 50051 --run-id 0
 ```
 
 ---
 
 ## Step 3: Enabling Secure Mode in Java MAS
 
-Set the security environment variable or system property before executing Gradle:
+Set the security environment variables (`GRPC_CERT_DIR` expects `ca.crt`, `client.crt`, `client.key`):
 
 ```bash
 export GRPC_SECURE_MODE=true
-export GRPC_CA_CERT=certs/ca-cert.pem
-export GRPC_CLIENT_CERT=certs/client-cert.pem
-export GRPC_CLIENT_KEY=certs/client-key.pem
+export GRPC_CERT_DIR=certs
 
 ./gradlew run --args="0 50051 --max-ticks=1000"
 ```

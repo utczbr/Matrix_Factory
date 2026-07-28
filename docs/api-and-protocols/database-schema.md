@@ -10,12 +10,11 @@ Matrix Factory Twin utilizes SQLite with Write-Ahead Logging (`WAL`) mode:
 
 ```sql
 PRAGMA journal_mode = WAL;
+PRAGMA wal_autocheckpoint = 100;
 PRAGMA synchronous = NORMAL;
-PRAGMA temp_store = MEMORY;
-PRAGMA mmap_size = 30000000000;
 ```
 
-This configuration permits non-blocking concurrent reads while `DatabaseArtifact.java` flushes telemetry and bidding logs asynchronously.
+This configuration permits non-blocking concurrent reads while `DatabaseArtifact.java` flushes telemetry and quality logs asynchronously.
 
 ---
 
@@ -23,56 +22,44 @@ This configuration permits non-blocking concurrent reads while `DatabaseArtifact
 
 ```mermaid
 erDiagram
-    FACTORY_RUNS ||--o{ STATION_EVENTS : contains
-    FACTORY_RUNS ||--o{ HOLON_BIDS : contains
-    FACTORY_RUNS ||--o{ TOPOLOGY_SWITCHES : logs
-
-    FACTORY_RUNS {
-        text run_id PK
-        integer seed
-        text initial_topology
-        integer max_ticks
-        text created_at
-    }
-
-    STATION_EVENTS {
-        integer event_id PK
-        text run_id FK
-        integer tick
-        text station_id
-        text state_json
-        real execution_time_ms
-    }
-
-    HOLON_BIDS {
-        integer bid_id PK
-        text run_id FK
-        integer tick
+    Orders {
+        integer run_id
         text order_id
-        text resource_id
-        real bid_cost
-        text status
+        text event_type
+        real sim_time
     }
 
-    TOPOLOGY_SWITCHES {
-        integer switch_id PK
-        text run_id FK
-        integer tick
-        text source_mode
-        text target_mode
-        text reason
+    StationQuality {
+        integer run_id
+        text stack_id
+        text station_id
+        integer defect
+        real t_proc_s
+        real t_mean_s
+        real sim_time
+    }
+
+    EnergyTelemetry {
+        integer run_id
+        real sim_time
+        real energy_price_eur_mwh
+        real compressor_power_kw
     }
 ```
+
+> **Not implemented note:** Bid-logging and topology-switch-logging tables (previously documented as `HOLON_BIDS` and `TOPOLOGY_SWITCHES`) are not implemented in `DatabaseArtifact.java`. Bid tenders and 2PC regime transitions occur dynamically in agent memory (`supervisor_agent.asl` and `order_holon.asl`) but are not persisted to SQLite.
 
 ---
 
 ## Asynchronous Batch Queue Architecture
 
-To prevent disk I/O bottlenecks from stalling the agent execution loop, `DatabaseArtifact.java` utilizes a `BlockingQueue<LogEntry>` with a dedicated background consumer thread:
+To prevent disk I/O bottlenecks from stalling the agent execution loop, `DatabaseArtifact.java` utilizes three dedicated `ArrayBlockingQueue` buffers (capacity 300,000 records each: `queue`, `qualityQueue`, `energyQueue`) serviced by a background drain thread (`drainLoop()`):
 
 ```mermaid
 graph LR
-    A[CArtAgO Operation Thread] -->|log_event non-blocking offer| B[ConcurrentLinkedQueue]
-    B -->|Batch Drain every 100ms or 50 items| C[Background Writer Thread]
-    C -->|Execute Batch Statement| D[factory_history.db SQLite WAL]
+    A[CArtAgO Operation Thread] -->|offer, non-blocking| B["3× ArrayBlockingQueue&lt;Record&gt; (cap 300,000 each: Orders / StationQuality / EnergyTelemetry)"]
+    B -->|drain every 500ms, batch up to 2,000| C[Background Writer Thread]
+    C -->|executeBatch + commit| D[factory_history.db SQLite WAL]
+    C -.->|on failed commit: requeue batch, signal database_batch_commit_failed| B
 ```
+

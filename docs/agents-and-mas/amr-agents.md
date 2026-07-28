@@ -1,6 +1,6 @@
 # AMR Fleet Agents & Logistics (Reference)
 
-This document describes the dispatch, path routing, battery state-of-charge (SoC) modeling, and material movement logic of **Autonomous Mobile Robot (AMR)** fleet agents (`amr_agent.asl`).
+> **Implementation status note:** The state-machine `CHARGING` transitions and battery State of Charge (SoC) derating model detailed below represent design specifications for future work. Currently, `amr_agent.asl` and `AMRArtifact.java` handle dispatch, collision locking, and grid routing, but do not track battery depletion or perform charging cycles.
 
 ---
 
@@ -21,15 +21,15 @@ stateDiagram-v2
     LOADING --> MOVING_TO_DROP : Material Loaded
     MOVING_TO_DROP --> UNLOADING : Arrived at Destination Station
     UNLOADING --> IDLE : Material Transferred
-    IDLE --> CHARGING : SoC < 20%
-    CHARGING --> IDLE : SoC > 90%
+    IDLE -.-> CHARGING : SoC < 20% (Planned)
+    CHARGING -.-> IDLE : SoC > 90% (Planned)
 ```
 
 ---
 
-## Battery State of Charge (SoC) Derating Model
+## Battery State of Charge (SoC) Derating Model (Design Specification)
 
-Battery depletion during transport depends on payload mass $m_{\mathrm{load}}$ ($\mathrm{kg}$) and travel distance $d$ ($\mathrm{m}$):
+Battery depletion during transport is specified to depend on payload mass $m_{\mathrm{load}}$ ($\mathrm{kg}$) and travel distance $d$ ($\mathrm{m}$):
 
 $$\mathrm{SoC}_{t+1} = \mathrm{SoC}_t - \frac{\left( P_{\mathrm{idle}} + \mu_{\mathrm{roll}} (m_{\mathrm{robot}} + m_{\mathrm{load}}) g v_{\mathrm{amr}} \right) \cdot \Delta t}{E_{\mathrm{battery,max}}}$$
 
@@ -43,4 +43,6 @@ where:
 
 ## Code Reference
 
-* Agent Source File: [`src/agt/amr_agent.asl`](https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/amr_agent.asl)
+* Agent Source File: [`src/agt/amr_agent.asl`](file:///home/stuart/Documentos/matrix_factory_twin/src/agt/amr_agent.asl)
+* Java Artifact: [`src/main/java/factory/AMRArtifact.java`](file:///home/stuart/Documentos/matrix_factory_twin/src/main/java/factory/AMRArtifact.java)
+

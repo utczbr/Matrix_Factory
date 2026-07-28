@@ -1124,10 +1124,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#websocket-json-telemetry-payload-schema" class="md-nav__link">
+  <a href="#websocket-binary-telemetry-payload-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        WebSocket JSON Telemetry Payload Schema
+        WebSocket Binary Telemetry Payload Schema
       
     </span>
   </a>
@@ -1135,10 +1135,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#telemetry-stream-categories" class="md-nav__link">
+  <a href="#telemetry-stream-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Telemetry Stream Categories
+        Telemetry Stream Architecture
       
     </span>
   </a>
@@ -1512,10 +1512,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#websocket-json-telemetry-payload-schema" class="md-nav__link">
+  <a href="#websocket-binary-telemetry-payload-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        WebSocket JSON Telemetry Payload Schema
+        WebSocket Binary Telemetry Payload Schema
       
     </span>
   </a>
@@ -1523,10 +1523,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#telemetry-stream-categories" class="md-nav__link">
+  <a href="#telemetry-stream-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Telemetry Stream Categories
+        Telemetry Stream Architecture
       
     </span>
   </a>
@@ -1562,75 +1562,57 @@
 <p>This document describes the real-time telemetry streaming service (<code>TelemetryHub.java</code>), WebSocket endpoints, JSON event payload structures, and HMAC SHA-256 client authentication flows.</p>
 <hr />
 <h2 id="authentication-ticket-flow">Authentication Ticket Flow</h2>
-<p>To connect to the live WebSocket telemetry stream (<code>ws://127.0.0.1:8081/telemetry</code>), dashboard clients must first request an authenticated ticket token:</p>
+<p>To connect to the live WebSocket telemetry stream (<code>ws://127.0.0.1:8080/telemetry</code>), dashboard clients first request an authenticated ticket token from the HTTP ticket server on port 8081:</p>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Client as Dashboard Web Client
-    participant Auth as TelemetryHub Auth API
-    participant WS as WebSocket Endpoint (WSS)
+    participant Auth as TelemetryHub Auth API (Port 8081)
+    participant WS as WebSocket Endpoint (Port 8080)
 
     Client-&gt;&gt;Auth: POST http://127.0.0.1:8081/telemetry/ticket (Secret Header)
     Auth-&gt;&gt;Auth: Generate HMAC SHA-256 Token (Timestamp + Nonce + Key)
     Auth--&gt;&gt;Client: 200 OK Ticket Token Response
-    Client-&gt;&gt;WS: Connect ws://127.0.0.1:8081/telemetry?ticket=token
+    Client-&gt;&gt;WS: Connect ws://127.0.0.1:8080/telemetry?ticket=token
     WS-&gt;&gt;WS: Validate Ticket &amp; HMAC Signature
     WS--&gt;&gt;Client: 101 Switching Protocols (Stream Active)</code></pre>
 <hr />
-<h2 id="websocket-json-telemetry-payload-schema">WebSocket JSON Telemetry Payload Schema</h2>
-<p>Events are emitted in JSON format on every step tick:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;event_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;STATION_STEP_COMPLETED&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1722089400123</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;simulation_tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">450</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;station_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;STATION_3_STAMPING&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">&quot;press_force_kN&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">450.2</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&quot;ductile_damage_NCL&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.384</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">&quot;die_wear_um&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.24</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">&quot;microcrack_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">&quot;cycle_time_s&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.8</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="nt">&quot;control_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADACOR&quot;</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
+<h2 id="websocket-binary-telemetry-payload-schema">WebSocket Binary Telemetry Payload Schema</h2>
+<p>Telemetry is streamed as <strong>binary Protobuf</strong> frames (<code>TelemetryFrame</code>, defined in <code>sim_bridge.proto</code>), not JSON, at a target rate of ~18 Hz (<code>TelemetryArtifact.PUBLISH_INTERVAL_S = 1.0 / 18.0</code>). Each WebSocket binary message contains one serialized <code>TelemetryFrame</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">message</span><span class="w"> </span><span class="nc">TelemetryFrame</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="kt">uint64</span><span class="w"> </span><span class="na">sequence_number</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">sim_time_s</span><span class="w">                  </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="kt">int32</span><span class="w">  </span><span class="na">schema_epoch</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="kt">string</span><span class="w"> </span><span class="na">active_org_schema</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="k">repeated</span><span class="w"> </span><span class="n">AMRState</span><span class="w">     </span><span class="na">amr_states</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="k">repeated</span><span class="w"> </span><span class="n">StationState</span><span class="w"> </span><span class="na">station_states</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="k">repeated</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="na">thermo_state_vector</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="w"> </span><span class="p">[</span><span class="k">packed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">];</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">station5_stack_voltage_v</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">station5_current_density_a_cm2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">9</span><span class="p">;</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">station5_stack_temp_k</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">station5_stack_core_temp_k</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">11</span><span class="p">;</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">station5_stack_skin_temp_k</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">12</span><span class="p">;</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="kt">uint32</span><span class="w"> </span><span class="na">station5_failure_flags</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mi">13</span><span class="p">;</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="kt">bool</span><span class="w">   </span><span class="na">station5_has_run_test</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mi">21</span><span class="p">;</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span><span class="kt">bool</span><span class="w">   </span><span class="na">station5_last_test_passed</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">22</span><span class="p">;</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="kt">string</span><span class="w"> </span><span class="na">station5_last_tested_stack_id</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">23</span><span class="p">;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">  </span><span class="k">repeated</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="na">station5_last_measured_voltages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">24</span><span class="w"> </span><span class="p">[</span><span class="k">packed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">];</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">h2_tank_pressure_bar</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="mi">14</span><span class="p">;</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">h2_tank_fill_fraction</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mi">15</span><span class="p">;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">chiller_temp_k</span><span class="w">                 </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">;</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="na">compressor_power_kw</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="mi">17</span><span class="p">;</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span><span class="kt">uint32</span><span class="w"> </span><span class="na">dropped_telemetry_frame_count</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">18</span><span class="p">;</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">  </span><span class="kt">uint32</span><span class="w"> </span><span class="na">dropped_ner_count</span><span class="w">              </span><span class="o">=</span><span class="w"> </span><span class="mi">19</span><span class="p">;</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">  </span><span class="kt">uint32</span><span class="w"> </span><span class="na">run_id</span><span class="w">                         </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="p">}</span>
 </code></pre></div>
+<p><code>AMRState</code> and <code>StationState</code> are nested messages carrying per-entity position and status. Clients should decode incoming binary WebSocket frames using a Protobuf <code>TelemetryFrame</code> decoder.</p>
 <hr />
-<h2 id="telemetry-stream-categories">Telemetry Stream Categories</h2>
-<table>
-<thead>
-<tr>
-<th>Event Type</th>
-<th>Description</th>
-<th>Emitting Component</th>
-<th>Frequency</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>STATION_STEP_COMPLETED</code></td>
-<td>Output state updates from station solvers 1-5.</td>
-<td><code>SimBridgeArtifact.java</code></td>
-<td>Every tick</td>
-</tr>
-<tr>
-<td><code>HOLON_BID_LOGGED</code></td>
-<td>Contract-Net proposals and award notifications.</td>
-<td><code>DatabaseArtifact.java</code></td>
-<td>On CFP events</td>
-</tr>
-<tr>
-<td><code>CONTROL_MODE_CHANGED</code></td>
-<td>2PC regime switch commit notifications (PROSA <span class="arithmatex">\(\leftrightarrow\)</span> ADACOR).</td>
-<td><code>supervisor_agent.asl</code></td>
-<td>On topology switch</td>
-</tr>
-<tr>
-<td><code>AMR_POSITION_UPDATED</code></td>
-<td>Battery level, grid position, and route milestones.</td>
-<td><code>amr_agent.asl</code></td>
-<td>Periodic (5 ticks)</td>
-</tr>
-</tbody>
-</table>
+<h2 id="telemetry-stream-architecture">Telemetry Stream Architecture</h2>
+<p>Unlike a discrete event log, <code>TelemetryFrame</code> is a periodic full-state snapshot (station states, AMR states, Station 5 electrochemistry, thermal/H2 subsystem state) broadcast on a fixed ~18 Hz cadence, not a stream of typed events.</p>
 
 
 

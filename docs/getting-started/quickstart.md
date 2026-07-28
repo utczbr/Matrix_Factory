@@ -37,14 +37,14 @@ pip install -r requirements.txt
 Start the Python physical engine gRPC daemon bridge in the background:
 
 ```bash
-python3 physical_engine/daemon_launcher.py --port 50051 &
+python3 physical_engine/sim_bridge_server.py --port 50051 --run-id 0 &
 ```
 
 Expected output:
 ```text
-[DaemonLauncher] Starting SimBridge gRPC daemon on port 50051...
-[DaemonLauncher] Physics kernels initialized (Numba JIT warmed up).
-[DaemonLauncher] Listening for lock-stepped NER requests...
+[SimBridgeServer] Starting SimBridge gRPC daemon on port 50051...
+[SimBridgeServer] Physics kernels initialized (Numba JIT warmed up).
+[SimBridgeServer] Listening for lock-stepped NER requests...
 ```
 
 ---
@@ -66,10 +66,10 @@ Arguments:
 
 ## 4. Viewing Real-Time Telemetry
 
-Open your web browser and navigate to the live WebSocket telemetry dashboard:
+Open your web browser and navigate to the live WebSocket telemetry stream:
 
 ```text
-http://localhost:8081/telemetry
+ws://localhost:8080/telemetry
 ```
 
 To authenticate the dashboard client with HMAC SHA-256 tokens:

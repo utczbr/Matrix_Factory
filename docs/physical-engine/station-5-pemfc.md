@@ -72,23 +72,25 @@ with $B = 0.05$, $j_{\text{lim}} = 2.5\text{ A/cm}^2$ nominal.
 
 `sim_bridge_server.py::RunBatchTest` combines upstream station outputs into the effective internal resistance and reactant conditions actually fed to the polarization solver:
 
-$$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right) + R_{\text{gdl}}\!\left(t_{\text{comp}},\, \varepsilon_{\text{gdl}}\right)$$
+$$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}}\right)$$
 
 $$a_{H_2}^{\text{eff}} = a_{H_2}\,(1 - \text{derate}), \qquad a_{O_2}^{\text{eff}} = a_{O_2}\,(1 - \text{derate})$$
 
 $$j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim\_derate}})\right)$$
 
-where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, $R_{\text{gdl}}(\cdot) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{bulk}}(1-\varepsilon_{\text{gdl}})^m}$ is the GDL bulk electrical resistance (see [Station 4](station-4-assembly.md)), and $\text{derate}$/$j_{\text{lim\_derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
+where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, and $\text{derate}$/$j_{\text{lim\_derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
+
+> **Implementation note:** Bulk GDL electrical resistance $R_{\text{gdl}}(t_{\text{comp}}, \varepsilon_{\text{gdl}}) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{eff}}}$ (calculated via the Bruggeman relation in `microstructure.py`) is defined but not currently wired into `R_internal_effective` across the gRPC bridge, as `t_comp` is not present in `BatchTestRequest`.
 
 ### 7. Thermal Coupling & Test-Bench QC Thresholds
 
 Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (`stack_thermal_model.py`), validated against the **Yonkist number** — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation ($Yo = \frac{q_{\text{gen}}L^2}{k\,\Delta T}$; valid when $Yo < Bi$).
 
-Total irreversible voltage overpotential and entropic heat generation per unit area $Q_{\text{gen}}$ ($\text{W/cm}^2$) is:
+Total active internal heat generation rate $Q_{\text{gen}}$ ($\text{W/cm}^2$) is implemented as:
 
-$$Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)$$
+$$Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} \right)$$
 
-where $E_{\text{entropic}} = \frac{-T \Delta S}{zF} \approx 0.23\text{ V}$ represents reversible entropic heat generation ($\Delta S = -163.2\text{ J/(mol} \cdot \text{K)}$ for liquid water formation), ensuring accurate thermal runaway prediction at high current density ($j \to j_{\text{lim}}$).
+> **Implementation note:** The physical engine currently omits the concentration-overpotential ($\eta_{\text{conc}}$) and reversible-entropic ($E_{\text{entropic}} \approx 0.23\text{ V}$) heat generation terms as an intentional model simplification (see `stack_thermal_model.py` module docstring). The full thermodynamic form for reference is: $Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)$.
 
 The end-of-line test bench flags a stack via a bitmask if any of the following hold during a sweep:
 
@@ -116,7 +118,7 @@ The end-of-line test bench flags a stack via a bitmask if any of the following h
 | Stack Characteristic Length | $L$ | $0.05$ ($5.0\text{ cm}$) | $\text{m}$ | Stack thermal geometry |
 | Effective Thermal Conductivity | $k_{\text{eff}}$ | $1.25$ | $\text{W/(m} \cdot \text{K)}$ | Stack composite thermal property |
 | Core-Skin Temp. Threshold | $\Delta T$ | $15.0$ | $\text{K}$ | Yonkist stability criterion |
-| Reversible Entropic Potential | $E_{\text{entropic}}$ | $0.23$ | $\text{V}$ | Thermodynamic entropic term ($-T\Delta S/zF$) |
+| Reversible Entropic Potential | $E_{\text{entropic}}$ | $0.23$ | $\text{V}$ | Defined constant (omitted from live $Q_{\text{gen}}$) |
 | Ohmic Degradation Threshold | — | $0.35$ | $\text{V}$ | QC threshold |
 | Thermal Shutdown Threshold | — | $358.15$ ($85^\circ\text{C}$) | $\text{K}$ | QC threshold |
 | Low-Activation ECSA Floor | — | $0.30$ | — | QC threshold |
