@@ -2,106 +2,106 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/citation/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/agents-and-mas/amr-agents/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/agents-and-mas/jacamo-structure/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/agents-and-mas/order-resource-holons/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/agents-and-mas/supervisor-agent/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/api-and-protocols/database-schema/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/api-and-protocols/grpc-protobuf/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/api-and-protocols/websocket-telemetry/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/architecture/c4-system-context/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/architecture/holonic-control/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/architecture/time-sync-engine/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/artifact-evaluation/claim-matrix/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/artifact-evaluation/quick-repro/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/getting-started/architecture-overview/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/getting-started/quickstart/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/operations-and-dev/monte-carlo-scale/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/operations-and-dev/security-mtls/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/operations-and-dev/testing-calibration/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/literature-calibration/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/overview/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/station-1-resin/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/station-2-coating/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/station-3-stamping/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/station-4-assembly/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
     <url>
          <loc>https://utczbr.github.io/Matrix_Factory/physical-engine/station-5-pemfc/</loc>
-         <lastmod>2026-07-27</lastmod>
+         <lastmod>2026-07-28</lastmod>
     </url>
 </urlset>
