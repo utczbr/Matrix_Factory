@@ -1602,7 +1602,7 @@
     end
 
     MAIN --&gt; AGTS
-    AGTS &lt;--&gt; ART
+    AGTS --&gt; ART
     ART ==&gt;|gRPC / Protobuf over mTLS (Port 50051)| DAEMON
     DAEMON --&gt; NUMBA
     NUMBA --&gt; COOL
