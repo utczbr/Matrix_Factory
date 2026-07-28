@@ -20,7 +20,7 @@ graph LR
         D -->|Thermodynamics & Kinetics| C
     end
 
-    Cognitive_Layer == "gRPC mTLS IPC" ==> Physical_Layer
+    Cognitive_Layer ==>|gRPC mTLS IPC| Physical_Layer
 ```
 
 1. **Cognitive Layer (Java / JaCaMo):**

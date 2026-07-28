@@ -21,8 +21,8 @@ stateDiagram-v2
     LOADING --> MOVING_TO_DROP : Material Loaded
     MOVING_TO_DROP --> UNLOADING : Arrived at Destination Station
     UNLOADING --> IDLE : Material Transferred
-    IDLE -.-> CHARGING : SoC < 20% (Planned)
-    CHARGING -.-> IDLE : SoC > 90% (Planned)
+    IDLE -.-> CHARGING : SoC below 20% (Planned)
+    CHARGING -.-> IDLE : SoC above 90% (Planned)
 ```
 
 ---

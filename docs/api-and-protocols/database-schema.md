@@ -57,7 +57,7 @@ To prevent disk I/O bottlenecks from stalling the agent execution loop, `Databas
 
 ```mermaid
 graph LR
-    A[CArtAgO Operation Thread] -->|offer, non-blocking| B["3× ArrayBlockingQueue&lt;Record&gt; (cap 300,000 each: Orders / StationQuality / EnergyTelemetry)"]
+    A[CArtAgO Operation Thread] -->|offer, non-blocking| B["3x ArrayBlockingQueue(Record) (cap 300,000 each: Orders / StationQuality / EnergyTelemetry)"]
     B -->|drain every 500ms, batch up to 2,000| C[Background Writer Thread]
     C -->|executeBatch + commit| D[factory_history.db SQLite WAL]
     C -.->|on failed commit: requeue batch, signal database_batch_commit_failed| B

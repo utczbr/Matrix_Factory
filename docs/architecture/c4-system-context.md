@@ -22,7 +22,7 @@ graph TD
     end
 
     USER -->|Configures Runs & Topologies| MAS
-    MAS == "gRPC IPC" ==> PHYS
+    MAS ==>|gRPC IPC| PHYS
     MAS -->|Persists State Logs| DB
     HUB -->|Streams Metrics over WSS| DASH
     MARKET -->|Energy Price Feeds| MAS
@@ -55,7 +55,7 @@ graph TB
 
     MAIN --> AGTS
     AGTS <--> ART
-    ART == "gRPC / Protobuf over mTLS (Port 50051)" ==> DAEMON
+    ART ==>|gRPC / Protobuf over mTLS (Port 50051)| DAEMON
     DAEMON --> NUMBA
     NUMBA --> COOL
     ART --> SQLITE

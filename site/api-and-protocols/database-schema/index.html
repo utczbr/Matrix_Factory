@@ -1601,7 +1601,7 @@
 <h2 id="asynchronous-batch-queue-architecture">Asynchronous Batch Queue Architecture</h2>
 <p>To prevent disk I/O bottlenecks from stalling the agent execution loop, <code>DatabaseArtifact.java</code> utilizes three dedicated <code>ArrayBlockingQueue</code> buffers (capacity 300,000 records each: <code>queue</code>, <code>qualityQueue</code>, <code>energyQueue</code>) serviced by a background drain thread (<code>drainLoop()</code>):</p>
 <pre class="mermaid"><code>graph LR
-    A[CArtAgO Operation Thread] --&gt;|offer, non-blocking| B["3× ArrayBlockingQueue&amp;lt;Record&amp;gt; (cap 300,000 each: Orders / StationQuality / EnergyTelemetry)"]
+    A[CArtAgO Operation Thread] --&gt;|offer, non-blocking| B["3x ArrayBlockingQueue(Record) (cap 300,000 each: Orders / StationQuality / EnergyTelemetry)"]
     B --&gt;|drain every 500ms, batch up to 2,000| C[Background Writer Thread]
     C --&gt;|executeBatch + commit| D[factory_history.db SQLite WAL]
     C -.-&gt;|on failed commit: requeue batch, signal database_batch_commit_failed| B</code></pre>

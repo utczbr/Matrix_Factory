@@ -43,7 +43,7 @@ sequenceDiagram
         Sup->>RH: Broadcast SUSPEND_SCHEDULER
         RH->>RH: Freeze local state variables & queue buffers
         RH-->>Sup: SUSPENDED_ACK
-        Sup->>DB: Log topology switch commit (PROSA -> ADACOR)
+        Sup->>DB: Log topology switch commit (PROSA to ADACOR)
         Sup->>OH: Broadcast COMMIT_SWITCH(ADACOR_MODE)
         Sup->>RH: Broadcast COMMIT_SWITCH(ADACOR_MODE)
     end
