@@ -34,16 +34,16 @@ graph TD
         S5["Station 5: PEMFC Electrochemistry"]
     end
 
-    SUP <--> OH
-    OH <--> RH
-    RH <--> AMR
-    RH <--> GRPC
-    GRPC <--> TMC
-    TMC <--> S1
-    TMC <--> S2
-    TMC <--> S3
-    TMC <--> S4
-    TMC <--> S5
+    SUP --> OH
+    OH --> RH
+    RH --> AMR
+    RH --> GRPC
+    GRPC --> TMC
+    TMC --> S1
+    TMC --> S2
+    TMC --> S3
+    TMC --> S4
+    TMC --> S5
 ```
 
 ---

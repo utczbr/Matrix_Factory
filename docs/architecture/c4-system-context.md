@@ -54,7 +54,7 @@ graph TB
     end
 
     MAIN --> AGTS
-    AGTS <--> ART
+    AGTS --> ART
     ART ==>|gRPC / Protobuf over mTLS (Port 50051)| DAEMON
     DAEMON --> NUMBA
     NUMBA --> COOL
