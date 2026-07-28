@@ -1786,15 +1786,20 @@
 <p>with <span class="arithmatex">\(B = 0.05\)</span>, <span class="arithmatex">\(j_{\text{lim}} = 2.5\text{ A/cm}^2\)</span> nominal.</p>
 <h3 id="6-manufacturing-to-performance-coupling">6. Manufacturing-to-Performance Coupling</h3>
 <p><code>sim_bridge_server.py::RunBatchTest</code> combines upstream station outputs into the effective internal resistance and reactant conditions actually fed to the polarization solver:</p>
-<div class="arithmatex">\[R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}},\, \varepsilon_{\text{gdl}}\right) + R_{\text{gdl}}\!\left(t_{\text{comp}},\, \varepsilon_{\text{gdl}}\right)\]</div>
+<div class="arithmatex">\[R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}}\right)\]</div>
 <div class="arithmatex">\[a_{H_2}^{\text{eff}} = a_{H_2}\,(1 - \text{derate}), \qquad a_{O_2}^{\text{eff}} = a_{O_2}\,(1 - \text{derate})\]</div>
 <div class="arithmatex">\[j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim\_derate}})\right)\]</div>
-<p>where <span class="arithmatex">\(R_{\text{internal},0}\)</span> is a per-run baseline resistance (default <span class="arithmatex">\(0.06\ \Omega\cdot\text{cm}^2\)</span>), <span class="arithmatex">\(\Delta R_{\text{penalty}}\)</span> is a defect-accumulation penalty tracked by the agent layer, <span class="arithmatex">\(R_{\text{contact}}(\cdot)\)</span> is the Station 4 U-shaped contact-resistance model, <span class="arithmatex">\(R_{\text{gdl}}(\cdot) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{bulk}}(1-\varepsilon_{\text{gdl}})^m}\)</span> is the GDL bulk electrical resistance (see <a href="../station-4-assembly/">Station 4</a>), and <span class="arithmatex">\(\text{derate}\)</span>/<span class="arithmatex">\(j_{\text{lim\_derate}}\)</span> are upstream-quality-derived fractions clamped to <span class="arithmatex">\([0, 0.95]\)</span> and <span class="arithmatex">\([0, 0.90]\)</span> respectively.</p>
+<p>where <span class="arithmatex">\(R_{\text{internal},0}\)</span> is a per-run baseline resistance (default <span class="arithmatex">\(0.06\ \Omega\cdot\text{cm}^2\)</span>), <span class="arithmatex">\(\Delta R_{\text{penalty}}\)</span> is a defect-accumulation penalty tracked by the agent layer, <span class="arithmatex">\(R_{\text{contact}}(\cdot)\)</span> is the Station 4 U-shaped contact-resistance model, and <span class="arithmatex">\(\text{derate}\)</span>/<span class="arithmatex">\(j_{\text{lim\_derate}}\)</span> are upstream-quality-derived fractions clamped to <span class="arithmatex">\([0, 0.95]\)</span> and <span class="arithmatex">\([0, 0.90]\)</span> respectively.</p>
+<blockquote>
+<p><strong>Implementation note:</strong> Bulk GDL electrical resistance <span class="arithmatex">\(R_{\text{gdl}}(t_{\text{comp}}, \varepsilon_{\text{gdl}}) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{eff}}}\)</span> (calculated via the Bruggeman relation in <code>microstructure.py</code>) is defined but not currently wired into <code>R_internal_effective</code> across the gRPC bridge, as <code>t_comp</code> is not present in <code>BatchTestRequest</code>.</p>
+</blockquote>
 <h3 id="7-thermal-coupling-test-bench-qc-thresholds">7. Thermal Coupling &amp; Test-Bench QC Thresholds</h3>
 <p>Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (<code>stack_thermal_model.py</code>), validated against the <strong>Yonkist number</strong> — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation (<span class="arithmatex">\(Yo = \frac{q_{\text{gen}}L^2}{k\,\Delta T}\)</span>; valid when <span class="arithmatex">\(Yo &lt; Bi\)</span>).</p>
-<p>Total irreversible voltage overpotential and entropic heat generation per unit area <span class="arithmatex">\(Q_{\text{gen}}\)</span> (<span class="arithmatex">\(\text{W/cm}^2\)</span>) is:</p>
-<div class="arithmatex">\[Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)\]</div>
-<p>where <span class="arithmatex">\(E_{\text{entropic}} = \frac{-T \Delta S}{zF} \approx 0.23\text{ V}\)</span> represents reversible entropic heat generation (<span class="arithmatex">\(\Delta S = -163.2\text{ J/(mol} \cdot \text{K)}\)</span> for liquid water formation), ensuring accurate thermal runaway prediction at high current density (<span class="arithmatex">\(j \to j_{\text{lim}}\)</span>).</p>
+<p>Total active internal heat generation rate <span class="arithmatex">\(Q_{\text{gen}}\)</span> (<span class="arithmatex">\(\text{W/cm}^2\)</span>) is implemented as:</p>
+<div class="arithmatex">\[Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} \right)\]</div>
+<blockquote>
+<p><strong>Implementation note:</strong> The physical engine currently omits the concentration-overpotential (<span class="arithmatex">\(\eta_{\text{conc}}\)</span>) and reversible-entropic (<span class="arithmatex">\(E_{\text{entropic}} \approx 0.23\text{ V}\)</span>) heat generation terms as an intentional model simplification (see <code>stack_thermal_model.py</code> module docstring). The full thermodynamic form for reference is: <span class="arithmatex">\(Q_{\text{gen}} = j \cdot N_{\text{cells}} \cdot \left( \eta_{\text{act}} + \eta_{\text{ohm}} + \eta_{\text{conc}} + E_{\text{entropic}} \right)\)</span>.</p>
+</blockquote>
 <p>The end-of-line test bench flags a stack via a bitmask if any of the following hold during a sweep:</p>
 <ul>
 <li><strong>Ohmic degradation:</strong> per-cell ohmic overpotential <span class="arithmatex">\(\eta_{\text{ohm}} &gt; 0.35\text{ V}\)</span></li>
@@ -1899,7 +1904,7 @@
 <td><span class="arithmatex">\(E_{\text{entropic}}\)</span></td>
 <td><span class="arithmatex">\(0.23\)</span></td>
 <td><span class="arithmatex">\(\text{V}\)</span></td>
-<td>Thermodynamic entropic term (<span class="arithmatex">\(-T\Delta S/zF\)</span>)</td>
+<td>Defined constant (omitted from live <span class="arithmatex">\(Q_{\text{gen}}\)</span>)</td>
 </tr>
 <tr>
 <td>Ohmic Degradation Threshold</td>

@@ -1649,12 +1649,12 @@
 <hr />
 <h2 id="2-launching-the-physical-daemon-bridge">2. Launching the Physical Daemon Bridge</h2>
 <p>Start the Python physical engine gRPC daemon bridge in the background:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python3<span class="w"> </span>physical_engine/daemon_launcher.py<span class="w"> </span>--port<span class="w"> </span><span class="m">50051</span><span class="w"> </span><span class="p">&amp;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python3<span class="w"> </span>physical_engine/sim_bridge_server.py<span class="w"> </span>--port<span class="w"> </span><span class="m">50051</span><span class="w"> </span>--run-id<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
 <p>Expected output:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[DaemonLauncher] Starting SimBridge gRPC daemon on port 50051...
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[DaemonLauncher] Physics kernels initialized (Numba JIT warmed up).
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>[DaemonLauncher] Listening for lock-stepped NER requests...
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[SimBridgeServer] Starting SimBridge gRPC daemon on port 50051...
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[SimBridgeServer] Physics kernels initialized (Numba JIT warmed up).
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>[SimBridgeServer] Listening for lock-stepped NER requests...
 </code></pre></div></p>
 <hr />
 <h2 id="3-running-the-jacamo-multi-agent-system">3. Running the JaCaMo Multi-Agent System</h2>
@@ -1667,8 +1667,8 @@
 * <code>--max-ticks=1000</code>: Simulation duration threshold.</p>
 <hr />
 <h2 id="4-viewing-real-time-telemetry">4. Viewing Real-Time Telemetry</h2>
-<p>Open your web browser and navigate to the live WebSocket telemetry dashboard:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>http://localhost:8081/telemetry
+<p>Open your web browser and navigate to the live WebSocket telemetry stream:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ws://localhost:8080/telemetry
 </code></pre></div>
 <p>To authenticate the dashboard client with HMAC SHA-256 tokens:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8081/telemetry/ticket
