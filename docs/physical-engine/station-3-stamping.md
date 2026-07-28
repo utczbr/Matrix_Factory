@@ -57,7 +57,7 @@ where $K_{\text{strength}} = 1280.0\text{ MPa}$ and $n_{\text{hardening}} = 0.43
 
 The Normalized Cockcroft–Latham (NCL) ductile damage criterion evaluates normalized plastic work by integrating tensile stress $\sigma_1$ over flow stress $\sigma_{\text{flow}} = K_{\text{strength}}\varepsilon_p^n$:
 
-$$C_{\text{NCL}} = \int_0^{\varepsilon_p} \frac{\sigma_1}{\sigma_{\text{flow}}} \, d\varepsilon_p = \int_0^{\varepsilon_p} \left( \frac{\sigma_{\text{mem}} e^{\mu_{\text{local}}\theta_{\text{rad}}}}{K_{\text{strength}}} \varepsilon_p^{-n_{\text{hardening}}} + 1 \right) d\varepsilon_p$$
+$$C_{\text{NCL}} = \int_0^{\varepsilon_p} \frac{\sigma_1(\varepsilon)}{\sigma_{\text{flow}}(\varepsilon)} \, d\varepsilon = \int_0^{\varepsilon_p} \left( \frac{\sigma_{\text{mem}} e^{\mu_{\text{local}}\theta_{\text{rad}}}}{K_{\text{strength}}} \varepsilon^{-n_{\text{hardening}}} + 1 \right) d\varepsilon$$
 
 Evaluating this integral yields the plastic work index $W_{\text{plastic}}$:
 
@@ -73,7 +73,7 @@ $$t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.12\, F_{\t
 
 $$\text{var\_ratio} = 1.0 + 0.40\, W_{\text{ratio}} + 0.30\, \text{damage}_{\text{NCL}}^2$$
 
-where $F_{\text{dev}} = |F_{\text{press}} - F_{\text{nominal}}| / F_{\text{nominal}}$.
+where $F_{\text{dev}} = \frac{\left|F_{\text{press}} - F_{\text{nominal}}\right|}{F_{\text{nominal}}}$.
 
 ---
 

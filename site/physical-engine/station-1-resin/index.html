@@ -1663,7 +1663,7 @@
 <div class="arithmatex">\[V_{\text{ratio}} = 1.0 + 0.30\, R_{\text{delam}} + 0.25\, R_{\text{pinhole}}\]</div>
 <p>Station cycle time <span class="arithmatex">\(t_{\text{proc}}\)</span> scales with deviations from nominal press temperature and dwell time:</p>
 <div class="arithmatex">\[t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.15\, T_{\text{dev}} + 0.10\, t_{\text{dwell,dev}}\right)\]</div>
-<p>where <span class="arithmatex">\(t_{\text{base}} = 5.0\ \text{s}\)</span>, <span class="arithmatex">\(T_{\text{dev}} = |T_{\text{press}} - T_{\text{press,nominal}}| / T_{\text{press,nominal}}\)</span>, and <span class="arithmatex">\(t_{\text{dwell,dev}}\)</span> is defined analogously for dwell time. <span class="arithmatex">\(k_{\text{time}}\)</span> is a global time-acceleration factor (1.0 in accelerated simulation mode, 10.0 in industrial-pace mode).</p>
+<p>where <span class="arithmatex">\(t_{\text{base}} = 5.0\ \text{s}\)</span>, <span class="arithmatex">\(T_{\text{dev}} = \frac{\left|T_{\text{press}} - T_{\text{press,nominal}}\right|}{T_{\text{press,nominal}}}\)</span>, and <span class="arithmatex">\(t_{\text{dwell,dev}}\)</span> is defined analogously for dwell time. <span class="arithmatex">\(k_{\text{time}}\)</span> is a global time-acceleration factor (1.0 in accelerated simulation mode, 10.0 in industrial-pace mode).</p>
 <hr />
 <h2 id="calibration-parameters-variables">Calibration Parameters &amp; Variables</h2>
 <table>

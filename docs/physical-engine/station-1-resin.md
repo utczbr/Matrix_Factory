@@ -44,7 +44,7 @@ Station cycle time $t_{\text{proc}}$ scales with deviations from nominal press t
 
 $$t_{\text{proc}} = k_{\text{time}} \cdot t_{\text{base}} \left(1 + 0.15\, T_{\text{dev}} + 0.10\, t_{\text{dwell,dev}}\right)$$
 
-where $t_{\text{base}} = 5.0\ \text{s}$, $T_{\text{dev}} = |T_{\text{press}} - T_{\text{press,nominal}}| / T_{\text{press,nominal}}$, and $t_{\text{dwell,dev}}$ is defined analogously for dwell time. $k_{\text{time}}$ is a global time-acceleration factor (1.0 in accelerated simulation mode, 10.0 in industrial-pace mode).
+where $t_{\text{base}} = 5.0\ \text{s}$, $T_{\text{dev}} = \frac{\left|T_{\text{press}} - T_{\text{press,nominal}}\right|}{T_{\text{press,nominal}}}$, and $t_{\text{dwell,dev}}$ is defined analogously for dwell time. $k_{\text{time}}$ is a global time-acceleration factor (1.0 in accelerated simulation mode, 10.0 in industrial-pace mode).
 
 ---
 
