@@ -1,4 +1,4 @@
-# Supervisor Agent & 2PC Coordinator (Reference)
+# Supervisor Agent & Closed-Loop Control Coordinator (Reference)
 
 This document presents belief structures, plan rules, and state machine specifications for `supervisor_agent.asl`.
 
@@ -6,7 +6,25 @@ This document presents belief structures, plan rules, and state machine specific
 
 ## Agent Overview
 
-The `supervisor_agent` acts as the central coordinator in Matrix Factory Twin. It monitors overall plant performance, grid energy spot prices, buffer capacities, and coordinates the Two-Phase Commit (2PC) protocol during control regime switching (PROSA $\leftrightarrow$ ADACOR).
+The `supervisor_agent` acts as the central coordinator in Matrix Factory Twin. It monitors overall plant performance, grid energy spot prices, buffer capacities, closed-loop station defect drift rates, and coordinates the Two-Phase Commit (2PC) protocol during control regime switching (PROSA $\leftrightarrow$ ADACOR).
+
+---
+
+## Closed-Loop Station Defect Monitoring & Setpoint Control
+
+The supervisor periodically queries recent defect rates across Stations 1–4 via `DatabaseArtifact.getRecentDefectRate(StationId, WindowSize, Rate)` and issues corrective setpoint adjustments to resource holons when drift exceeds quality thresholds:
+
+```jason
++!monitor_defect_drift
+  : true
+  <- for ( .member(Station, ["S1","S2","S3","S4"]) ) {
+        getRecentDefectRate(Station, 20, Rate);
+        if (Rate > 0.30) {
+            compute_corrective_setpoint(Station, Param, Value);
+            .send(Station, tell, adjust_setpoint(Param, Value));
+        }
+     }.
+```
 
 ---
 
@@ -66,4 +84,4 @@ adacor_mode_active    :- control_mode("adacor").
 
 ## Code Reference
 
-* Agent Source File: [`src/agt/supervisor_agent.asl`](https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/supervisor_agent.asl)
+* Agent Source File: [`src/agt/supervisor_agent.asl`](file:///home/stuart/Documentos/matrix_factory_twin/src/agt/supervisor_agent.asl)

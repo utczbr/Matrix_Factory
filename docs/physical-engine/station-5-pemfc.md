@@ -1,12 +1,12 @@
 # Station 5: PEMFC Electrochemistry & Test Bench
 
-This document presents the non-linear electrochemistry, Butler–Volmer reaction kinetics, Springer membrane hydration model, thermal coupling, and polarization curve equations for **Station 5: Quality Testing & PEMFC Performance Verification**.
+This document presents the non-linear electrochemistry, Butler–Volmer reaction kinetics, Springer membrane hydration model, dynamic two-phase water flooding, N-cell thermal discretization, manufacturing-to-performance coupling, quality control thresholds, and polarization curve equations for **Station 5: Quality Testing & PEMFC Performance Verification**.
 
 ---
 
 ## Physical Process Description
 
-Station 5 subjects assembled fuel cell stacks to end-of-line electrical and gas crossover diagnostics. It simulates IV polarization curves, cell voltage distributions, activation losses, ohmic resistance, mass transport limitation current densities $j_{\text{lim}}$, and — coupled to a two-lump thermal model — thermal runaway risk.
+Station 5 subjects assembled fuel cell stacks to end-of-line electrical and gas crossover diagnostics. It simulates IV polarization curves, cell voltage distributions, activation losses, ohmic resistance, mass transport limitation current densities $j_{\text{lim}}$, dynamic membrane hydration hysteresis, cathode liquid water flooding, N-cell flow-path thermal discretization, and end-of-line QC defect bitmask flags.
 
 ---
 
@@ -58,7 +58,25 @@ $$\lambda(a_w) = \begin{cases} 0.043 + 17.81\,a_w - 39.85\,a_w^2 + 36.0\,a_w^3, 
 
 clamped to $\lambda \in [1.0, 14.0]$.
 
-### 5. Mass Transport Concentration Overpotential
+### 5. Dynamic Membrane Water Sorption Hysteresis
+
+Membrane water content $\lambda$ evolves dynamically via a first-order relaxation ODE (`step_membrane_hydration` in `membrane_hydration.py`) towards equilibrium $\lambda_{\text{eq}}(a_w)$:
+
+$$\frac{d\lambda}{dt} = \frac{\lambda_{\text{eq}}(a_w) - \lambda}{\tau}$$
+
+with asymmetric time constants ($\tau_{\text{sorption}} = 12.0\text{ s}$ for uptake vs. $\tau_{\text{desorption}} = 45.0\text{ s}$ for release per Ge et al. hysteresis).
+
+### 6. Two-Phase Liquid Water Transport & Cathode Flooding
+
+Cathode GDL liquid water saturation $s \in [0, 0.99]$ evolves dynamically via `step_liquid_saturation` in `pemfc_model.py`:
+
+$$\frac{ds}{dt} = \frac{w_{\text{prod}} - w_{\text{rem}}}{s_{\text{cap}}}$$
+
+where $s_{\text{cap}} = 0.35$ is saturation capacity, $w_{\text{prod}} = \frac{j \cdot 10^4}{2F}$ is Faraday water production rate, and $w_{\text{rem}}$ is convective air removal. Bruggeman-corrected gas diffusivity $D_{\text{eff}}$ reduces the effective limiting current $j_{\text{lim}}^{\text{eff}}$ under flooding conditions:
+
+$$D_{\text{eff}} = D_{0,\text{O}_2} \cdot \varepsilon_{\text{gdl}} \cdot (1 - s)^{1.5}$$
+
+### 7. Mass Transport Concentration Overpotential
 
 $$\eta_{\text{conc}} = -B \ln\left(1 - \frac{j}{j_{\text{lim}}}\right), \qquad \frac{j}{j_{\text{lim}}} \le 0.99$$
 
@@ -68,7 +86,7 @@ $$\eta_{\text{conc}} = -B\ln(0.01) + \frac{B}{0.01\,j_{\text{lim}}}\left(\frac{j
 
 with $B = 0.05$, $j_{\text{lim}} = 2.5\text{ A/cm}^2$ nominal.
 
-### 6. Manufacturing-to-Performance Coupling
+### 8. Manufacturing-to-Performance Coupling
 
 `sim_bridge_server.py::RunBatchTest` combines upstream station outputs into the effective internal resistance and reactant conditions actually fed to the polarization solver:
 
@@ -76,15 +94,15 @@ $$R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + 
 
 $$a_{H_2}^{\text{eff}} = a_{H_2}\,(1 - \text{derate}), \qquad a_{O_2}^{\text{eff}} = a_{O_2}\,(1 - \text{derate})$$
 
-$$j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim\_derate}})\right)$$
+$$j_{\text{lim}}^{\text{eff}} = \max\!\left(0.2,\ 2.5\,(1 - j_{\text{lim\_derate}}) \cdot \frac{D_{\text{eff}}}{D_{0,\text{O}_2}}\right)$$
 
 where $R_{\text{internal},0}$ is a per-run baseline resistance (default $0.06\ \Omega\cdot\text{cm}^2$), $\Delta R_{\text{penalty}}$ is a defect-accumulation penalty tracked by the agent layer, $R_{\text{contact}}(\cdot)$ is the Station 4 U-shaped contact-resistance model, and $\text{derate}$/$j_{\text{lim\_derate}}$ are upstream-quality-derived fractions clamped to $[0, 0.95]$ and $[0, 0.90]$ respectively.
 
 > **Implementation note:** Bulk GDL electrical resistance $R_{\text{gdl}}(t_{\text{comp}}, \varepsilon_{\text{gdl}}) = \frac{t_{\text{comp}} \times 10^{-4}}{\sigma_{\text{eff}}}$ (calculated via the Bruggeman relation in `microstructure.py`) is defined but not currently wired into `R_internal_effective` across the gRPC bridge, as `t_comp` is not present in `BatchTestRequest`.
 
-### 7. Thermal Coupling & Test-Bench QC Thresholds
+### 9. Thermal Coupling, N-Cell Discretization & Test-Bench QC Thresholds
 
-Station 5 couples the electrochemical solve to a two-lump (core/skin) thermal model (`stack_thermal_model.py`), validated against the **Yonkist number** — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation ($Yo = \frac{q_{\text{gen}}L^2}{k\,\Delta T}$; valid when $Yo < Bi$).
+Station 5 couples the electrochemical solve to a two-lump core/skin model or an N-cell 1D discretized chain along the coolant flow path (`StackThermalModelND`), validated against the **Yonkist number** — a Buckingham-Pi-derived extension of the Biot-number lumped-capacitance criterion for bodies with internal heat generation ($Yo = \frac{q_{\text{gen}}L^2}{k\,\Delta T}$; valid when $Yo < Bi$).
 
 Total active internal heat generation rate $Q_{\text{gen}}$ ($\text{W/cm}^2$) is implemented as:
 
@@ -128,7 +146,7 @@ The end-of-line test bench flags a stack via a bitmask if any of the following h
 
 ## Code Reference
 
-* Main Model: [`physical_engine/factory_simulation/pemfc_model.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/pemfc_model.py)
-* Membrane Hydration: [`physical_engine/factory_simulation/membrane_hydration.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/membrane_hydration.py)
-* Thermal Model: [`physical_engine/factory_simulation/stack_thermal_model.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/stack_thermal_model.py)
-* Test Suite: [`physical_engine/factory_simulation/pemfc_test.py`](https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/pemfc_test.py)
+* Main Model: [`physical_engine/factory_simulation/pemfc_model.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/pemfc_model.py)
+* Hydration Submodel: [`physical_engine/factory_simulation/membrane_hydration.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/membrane_hydration.py)
+* Thermal Submodel: [`physical_engine/factory_simulation/stack_thermal_model.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/stack_thermal_model.py)
+* Test Suite: [`physical_engine/factory_simulation/pemfc_test.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/pemfc_test.py)

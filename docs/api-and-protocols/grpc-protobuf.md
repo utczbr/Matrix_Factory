@@ -20,6 +20,7 @@ service SimBridge {
   rpc AdvanceTime (TimeStep) returns (StepReady);
   rpc RunBatchTest (BatchTestRequest) returns (BatchTestResponse);
   rpc HealthCheck (Empty) returns (HealthStatus);
+  rpc SimulateStationProcess (StationProcessRequest) returns (StationProcessResponse); // JIT Station 1-4 Mechanistic Process
 }
 
 message TimeStep {
@@ -32,6 +33,54 @@ message StepReady {
   double target_time = 1;
   bool success = 2;
   repeated double state_vector = 3 [packed = true];
+}
+
+message Station1Params {
+  double t_press_k = 1;
+  double dwell_time_s = 2;
+}
+
+message Station2Params {
+  double v_coat_m_s = 1;
+  double mu_slurry_pa_s = 2;
+}
+
+message Station3Params {
+  double press_force_kn = 1;
+  int32 die_stroke_count = 2;
+  double w0_initial_wear = 3;
+  bool use_duplex_coating = 4;
+}
+
+message Station4Params {
+  repeated double applied_torques_nm = 1;
+  repeated double friction_coefficients = 2;
+}
+
+message StationProcessRequest {
+  string station_id = 1;
+  string order_id = 2;
+  double k_time = 3;
+  oneof params {
+    Station1Params station1 = 10;
+    Station2Params station2 = 11;
+    Station3Params station3 = 12;
+    Station4Params station4 = 13;
+  }
+}
+
+message StationProcessResponse {
+  double proc_time_s = 1;
+  bool is_defective = 2;
+  double var_ratio = 3;
+  double alpha_final = 10;
+  double delamination_risk = 11;
+  double pinhole_risk = 12;
+  double ecsa_ratio = 20;
+  double damage_index = 30;
+  double gdl_porosity = 40;
+  double e_tangent_mpa = 41;
+  double p_clamp_mpa = 42;
 }
 
 message BatchTestRequest {
@@ -75,6 +124,7 @@ message HealthStatus {
 | RPC Method | Input Type | Output Type | Description |
 | --- | --- | --- | --- |
 | `AdvanceTime` | `TimeStep` | `StepReady` | Unary time-synchronization barrier; advances all physical station ODE integrators to `current_time + dt` and returns the embedded state vector. |
+| `SimulateStationProcess` | `StationProcessRequest` | `StationProcessResponse` | Executes mechanistic process simulation for Stations 1–4, returning process timing, defect flags, and physical quality metrics (`ecsa_ratio`, `damage_index`, `gdl_porosity`, `p_clamp_mpa`). |
 | `RunBatchTest` | `BatchTestRequest` | `BatchTestResponse` | Runs a Station 5 polarization-curve sweep (Newton–Raphson current-density solve) incorporating upstream manufacturing-quality penalties. |
 | `HealthCheck` | `Empty` | `HealthStatus` | Reports whether the physical daemon's JIT kernels have finished warming up. |
 
@@ -85,4 +135,3 @@ message HealthStatus {
 * Proto Source File: [`src/main/proto/sim_bridge.proto`](file:///home/stuart/Documentos/matrix_factory_twin/src/main/proto/sim_bridge.proto)
 * Python Protobuf Bridge: [`physical_engine/sim_bridge_server.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/sim_bridge_server.py)
 * Proto Index Helper: [`physical_engine/proto_index.py`](file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/proto_index.py)
-

@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+package factory;
+
+option java_multiple_files = false;
+option java_outer_classname = "SimBridgeProto";
+
+// SimBridge — gRPC co-simulation interface between the JaCaMo cognitive
+// layer and the Python physical engine.
+
+service SimBridge {
+  rpc AdvanceTime (TimeStep) returns (StepReady);
+  rpc RunBatchTest (BatchTestRequest) returns (BatchTestResponse);
+  rpc HealthCheck (Empty) returns (HealthStatus);
+  rpc SimulateStationProcess (StationProcessRequest) returns (StationProcessResponse);
+}
+
+message TimeStep {
+  double current_time = 1;
+  double dt = 2;
+  int32 schema_epoch = 3;
+}
+
+message StepReady {
+  double target_time = 1;
+  bool success = 2;
+  repeated double state_vector = 3 [packed = true];
+}
+
+message BatchTestRequest {
+  string stack_id = 1;
+  int32 num_cells = 2;
+  double operating_temp_k = 3;
+  double inlet_pressure_h2_bar = 4;
+  double inlet_pressure_o2_bar = 5;
+  repeated double current_densities = 6 [packed = true];
+  double r_internal_penalty_ohm_cm2 = 7;
+  double activity_derate_fraction = 8;
+  double rh_anode = 9;
+  double ecsa_ratio = 10;
+  double p_clamp_mpa = 11;
+  double gdl_porosity = 12;
+  double j_lim_derate_fraction = 13;
+}
+
+message BatchTestResponse {
+  bool passed = 1;
+  repeated double measured_voltages = 2 [packed = true];
+  uint32 failure_flags = 3;
+}
+
+message Empty {}
+
+message HealthStatus {
+  bool ready = 1;
+}
+
+message Station1Params {
+  optional double t_press_k = 1;
+  optional double dwell_time_s = 2;
+}
+message Station2Params {
+  optional double v_coat_m_s = 1;
+  optional double mu_slurry_pa_s = 2;
+}
+message Station3Params {
+  optional double press_force_kn = 1;
+  optional int32 die_stroke_count = 2;
+  optional double w0_initial_wear = 3;
+  optional bool use_duplex_coating = 4;
+}
+message Station4Params {
+  repeated double applied_torques_nm = 1;
+  repeated double friction_coefficients = 2;
+}
+
+message StationProcessRequest {
+  string station_id = 1;
+  string order_id = 2;
+  double k_time = 3;
+  oneof params {
+    Station1Params station1 = 10;
+    Station2Params station2 = 11;
+    Station3Params station3 = 12;
+    Station4Params station4 = 13;
+  }
+}
+
+message StationProcessResponse {
+  double proc_time_s = 1;
+  bool is_defective = 2;
+  double var_ratio = 3;
+  double alpha_final = 10;
+  double delamination_risk = 11;
+  double pinhole_risk = 12;
+  double ecsa_ratio = 20;
+  double damage_index = 30;
+  double gdl_porosity = 40;
+  double e_tangent_mpa = 41;
+  double p_clamp_mpa = 42;
+}
+
+enum AMRStatusEnum {
+  AMR_IDLE      = 0;
+  AMR_MOVING    = 1;
+  AMR_LOADING   = 2;
+  AMR_UNLOADING = 3;
+  AMR_BLOCKED   = 4;
+}
+
+enum StationStateEnum {
+  STATION_IDLE             = 0;
+  STATION_PROVISIONAL_LOCK = 1;
+  STATION_BUSY_PROCESSING  = 2;
+  STATION_DEFECT_DETECTED  = 3;
+  STATION_OFFLINE          = 4;
+}
+
+message AMRState {
+  string      amr_id            = 1;
+  float       grid_x            = 2;
+  float       grid_y            = 3;
+  float       next_grid_x       = 4;
+  float       next_grid_y       = 5;
+  float       movement_progress = 6;
+  AMRStatusEnum status          = 7;
+  string      carrying_order_id = 8;
+  bool        amr_breakdown_active = 9;
+}
+
+message StationState {
+  string         station_id          = 1;
+  StationStateEnum state             = 2;
+  string         active_order_id     = 3;
+  float          processing_progress = 4;
+
+  double alpha_final       = 5;
+  double delamination_risk = 6;
+  double pinhole_risk      = 7;
+  double ecsa_ratio        = 8;
+  double damage_index      = 9;
+  double gdl_porosity      = 10;
+  double e_tangent_mpa     = 11;
+  double p_clamp_mpa       = 12;
+}
+
+message OrderState {
+  string order_id         = 1;
+  string current_location = 2;
+  string status           = 3;
+  float  progress         = 4;
+}
+
+message TelemetryFrame {
+  uint64 sequence_number             = 1;
+  double sim_time_s                  = 2;
+  int32  schema_epoch                = 3;
+  string active_org_schema           = 4;
+
+  repeated AMRState     amr_states     = 5;
+  repeated StationState station_states = 6;
+
+  repeated double thermo_state_vector  = 7 [packed = true];
+
+  double station5_stack_voltage_v       = 8;
+  double station5_current_density_a_cm2 = 9;
+  double station5_stack_temp_k          = 10;
+  double station5_stack_core_temp_k     = 11;
+  double station5_stack_skin_temp_k     = 12;
+  uint32 station5_failure_flags         = 13;
+
+  bool   station5_has_run_test          = 21;
+  bool   station5_last_test_passed      = 22;
+  string station5_last_tested_stack_id  = 23;
+  repeated double station5_last_measured_voltages = 24 [packed = true];
+  repeated double station5_last_current_densities = 25 [packed = true];
+
+  double h2_tank_pressure_bar           = 14;
+  double h2_tank_fill_fraction          = 15;
+  double chiller_temp_k                 = 16;
+  double compressor_power_kw            = 17;
+
+  uint32 dropped_telemetry_frame_count  = 18;
+  uint32 dropped_ner_count              = 19;
+  uint32 run_id                         = 20;
+
+  repeated OrderState order_states      = 26;
+  double energy_price                   = 27;
+}

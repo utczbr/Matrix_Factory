@@ -681,10 +681,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#inter-station-quality-degradation-propagation" class="md-nav__link">
+  <a href="#closed-loop-actuation-physical-inter-station-coupling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Inter-Station Quality Degradation Propagation
+        Closed-Loop Actuation &amp; Physical Inter-Station Coupling
       
     </span>
   </a>
@@ -1523,10 +1523,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#inter-station-quality-degradation-propagation" class="md-nav__link">
+  <a href="#closed-loop-actuation-physical-inter-station-coupling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Inter-Station Quality Degradation Propagation
+        Closed-Loop Actuation &amp; Physical Inter-Station Coupling
       
     </span>
   </a>
@@ -1559,24 +1559,24 @@
 
 
 <h1 id="physical-engine-overview-numba-bridge">Physical Engine Overview &amp; Numba Bridge</h1>
-<p>This document describes the high-performance physical simulation engine underpinning <strong>Matrix Factory Twin</strong>, detailing its Numba JIT compilation strategy, CoolProp equation-of-state coupling, and gRPC communication layer.</p>
+<p>This document describes the high-performance physical simulation engine underpinning <strong>Matrix Factory Twin</strong>, detailing its Numba JIT compilation strategy, CoolProp equation-of-state coupling, gRPC communication layer, and multi-station physical fidelity models.</p>
 <hr />
 <h2 id="technical-stack-acceleration-strategy">Technical Stack &amp; Acceleration Strategy</h2>
 <p>The physical engine is implemented in Python 3.11 with Numba JIT acceleration:</p>
 <ul>
 <li>
-<p><strong>Numba JIT Compilation (<code>@njit</code>):</strong> Converts Python numerical ODE/PDE solvers into machine code. Reported speedups are kernel-specific:</p>
+<p><strong>Numba JIT Compilation (<code>@njit</code>):</strong> Converts Python numerical ODE/PDE solvers into machine code:</p>
 <ul>
 <li>~10–100× for general JIT-compiled loops vs. pure Python (<code>_numba_ops_core_python.py</code>).</li>
 <li>~10–50× for <code>numba.prange</code>-parallelized interpolation kernels.</li>
-<li>~50–200× specifically for replacing runtime CoolProp calls with the pre-computed LUT layer described below (<code>optimization/lut_manager.py</code>).</li>
+<li>~50–200× specifically for replacing runtime CoolProp calls with the pre-computed LUT layer (<code>optimization/lut_manager.py</code>).</li>
 </ul>
 </li>
 <li>
-<p><strong>CoolProp Integration:</strong> Provides thermodynamic fluid property lookups via a bilinear-interpolated Lookup Table (LUT) layer (<code>optimization/lut_manager.py</code>) that falls back to live CoolProp calls for out-of-bounds queries. <code>core/constants.py::StandardConditions.CANONICAL_FLUID_ORDER</code> caches <strong>seven</strong> species: <code>H2, O2, N2, CO2, CH4, CO, H2O</code>. Of these, <strong>H₂, O₂, N₂, and H₂O are actively consumed by the Station 5 physics</strong> (humidified reactant activity via <code>real_gas_activity</code>).</p>
+<p><strong>CoolProp Integration:</strong> Provides thermodynamic fluid property lookups via a bilinear-interpolated Lookup Table (LUT) layer (<code>optimization/lut_manager.py</code>) caching seven species: <code>H2, O2, N2, CO2, CH4, CO, H2O</code>.</p>
 </li>
 <li>
-<p><strong>gRPC SimBridge IPC Interface:</strong> High-speed binary IPC channel using Protocol Buffers over TLS, allowing low-latency execution step requests from the Java JVM.</p>
+<p><strong>gRPC SimBridge IPC Interface:</strong> High-speed binary IPC channel using Protocol Buffers over TLS (<code>AdvanceTime</code>, <code>SimulateStationProcess</code>, <code>RunBatchTest</code>, <code>HealthCheck</code>).</p>
 </li>
 </ul>
 <hr />
@@ -1599,48 +1599,63 @@
 <tr>
 <td><strong>Station 1: Resin Cure</strong></td>
 <td>Chemical Kinetics &amp; Thermal</td>
-<td>Kamal–Sourour autocatalytic curing, Arrhenius rate constants</td>
+<td>Kamal–Sourour autocatalytic curing, Arrhenius rate constants (<code>t_press_k</code>, <code>dwell_time_s</code>)</td>
 <td><code>station1_mea_preparation.py</code></td>
 </tr>
 <tr>
 <td><strong>Station 2: Coating</strong></td>
 <td>Fluid Hydrodynamics</td>
-<td>Slot-die coating deviation model, ECSA degradation</td>
+<td>Slot-die coating deviation model, ECSA ratio calculation (<code>v_coat_m_s</code>, <code>mu_slurry_pa_s</code>)</td>
 <td><code>station2_catalyst_deposition.py</code></td>
 </tr>
 <tr>
 <td><strong>Station 3: Stamping</strong></td>
 <td>Continuum Mechanics &amp; Damage</td>
-<td>Archard tool wear, Normalized Cockcroft–Latham ductile damage (<span class="arithmatex">\(C_{\text{crit,NCL}}\)</span>)</td>
+<td>Archard tool wear, Cockcroft–Latham ductile damage (<span class="arithmatex">\(D_{\text{NCL}}\)</span>) (<code>press_force_kn</code>, <code>die_stroke_count</code>)</td>
 <td><code>station3_bipolar_plate_stamping.py</code></td>
 </tr>
 <tr>
 <td><strong>Station 4: Assembly</strong></td>
 <td>Solid Mechanics &amp; Contact</td>
-<td>VDI 2230 bolt torque friction, GDL compression &amp; Bruggeman porosity derating, U-shaped interfacial contact resistance</td>
-<td><code>station4_stack_clamping.py</code>, <code>microstructure.py</code></td>
+<td>VDI 2230 bolt torque friction, GDL compression &amp; Bruggeman porosity derating (<code>applied_torques_nm</code>, <code>friction_coefficients</code>)</td>
+<td><code>station4_stack_clamping.py</code></td>
 </tr>
 <tr>
 <td><strong>Station 5: PEMFC Test</strong></td>
 <td>Electrochemistry &amp; Transport</td>
-<td>Nernst potential, Butler–Volmer kinetics, Springer membrane hydration, flooded mass transport <span class="arithmatex">\(j_{\text{lim}}\)</span>, two-lump thermal model (Yonkist-validated)</td>
+<td>Nernst potential, Butler–Volmer ORR kinetics, dynamic Springer sorption hysteresis, cathode liquid saturation flooding, N-cell thermal discretization</td>
 <td><code>pemfc_model.py</code>, <code>membrane_hydration.py</code>, <code>stack_thermal_model.py</code></td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="inter-station-quality-degradation-propagation">Inter-Station Quality Degradation Propagation</h2>
-<p>Physical output states from upstream stations serve as boundary constraints for downstream manufacturing processes:</p>
+<h2 id="closed-loop-actuation-physical-inter-station-coupling">Closed-Loop Actuation &amp; Physical Inter-Station Coupling</h2>
+<p>Physical output states from upstream stations serve as boundary constraints for downstream processes and fuel cell performance sweeps:</p>
 <ol>
-<li><strong>Station 3 Ductile Micro-Cracks → Station 4 Clamping:</strong> Stamping springback and micro-cracks increase local contact stress non-uniformity during clamping.</li>
-<li><strong>Station 4 Clamping Pressure → Station 5 Polarization:</strong> Interfacial contact pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span> determines gas diffusion layer (GDL) contact resistance <span class="arithmatex">\(R_{\text{contact}}\)</span>, GDL bulk resistance <span class="arithmatex">\(R_{\text{gdl}}\)</span>, and bulk porosity <span class="arithmatex">\(\varepsilon_{\text{gdl}}\)</span>, all of which are folded directly into the Station 5 solver's effective internal resistance.</li>
+<li><strong>Station 1–4 Direct Mechanistic RPC (<code>SimulateStationProcess</code>)</strong>:</li>
+<li>Executes real JIT station kernels from Java <code>BaseStationArtifact</code> per order.</li>
+<li>
+<p>Closed-loop agent control adjusts setpoints (<code>adjustSetpoint</code>) dynamically based on recent defect rate tracking (<code>getRecentDefectRate</code>).</p>
+</li>
+<li>
+<p><strong>Dynamic Sorption Hysteresis (<code>membrane_hydration.py</code>)</strong>:</p>
+</li>
+<li>First-order relaxation dynamics: <span class="arithmatex">\(\tau_{\text{sorption}}=12\text{s}\)</span> (uptake), <span class="arithmatex">\(\tau_{\text{desorption}}=45\text{s}\)</span> (release).</li>
+<li>
+<p><span class="arithmatex">\(\lambda(t)\)</span> evolves dynamically during continuous simulation instead of assuming instantaneous equilibrium.</p>
+</li>
+<li>
+<p><strong>Two-Phase Liquid Water Transport &amp; Flooding (<code>pemfc_model.py</code>)</strong>:</p>
+</li>
+<li>Cathode GDL liquid water saturation <span class="arithmatex">\(s \in [0.0, 0.99]\)</span> with capacity <span class="arithmatex">\(s_{\text{cap}} = 0.35\)</span>.</li>
+<li>
+<p>Bruggeman gas diffusivity correction <span class="arithmatex">\(D_{\text{eff}} = D_0 \varepsilon (1-s)^{1.5}\)</span> dynamically derates limiting current <span class="arithmatex">\(j_{\text{lim}}\)</span>.</p>
+</li>
+<li>
+<p><strong>N-Cell Thermal Discretization (<code>stack_thermal_model.py</code>)</strong>:</p>
+</li>
+<li><code>StackThermalModelND</code> models a 1D chain of <span class="arithmatex">\(N\)</span> thermal nodes along the coolant flow path with Yonkist criterion validity checking.</li>
 </ol>
-<p>The inter-station coupling mechanism, implemented in <code>sim_bridge_server.py::RunBatchTest</code>, evaluates:</p>
-<div class="arithmatex">\[R_{\text{internal,eff}} = R_{\text{internal},0} + \Delta R_{\text{penalty}} + R_{\text{contact}}\!\left(P_{\text{clamp}}\right)\]</div>
-<p>where <span class="arithmatex">\(R_{\text{internal},0}\)</span> is a per-run baseline (default <span class="arithmatex">\(0.06\ \Omega\cdot\text{cm}^2\)</span>), <span class="arithmatex">\(\Delta R_{\text{penalty}}\)</span> is an accumulated defect-rate penalty tracked on the Java/agent side, and <span class="arithmatex">\(R_{\text{contact}}(\cdot)\)</span> is the Station 4 U-shaped contact-resistance model. Reactant activities <span class="arithmatex">\(a_{H_2}, a_{O_2}\)</span> are separately derated by an <code>activity_derate_fraction</code>, and the limiting current <span class="arithmatex">\(j_{\text{lim}}\)</span> by a <code>j_lim_derate_fraction</code>, both also sourced from upstream station outcomes. See the <a href="../station-5-pemfc/">Station 5 doc</a> for the full path.</p>
-<blockquote>
-<p><strong>Implementation note:</strong> <span class="arithmatex">\(R_{\text{gdl}}\)</span> (GDL bulk electrical resistance via the Bruggeman relation) is specified in the physical submodels but is not wired into <code>sim_bridge_server.py::RunBatchTest</code> because <code>t_comp</code> is missing from <code>BatchTestRequest</code> in <code>sim_bridge.proto</code>.</p>
-</blockquote>
 
 
 

@@ -15,22 +15,22 @@
 ```mermaid
 graph TD
     subgraph MAS ["Java Multi-Agent System (JaCaMo / Jason BDI)"]
-        SA["supervisor_agent.asl"] -->|"2-Phase Commit (Drain/Suspend)"| OH["order_holon.asl (1..5)"]
-        SA --> RH["resource_holon.asl (1..5)"]
+        SA["supervisor_agent.asl"] -->|"Closed-Loop Setpoints / 2PC"| RH["resource_holon.asl (1..5)"]
+        SA -->|"2-Phase Commit (Drain/Suspend)"| OH["order_holon.asl (1..5)"]
         OH -->|"Contract-Net Bidding"| RH
         OH -->|"Dispatch"| AMR["amr_agent.asl (1..2)"]
-        RH -->|"Execute Step"| CA["CArtAgO Artifacts"]
+        RH -->|"Execute Step / Setpoints"| CA["CArtAgO Artifacts"]
     end
 
     subgraph Sync ["Tick Engine & Interfaces"]
         MS["MainSimulator.java"] -->|"Lock-Stepped Tick Loop"| CA
-        DB["DatabaseArtifact.java"] -->|"Async Queue + WAL"| SQLite[("factory_history.db")]
-        WS["TelemetryHub.java"] -->|"HMAC WebSocket :8080"| Client["Live Dashboard"]
+        DB["DatabaseArtifact.java"] -->|"Async Queue + Defect Tracking"| SQLite[("factory_history.db")]
+        WS["TelemetryHub.java & TicketHttpServer"] -->|"HMAC WebSocket & Control API :8080/8081"| Client["Live Dashboard & Interventions"]
     end
 
     subgraph Physics ["Python Physical Engine"]
-        gRPC["SimBridge gRPC (:50051..50080)"] <-->|"StepReady / Telemetry"| MS
-        PEMFC["Stack Thermal & PEMFC Model"] --> LUT["Numba JIT & CoolProp EOS"]
+        gRPC["SimBridge gRPC (:50051..50080)"] <-->|"StepReady / SimulateStationProcess"| MS
+        PEMFC["Stack Thermal, Flooding & PEMFC Model"] --> LUT["Numba JIT & CoolProp EOS"]
     end
 ```
 
@@ -38,13 +38,15 @@ graph TD
 
 ## Key Features
 
-* **Hybrid BDI & First-Principles Physics**: Combines Jason/CArtAgO agent cognitive reasoning in Java 17 with Numba-accelerated PEMFC fuel cell electrochemistry, Springer membrane hydration ($\lambda \in [1, 14]$), real-gas fugacity EOS (CoolProp LUT), two-lump thermal capacitance, and cathode air BOP dynamics in Python.
-* **Upstream Manufacturing Process Models (Stations 1–4)**: Includes first-principles physical kernels for Station 1 (Kamal–Sourour resin cure kinetics), Station 2 (slot-die catalyst coating hydrodynamics & ECSA spatial ratio), Station 3 (316L bipolar plate stamping with Archard tool wear & Cockcroft-Latham $D_{\text{NCL}}$ damage), and Station 4 (VDI 2230 stack assembly bolt torque friction & clamping pressure).
-* **Manufacturing-to-Performance Multiphysics Coupling**: Connects upstream manufacturing signals ($P_{\text{clamp}}$, $\varepsilon_{\text{gdl}}$, ECSA ratio) directly into downstream Station 5 fuel cell polarization sweeps via Bruggeman effective medium conductivity, mass-transport limiting current derating ($j_{\text{lim}}$), and interfacial contact resistance ($R_{\text{contact},0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$).
+* **Hybrid BDI & First-Principles Physics**: Combines Jason/CArtAgO agent cognitive reasoning in Java 17 with Numba-accelerated PEMFC fuel cell electrochemistry, dynamic Springer membrane hydration ($\tau_{\text{sorption}}=12\text{s}, \tau_{\text{desorption}}=45\text{s}$), real-gas fugacity EOS (CoolProp LUT), two-phase cathode liquid water flooding ($s_{\text{cap}}=0.35$), $N$-cell 1D stack thermal discretization (`StackThermalModelND`), and cathode air BOP dynamics in Python.
+* **Upstream Manufacturing Process Models (Stations 1–4)**: Includes first-principles physical JIT kernels for Station 1 (Kamal–Sourour resin cure kinetics), Station 2 (slot-die catalyst coating hydrodynamics & ECSA spatial ratio), Station 3 (316L bipolar plate stamping with Archard tool wear & Cockcroft-Latham $D_{\text{NCL}}$ damage), and Station 4 (VDI 2230 stack assembly bolt torque friction & clamping pressure).
+* **Direct Mechanistic RPC & Closed-Loop Actuation**: Executes Station 1–4 physical kernels per order via the `SimulateStationProcess` gRPC RPC. Supervisor agents dynamically monitor defect drift (`getRecentDefectRate`) and issue closed-loop setpoint adjustments (`adjustSetpoint`).
+* **Manufacturing-to-Performance Multiphysics Coupling**: Connects upstream manufacturing signals ($P_{\text{clamp}}$, $\varepsilon_{\text{gdl}}$, ECSA ratio) directly into downstream Station 5 fuel cell polarization sweeps via Bruggeman effective medium conductivity, liquid-water concentration overpotential derating ($D_{\text{eff}}$), and interfacial contact resistance ($R_{\text{contact},0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$).
+* **Stochastic AMR Breakdown Model & Deterministic Seeding**: Simulates constant hazard rate MTBF breakdown events and repair downtimes, driven by independent `SplittableRandom` per-AMR seeds. Dispatch logic is fully breakdown-aware (`isFree`).
 * **Dynamic Control Schema Transitions**: Real-time Two-Phase Commit (Phase 0 Drain, Phase 1 Suspend) switching between PROSA (peer-negotiated) and ADACOR (hierarchical) upon energy price spikes.
 * **Deterministic Lock-Stepped Simulator (TMC)**: Replaces non-deterministic wall-clock sleeps (`Thread.sleep`) with a synchronous Next Event Request (NER) engine in `MainSimulator.java`.
 * **Single-JVM Fan-Out Monte Carlo Scale**: Orchestrates up to 30 parallel, fully isolated simulation runs inside a single JVM instance via source-level agent namespace rewriting.
-* **Live Web Telemetry Dashboard**: Real-time canvas telemetry visualization streaming at `ws://127.0.0.1:8080` with HMAC-signed ticket authentication (`http://127.0.0.1:8081/telemetry/ticket`).
+* **Live Web Telemetry & Fault-Injection Dashboard**: Real-time canvas telemetry visualization streaming at `ws://127.0.0.1:8080` with HMAC-signed ticket authentication (`http://127.0.0.1:8081/telemetry/ticket`) and live fault-injection controls (`/control/ticket` & `/control/action`).
 
 ---
 
@@ -57,7 +59,7 @@ All physical parameters in the digital twin are ground-truth calibrated against 
 | **Tool Tribology** | Non-linear Archard wear law ($K_{wear,PVD} = 3.50 \times 10^{-6}\text{ mm}^3/\text{N}\cdot\text{m}$, $K_{wear,Duplex} = 1.47 \times 10^{-10}\text{ mm}^3/\text{N}\cdot\text{m}$, $\gamma = 1.35$) | Fernandes et al. (2017) [`10.1016/j.surfcoat.2017.10.052`], Bitay et al. (2021) [`10.1007/s00170-024-13800-x`] |
 | **Foil Formability** | Cockcroft-Latham ductile fracture ($C_{crit,NCL} = 0.35$), Hollomon strain hardening ($K = 1280\text{ MPa}, n = 0.43$) | Modanloo et al. (2018) [`10.1007/s00170-018-2210-y`], Blandford et al. (2007) [`10.2172/918231`] |
 | **GDL Mechanics & ICR** | Kleemann non-linear tangent modulus ($E_0 = 2.80\text{ MPa}, K_s = 28.5$), Interfacial contact resistance ($R_{contact,0} = 4.20\text{ m}\Omega\cdot\text{cm}^2$) | Kleemann et al. (2009) [`10.1016/j.jpowsour.2008.09.026`], El-Kharouf, Mason et al. (2012) [`10.1016/j.jpowsour.2012.06.099`] |
-| **Electrochemistry & Transport**| Multi-parameter Butler-Volmer kinetics ($E_{act} = 68.5\text{ kJ/mol}$, $j_{0,ref} = 2.50 \times 10^{-8}\text{ A/cm}^2$), Springer hydration ($\lambda$) | Neyerlin et al. (2006) [`10.1149/1.2266294`], Gasteiger et al. (2005) [`10.1016/j.apcatb.2004.06.021`] |
+| **Electrochemistry & Transport**| Multi-parameter Butler-Volmer kinetics ($E_{act} = 68.5\text{ kJ/mol}$, $j_{0,ref} = 2.50 \times 10^{-8}\text{ A/cm}^2$), Springer dynamic sorption ($\tau=12\text{s}/45\text{s}$) | Neyerlin et al. (2006) [`10.1149/1.2266294`], Gasteiger et al. (2005) [`10.1016/j.apcatb.2004.06.021`] |
 
 ---
 
@@ -105,10 +107,10 @@ Start the Python physical daemon, then launch the Java MAS engine:
 ```
 
 ### 2. Running a Monte Carlo Experiment (PROSA vs. ADACOR)
-Execute a 15-replication Monte Carlo experiment comparing the PROSA baseline against ADACOR dynamic schema switching under energy price disturbances:
+Execute a multi-replication Monte Carlo experiment comparing the PROSA baseline against ADACOR dynamic schema switching under energy price disturbances:
 
 ```bash
-# Runs 15 PROSA + 15 ADACOR simulations and outputs analysis/results.csv
+# Runs PROSA + ADACOR simulations and outputs analysis/results.csv
 python3 experiments/run_prosa_vs_adacor.py
 ```
 
@@ -133,9 +135,9 @@ GRPC_SECURE_MODE=true .venv/bin/python3 -m physical_engine.sim_bridge_server --p
 GRPC_SECURE_MODE=true ./gradlew run --args="0 50051 --max-ticks=1000"
 ```
 
-### 5. Launching the Live Telemetry Web Dashboard
+### 5. Launching the Live Telemetry Web Dashboard & Interventions Panel
 
-Start the local HTTP server to view real-time AMR movements, station states, and thermal heatmaps in your browser:
+Start the local HTTP server to view real-time AMR movements, station states, thermal heatmaps, and live fault-injection controls:
 
 ```bash
 # 1. Start Python HTTP server in workspace root
@@ -147,13 +149,13 @@ python3 -m http.server 8000
 ### 6. Running Test Suites & Calibration Reports
 
 ```bash
-# Run Python physical engine test suite (78 pytest unit, property & integration tests)
+# Run Python physical engine test suite (71 pytest unit, property & integration tests)
 .venv/bin/pytest physical_engine/
 
 # Run Stations 1–4 Monte Carlo process calibration report (10,000 runs)
 PYTHONPATH=. .venv/bin/python3 physical_engine/scripts/calibrate_stamping_clamping.py
 
-# Run Java MAS integration test suite
+# Run Java MAS integration test suite (18 isolated JVM test classes)
 ./gradlew test
 ```
 
@@ -163,10 +165,10 @@ PYTHONPATH=. .venv/bin/python3 physical_engine/scripts/calibrate_stamping_clampi
 
 | Layer | Technologies & Frameworks | Minimum Version | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Multi-Agent System (MAS)** | Java, JaCaMo (Jason BDI, CArtAgO, MoISE), Gradle | Java 17+, Gradle 8.7+ | BDI agent reasoning, organizational roles, and Contract-Net negotiations. |
-| **Physical Engine** | Python, gRPC / Protobuf, Numba, NumPy, SciPy, CoolProp | Python 3.11+ | First-principles PEMFC electrochemistry, thermal models, and JIT sweeps. |
-| **Security & Interfaces** | OpenSSL TLS/mTLS, Tyrus WebSocket, HMAC SHA-256 | OpenSSL 1.1+ | Encrypted gRPC daemon channels and authenticated browser telemetry. |
-| **Persistence** | SQLite JDBC (WAL mode), `ArrayBlockingQueue` | SQLite 3+ | Thread-safe, lock-free historic event and process variation logging. |
+| **Multi-Agent System (MAS)** | Java, JaCaMo (Jason BDI, CArtAgO, MoISE), Gradle | Java 17+, Gradle 8.7+ | BDI agent reasoning, organizational roles, closed-loop setpoint control, and Contract-Net negotiations. |
+| **Physical Engine** | Python, gRPC / Protobuf, Numba, NumPy, SciPy, CoolProp | Python 3.11+ | First-principles PEMFC electrochemistry, dynamic sorption, liquid flooding, N-cell thermal discretization, and JIT sweeps. |
+| **Security & Interfaces** | OpenSSL TLS/mTLS, Tyrus WebSocket, HMAC SHA-256 | OpenSSL 1.1+ | Encrypted gRPC daemon channels, authenticated browser telemetry, and scoped control ticket authorization. |
+| **Persistence** | SQLite JDBC (WAL mode), `ArrayBlockingQueue` | SQLite 3+ | Thread-safe, lock-free historic event, defect rate, energy telemetry, and process variation logging. |
 | **Analysis & Reporting** | Pandas, SciPy (`shapiro`, `mannwhitneyu`), LaTeX | Python 3.11+ | Statistical hypothesis testing, confidence interval extraction, and manuscript builds. |
 
 ---

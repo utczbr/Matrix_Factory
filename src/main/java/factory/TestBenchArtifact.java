@@ -18,6 +18,8 @@ public class TestBenchArtifact extends Artifact {
     private final ConcurrentHashMap<String, java.util.concurrent.CountDownLatch> latches = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicBoolean> completedCalls = new ConcurrentHashMap<>();
 
+    private final ConcurrentHashMap<String, Double> setpoints = new ConcurrentHashMap<>();
+
     public volatile StationSummary currentSummary = StationSummary.IDLE;
     // Last RunBatchTest result — surfaced to telemetry (MainSimulator) instead
     // of being dropped after the CArtAgO operation returns. Deliberately
@@ -42,11 +44,21 @@ public class TestBenchArtifact extends Artifact {
         this.runId = runId;
         this.recipeStep = recipeStep;
         this.baseCost = baseCost;
+
+        setpoints.put("operating_temp_k", 350.0);
+        setpoints.put("inlet_pressure_h2_bar", 2.0);
+        setpoints.put("inlet_pressure_o2_bar", 2.0);
         
         defineObsProperty("my_recipe_step", recipeStep);
         defineObsProperty("current_processing_cost", baseCost);
 
         RunManager.getSimulator(runId).stationArtifacts.add(this);
+    }
+
+    @OPERATION
+    public void adjustSetpoint(String paramName, double value) {
+        setpoints.put(paramName, value);
+        log("Station " + stationId + ": Setpoint " + paramName + " adjusted to " + value);
     }
 
     @OPERATION
@@ -69,9 +81,9 @@ public class TestBenchArtifact extends Artifact {
         currentSummary = new StationSummary(StationStateEnum.STATION_BUSY_PROCESSING, stackId, 0.0f);
 
         int numCells = 100;
-        double tempK = 350.0;
-        double pH2Bar = 2.0;
-        double pO2Bar = 1.0 + Math.min(1.5, numCells * 0.01);
+        double tempK = setpoints.getOrDefault("operating_temp_k", 350.0);
+        double pH2Bar = setpoints.getOrDefault("inlet_pressure_h2_bar", 2.0);
+        double pO2Bar = setpoints.getOrDefault("inlet_pressure_o2_bar", 1.0 + Math.min(1.5, numCells * 0.01));
 
         // --- Manufacturing-quality bridge -------------------------------
         // Fetch this stack's cumulative quality profile (defects + process

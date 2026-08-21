@@ -18,6 +18,24 @@ public class BaseStationArtifact extends Artifact {
 
     private final java.util.concurrent.ConcurrentHashMap<String, Double> setpoints = new java.util.concurrent.ConcurrentHashMap<>();
 
+    public volatile double lastAlphaFinal = 0.0;
+    public volatile double lastDelaminationRisk = 0.0;
+    public volatile double lastPinholeRisk = 0.0;
+    public volatile double lastEcsaRatio = 1.0;
+    public volatile double lastDamageIndex = 0.0;
+    public volatile double lastGdlPorosity = 0.78;
+    public volatile double lastETangentMpa = 0.0;
+    public volatile double lastPClampMpa = 4.25;
+
+    private StationSummary buildSummary(StationStateEnum state, String activeOrderId, float progress) {
+        return new StationSummary(
+            state, activeOrderId, progress,
+            lastAlphaFinal, lastDelaminationRisk, lastPinholeRisk,
+            lastEcsaRatio, lastDamageIndex, lastGdlPorosity,
+            lastETangentMpa, lastPClampMpa
+        );
+    }
+
     @OPERATION
     void init(String stationId, int stationIndex, double tMean_s, double tStd_s, double defectRate, int runId, int recipeStep, double baseCost) {
         this.stationId = stationId;
@@ -52,6 +70,7 @@ public class BaseStationArtifact extends Artifact {
         defineObsProperty("my_recipe_step", recipeStep);
         defineObsProperty("current_processing_cost", baseCost);
 
+        currentSummary = buildSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
         RunManager.getSimulator(runId).stationArtifacts.add(this);
     }
 
@@ -67,7 +86,7 @@ public class BaseStationArtifact extends Artifact {
             failed("Station is not idle");
             return;
         }
-        currentSummary = new StationSummary(StationStateEnum.STATION_PROVISIONAL_LOCK, orderId, 0.0f);
+        currentSummary = buildSummary(StationStateEnum.STATION_PROVISIONAL_LOCK, orderId, 0.0f);
         result.set("claimed");
 
         String agentName = getOpUserName();
@@ -87,7 +106,7 @@ public class BaseStationArtifact extends Artifact {
             failed("Station not locked for this order");
             return;
         }
-        currentSummary = new StationSummary(StationStateEnum.STATION_BUSY_PROCESSING, orderId, 0.0f);
+        currentSummary = buildSummary(StationStateEnum.STATION_BUSY_PROCESSING, orderId, 0.0f);
 
         double tProc = tMean_s;
         boolean defect = false;
@@ -135,13 +154,22 @@ public class BaseStationArtifact extends Artifact {
                 if (response != null) {
                     tProc = response.getProcTimeS();
                     defect = response.getIsDefective();
-                    if ("S2".equals(stationId) || recipeStep == 2) {
+                    if ("S1".equals(stationId) || recipeStep == 1) {
+                        lastAlphaFinal = response.getAlphaFinal();
+                        lastDelaminationRisk = response.getDelaminationRisk();
+                        lastPinholeRisk = response.getPinholeRisk();
+                    } else if ("S2".equals(stationId) || recipeStep == 2) {
                         ecsaRatio = response.getEcsaRatio();
+                        lastEcsaRatio = ecsaRatio;
                     } else if ("S3".equals(stationId) || recipeStep == 3) {
                         damageIndex = response.getDamageIndex();
+                        lastDamageIndex = damageIndex;
                     } else if ("S4".equals(stationId) || recipeStep == 4) {
                         pClampMpa = response.getPClampMpa();
                         gdlPorosity = response.getGdlPorosity();
+                        lastPClampMpa = pClampMpa;
+                        lastGdlPorosity = gdlPorosity;
+                        lastETangentMpa = response.getETangentMpa();
                     }
                     callSuccess = true;
                 }
@@ -154,15 +182,26 @@ public class BaseStationArtifact extends Artifact {
             tProc = tMean_s + rng.nextGaussian() * tStd_s;
             tProc = Math.max(tMean_s * 0.1, Math.min(tProc, tMean_s * 3.0));
             defect = rng.nextDouble() < defectRate;
-            if ("S2".equals(stationId) || recipeStep == 2) {
+            if ("S1".equals(stationId) || recipeStep == 1) {
+                lastAlphaFinal = defect ? 0.70 : 0.95;
+                lastDelaminationRisk = defect ? 0.45 : 0.05;
+                lastPinholeRisk = defect ? 0.35 : 0.02;
+            } else if ("S2".equals(stationId) || recipeStep == 2) {
                 ecsaRatio = defect ? 0.65 : 1.0;
+                lastEcsaRatio = ecsaRatio;
             } else if ("S3".equals(stationId) || recipeStep == 3) {
                 damageIndex = defect ? 1.35 : 0.86;
+                lastDamageIndex = damageIndex;
             } else if ("S4".equals(stationId) || recipeStep == 4) {
                 pClampMpa = defect ? 2.50 : 4.22;
                 gdlPorosity = defect ? 0.82 : 0.772;
+                lastPClampMpa = pClampMpa;
+                lastGdlPorosity = gdlPorosity;
+                lastETangentMpa = defect ? 120.0 : 180.0;
             }
         }
+
+        currentSummary = buildSummary(StationStateEnum.STATION_BUSY_PROCESSING, orderId, 0.0f);
 
         String agentId = getOpUserName();
         double currentSimTime = RunManager.getSimulator(runId).getCurrentTime();
@@ -201,7 +240,7 @@ public class BaseStationArtifact extends Artifact {
             log("Station " + stationId + ": failed to log quality profile for " + orderId + ": " + e);
         }
 
-        currentSummary = new StationSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
+        currentSummary = buildSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
 
         result.set(defect ? "defect" : "ok");
     }
@@ -214,7 +253,7 @@ public class BaseStationArtifact extends Artifact {
 
     @OPERATION
     public void releaseStation(String orderId) {
-        currentSummary = StationSummary.IDLE;
+        currentSummary = buildSummary(StationStateEnum.STATION_IDLE, "", 0.0f);
         try {
             ArtifactId timerArtifactId = lookupArtifact("timer_artifact");
             execLinkedOp(timerArtifactId, "cancelTimer", orderId, getOpUserName());

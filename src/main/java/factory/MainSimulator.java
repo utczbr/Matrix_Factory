@@ -392,6 +392,14 @@ public class MainSimulator {
                         .setState(sum.state())
                         .setActiveOrderId(sum.activeOrderId())
                         .setProcessingProgress(sum.processingProgress())
+                        .setAlphaFinal(sum.alphaFinal())
+                        .setDelaminationRisk(sum.delaminationRisk())
+                        .setPinholeRisk(sum.pinholeRisk())
+                        .setEcsaRatio(sum.ecsaRatio())
+                        .setDamageIndex(sum.damageIndex())
+                        .setGdlPorosity(sum.gdlPorosity())
+                        .setETangentMpa(sum.eTangentMpa())
+                        .setPClampMpa(sum.pClampMpa())
                         .build());
             } else if (obj instanceof TestBenchArtifact tb) {
                 StationSummary sum = tb.currentSummary;
@@ -408,18 +416,15 @@ public class MainSimulator {
 
         List<Double> sv = ready.getStateVectorList();
 
-        // Fix #5: persist the raw series needed to compute energy_cost per
-        // run. Same cadence as this telemetry frame (no extra timer), reusing
-        // the compressor-power reading already parsed below and the current
-        // price already held by EnergyPriceArtifact. Guarded because both
-        // artifacts are only wired up after MainSimulator's artifact-ready
-        // wait loop clears (see the while() check earlier in startup).
-        if (energyPriceArtifact != null && databaseArtifact != null
-                && sv.size() > ProtoIndex.COMPRESSOR_POWER_KW) {
+        // Persist raw series and populate energy price
+        if (energyPriceArtifact != null) {
             double priceNow = ((EnergyPriceArtifact) energyPriceArtifact).getCurrentPrice();
-            double compressorPowerKwNow = sv.get(ProtoIndex.COMPRESSOR_POWER_KW);
-            ((DatabaseArtifact) databaseArtifact).recordEnergyTelemetry(
-                    runId, currentTime, priceNow, compressorPowerKwNow);
+            b.setEnergyPrice(priceNow);
+            if (databaseArtifact != null && sv.size() > ProtoIndex.COMPRESSOR_POWER_KW) {
+                double compressorPowerKwNow = sv.get(ProtoIndex.COMPRESSOR_POWER_KW);
+                ((DatabaseArtifact) databaseArtifact).recordEnergyTelemetry(
+                        runId, currentTime, priceNow, compressorPowerKwNow);
+            }
         }
         if (sv.size() >= ProtoIndex.VECTOR_LENGTH) {
             b.setStation5StackVoltageV(sv.get(ProtoIndex.STACK_VOLTAGE_V))
@@ -433,19 +438,12 @@ public class MainSimulator {
                     .setCompressorPowerKw(sv.get(ProtoIndex.COMPRESSOR_POWER_KW));
         }
 
-        // station5_failure_flags mirrors the last RunBatchTest result (doc6
-        // §3.1). This is sourced from the TestBenchArtifact directly, not
-        // parsed out of the AdvanceTime state vector, because
-        // STATION_DEFECT_DETECTED on tb.currentSummary is reset back to
-        // STATION_IDLE by releaseStation() almost immediately after being
-        // set (resource_holon.asl calls it right after processOrder
-        // returns, on both the pass and fail paths, so the station remains
-        // claimable for the next order) — these fields on TestBenchArtifact
-        // are the reliable channel; they are never touched by
-        // releaseStation(). (station5_current_density/voltage above ARE
-        // read from the AdvanceTime state vector — RunBatchTest mirrors its
-        // in-progress current/voltage into that same shared state under
-        // `_physics_step_lock` so a live test is visible in telemetry.)
+        // Station 5 standard sweep current densities x-axis
+        List<Double> fixedCurrentDensities = List.of(
+            0.05, 0.15, 0.25, 0.40, 0.55, 0.70, 0.85, 1.00, 1.15, 1.30, 1.40, 1.50
+        );
+        b.addAllStation5LastCurrentDensities(fixedCurrentDensities);
+
         for (Object obj : stationArtifacts) {
             if (obj instanceof TestBenchArtifact tb) {
                 b.setStation5FailureFlags(tb.lastFailureFlags)
@@ -454,6 +452,39 @@ public class MainSimulator {
                         .setStation5LastTestedStackId(tb.lastTestedStackId)
                         .addAllStation5LastMeasuredVoltages(tb.lastMeasuredVoltages);
                 break;
+            }
+        }
+
+        // Active order tracking
+        for (Object obj : stationArtifacts) {
+            String orderId = null;
+            String loc = "";
+            if (obj instanceof BaseStationArtifact sta) {
+                orderId = sta.currentSummary.activeOrderId();
+                loc = sta.stationId;
+            } else if (obj instanceof TestBenchArtifact tb) {
+                orderId = tb.currentSummary.activeOrderId();
+                loc = tb.stationId;
+            }
+            if (orderId != null && !orderId.trim().isEmpty()) {
+                b.addOrderStates(SimBridgeProto.OrderState.newBuilder()
+                    .setOrderId(orderId)
+                    .setCurrentLocation(loc)
+                    .setStatus("PROCESSING")
+                    .setProgress(0.5f)
+                    .build());
+            }
+        }
+        if (amrArtifact instanceof AMRArtifact amrArt && amrArt.currentPositions != null) {
+            for (AMRSnapshot snap : amrArt.currentPositions) {
+                if (snap != null && snap.carryingOrderId() != null && !snap.carryingOrderId().trim().isEmpty()) {
+                    b.addOrderStates(SimBridgeProto.OrderState.newBuilder()
+                        .setOrderId(snap.carryingOrderId())
+                        .setCurrentLocation(snap.amrId())
+                        .setStatus("IN_TRANSIT")
+                        .setProgress(snap.movementProgress())
+                        .build());
+                }
             }
         }
 

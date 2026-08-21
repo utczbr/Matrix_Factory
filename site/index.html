@@ -1580,35 +1580,38 @@
 <p><a href="https://zenodo.org/"><img alt="DOI" src="https://img.shields.io/badge/Zenodo-10.5281%2Fzenodo.1234567-blue.svg" /></a>
 <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
 <a href="https://github.com/utczbr/Matrix_Factory/actions"><img alt="Build Status" src="https://github.com/utczbr/Matrix_Factory/actions/workflows/ci.yml/badge.svg" /></a></p>
-<p>Welcome to the companion documentation site for <strong>Matrix Factory Twin</strong>, a hybrid multi-agent digital twin combining BDI cognitive reasoning (JaCaMo/Jason &amp; CArtAgO), Numba JIT-accelerated physical manufacturing models, lock-stepped discrete event synchronization, and dynamic control regime switching.</p>
+<p>Welcome to the companion documentation site for <strong>Matrix Factory Twin</strong>, a hybrid multi-agent digital twin combining BDI cognitive reasoning (JaCaMo/Jason &amp; CArtAgO), Numba JIT-accelerated physical manufacturing models, lock-stepped discrete event synchronization, dynamic control regime switching, closed-loop setpoint actuation, and real-time fault injection.</p>
 <hr />
 <h2 id="executive-abstract">Executive Abstract</h2>
-<p>The <strong>Matrix Factory Twin</strong> bridges high-level cognitive decision-making with multi-physics numerical solvers across hydrogen fuel-cell manufacturing lines (PEMFC stack production). By coupling Jason BDI agents operating under holonic control structures (PROSA and ADACOR) with Numba JIT physical solvers via a high-speed gRPC IPC bridge, the twin enables real-time simulation of resin curing, catalyst coating, bipolar plate stamping, stack clamping, and electro-chemical fuel cell testing.</p>
+<p>The <strong>Matrix Factory Twin</strong> bridges high-level cognitive decision-making with multi-physics numerical solvers across hydrogen fuel-cell manufacturing lines (PEMFC stack production). By coupling Jason BDI agents operating under holonic control structures (PROSA and ADACOR) with Numba JIT physical solvers via a high-speed gRPC IPC bridge, the twin enables real-time simulation of resin curing, catalyst coating, bipolar plate stamping, stack clamping, electro-chemical fuel cell testing, dynamic hydration hysteresis, two-phase cathode liquid flooding, and N-cell thermal discretization.</p>
 <pre class="mermaid"><code>graph TD
     subgraph Cognitive_Layer ["Cognitive Layer (JaCaMo / BDI MAS - Java)"]
-        SUP["Supervisor Agent (2PC Coordinator)"]
+        SUP["Supervisor Agent (2PC &amp; Closed-Loop Control)"]
         OH["Order Holons (Task Allocation)"]
-        RH["Resource Holons (Station Control)"]
-        AMR["AMR Fleet Agents"]
+        RH["Resource Holons (Station Control &amp; Setpoints)"]
+        AMR["AMR Fleet Agents (Breakdown-Aware)"]
     end
 
-    subgraph IPC_Bridge ["IPC Bridge (gRPC &amp; Shared Memory)"]
-        GRPC["SimBridge Service (Protobuf over mTLS)"]
+    subgraph IPC_Bridge ["IPC Bridge &amp; Control APIs"]
+        GRPC["SimBridge Service (Protobuf / SimulateStationProcess)"]
         TMC["Time Managed Component (Lock-Stepped NER)"]
+        AUTH["TicketHttpServer (Scoped HMAC /control/action)"]
     end
 
     subgraph Physical_Engine ["Physical Engine (Numba JIT Physics - Python)"]
-        S1["Station 1: Resin Cure (Kamal-Sourour)"]
+        S1["Station 1: Resin Cure"]
         S2["Station 2: Coating &amp; ECSA"]
-        S3["Station 3: Stamping (Archard &amp; Cockcroft-Latham)"]
-        S4["Station 4: Stack Clamping (VDI 2230)"]
-        S5["Station 5: PEMFC Electrochemistry"]
+        S3["Station 3: Stamping &amp; Damage"]
+        S4["Station 4: Clamping &amp; Contact Resistance"]
+        S5["Station 5: PEMFC, Hydration, Flooding &amp; N-Cell Thermal"]
     end
 
     SUP --&gt; OH
+    SUP --&gt; RH
     OH --&gt; RH
     RH --&gt; AMR
     RH --&gt; GRPC
+    AUTH --&gt; RH
     GRPC --&gt; TMC
     TMC --&gt; S1
     TMC --&gt; S2
@@ -1620,8 +1623,8 @@
 <p>Our documentation is structured according to the <strong>Diátaxis Documentation Framework</strong>:</p>
 <ol>
 <li><strong>Tutorials (Learning-oriented):</strong> Step-by-step onboarding in <a href="getting-started/quickstart/">Quickstart Guide</a> and <a href="getting-started/architecture-overview/">Architecture Overview</a>.</li>
-<li><strong>How-To Guides (Goal-oriented):</strong> Operational recipes for <a href="operations-and-dev/security-mtls/">mTLS Security</a>, <a href="operations-and-dev/monte-carlo-scale/">Monte Carlo Scaling</a>, and <a href="operations-and-dev/testing-calibration/">Testing &amp; Calibration</a>.</li>
-<li><strong>Reference (Information-oriented):</strong> Mathematical formulations for <a href="physical-engine/overview/">Physical Stations</a>, <a href="api-and-protocols/grpc-protobuf/">gRPC Protobuf Schemas</a>, <a href="api-and-protocols/websocket-telemetry/">WebSocket Telemetry</a>, and <a href="api-and-protocols/database-schema/">Database Schema</a>.</li>
+<li><strong>How-To Guides (Goal-oriented):</strong> Operational recipes for <a href="operations-and-dev/security-mtls/">mTLS Security &amp; Scoped Tickets</a>, <a href="operations-and-dev/monte-carlo-scale/">Monte Carlo Scaling</a>, and <a href="operations-and-dev/testing-calibration/">Testing &amp; Calibration</a>.</li>
+<li><strong>Reference (Information-oriented):</strong> Mathematical formulations for <a href="physical-engine/overview/">Physical Stations</a>, <a href="physical-engine/station-5-pemfc/">Station 5 PEMFC &amp; Flooding</a>, <a href="api-and-protocols/grpc-protobuf/">gRPC Protobuf Schemas</a>, <a href="api-and-protocols/websocket-telemetry/">WebSocket Telemetry &amp; Control API</a>, and <a href="api-and-protocols/database-schema/">Database Schema</a>.</li>
 <li><strong>Explanation (Understanding-oriented):</strong> Deep dives into <a href="architecture/c4-system-context/">C4 System Context</a>, <a href="architecture/time-sync-engine/">Lock-Stepped Time Sync</a>, and <a href="architecture/holonic-control/">PROSA vs. ADACOR 2PC Control Switching</a>.</li>
 </ol>
 <hr />

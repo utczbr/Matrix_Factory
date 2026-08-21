@@ -123,6 +123,10 @@ public final class TicketHttpServer {
                         sta.adjustSetpoint(paramName, value);
                         executed = true;
                         break;
+                    } else if (obj instanceof TestBenchArtifact tb && tb.stationId.equalsIgnoreCase(stationId)) {
+                        tb.adjustSetpoint(paramName, value);
+                        executed = true;
+                        break;
                     }
                 }
             } else if ("amr_breakdown".equalsIgnoreCase(type) && sim != null && amrId != null) {

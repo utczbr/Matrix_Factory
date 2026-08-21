@@ -13,6 +13,8 @@
             --text: #e8e8ea;
             --text-dim: #9aa0a8;
             --accent-amber: #f1c40f;
+            --accent-blue: #2563eb;
+            --accent-green: #2ecc71;
             --grid-line: #2a2e35;
         }
 
@@ -32,7 +34,7 @@
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             background: var(--panel);
             border: 1px solid var(--panel-border);
             border-radius: 8px;
@@ -42,17 +44,32 @@
             color: var(--text-dim);
         }
 
-        .hud-bar select {
+        .hud-bar select, .hud-bar input {
             background: #14161a;
             color: var(--text);
             border: 1px solid var(--panel-border);
             border-radius: 4px;
             padding: 4px 6px;
+            font-size: 12px;
         }
 
         .hud-bar strong { color: var(--text); }
 
-        /* Org-schema pill flashes amber for 400ms on any schema transition */
+        .aux-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: #181b20;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 6px 14px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .aux-bar item { display: inline-flex; gap: 4px; }
+        .aux-bar strong { color: var(--text); }
+
         #orgSchemaPill {
             margin-left: auto;
             padding: 4px 10px;
@@ -71,7 +88,7 @@
 
         .layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 320px;
+            grid-template-columns: minmax(0, 1fr) 340px;
             gap: 16px;
             align-items: start;
         }
@@ -80,9 +97,6 @@
             .layout { grid-template-columns: minmax(0, 1fr); }
         }
 
-        /* Responsive stage: keeps the grid's true aspect ratio and scales
-           to fill available width, from phone to ultrawide, without
-           distorting the factory floor geometry. */
         #stage {
             position: relative;
             width: 100%;
@@ -101,8 +115,6 @@
             display: block;
         }
 
-        /* thermalCanvas sits above the static grid but below the dynamic
-           sprite layer so heat coloring never occludes stations/AMRs */
         #thermalCanvas { opacity: 0.55; pointer-events: none; }
 
         .panel {
@@ -138,12 +150,64 @@
 
         .amr-list-item { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid var(--panel-border); font-size: 12px; }
         .amr-list-item:first-child { border-top: none; }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 6px;
+            background: #14161a;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #14161a;
+            padding: 8px;
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+        }
+        .ctrl-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .ctrl-row label { width: 70px; color: var(--text-dim); font-size: 12px; }
+        .ctrl-row select, .ctrl-row input {
+            flex: 1;
+            background: #1e2126;
+            color: var(--text);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 12px;
+        }
+        .ctrl-btn {
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .ctrl-btn.warn {
+            background: #991b1b;
+            color: #fecaca;
+            border: 1px solid #dc2626;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
 </head>
 
 <body>
-    <h1>Matrix Factory Telemetry</h1>
+    <h1>Matrix Factory Twin Telemetry Dashboard</h1>
 
     <div class="hud-bar">
         <label for="runSelect">Run:</label>
@@ -152,6 +216,15 @@
         <span>Dropped Frames: <strong id="droppedFrames">0</strong></span>
         <span>WS: <strong id="wsStatus" style="color:var(--text-dim);">—</strong></span>
         <span id="orgSchemaPill">SCHEMA: —</span>
+    </div>
+
+    <div class="aux-bar">
+        <span>H2 Press: <strong id="auxH2Press">—</strong> bar</span>
+        <span>H2 Fill: <strong id="auxH2Fill">—</strong>%</span>
+        <span>Chiller: <strong id="auxChiller">—</strong> K</span>
+        <span>Compressor: <strong id="auxCompressor">—</strong> kW</span>
+        <span>Energy Price: <strong id="auxEnergyPrice">—</strong> $/kWh</span>
+        <span>Dropped NERs: <strong id="auxDroppedNers">0</strong></span>
     </div>
 
     <div class="layout">
@@ -166,19 +239,47 @@
             <div id="stationTabs"></div>
             <div id="stationBody">Waiting for telemetry…</div>
 
-            <h3 style="margin-top:18px;">AMR Fleet</h3>
+            <h3 style="margin-top:16px;">AMR Fleet</h3>
             <div id="amrList">Waiting for telemetry…</div>
 
-            <h3 style="margin-top:18px;">Fault Injection</h3>
-            <div id="interventionControls" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-                <button id="btnSpikeS1" style="background:#854d0e; color:#fef08a; border:1px solid #ca8a04; border-radius:4px; padding:6px; font-weight:600; cursor:pointer;">Spike S1 Press Temp (+20K)</button>
-                <button id="btnBreakdownAMR1" style="background:#991b1b; color:#fecaca; border:1px solid #dc2626; border-radius:4px; padding:6px; font-weight:600; cursor:pointer;">Breakdown AMR-1 (60s)</button>
+            <h3 style="margin-top:16px;">Active Orders & Holons</h3>
+            <div id="orderTracker">No active orders</div>
+
+            <h3 style="margin-top:16px;">Intervention & Controls</h3>
+            <div id="interventionControls" class="ctrl-group">
+                <div class="ctrl-row">
+                    <label>Station:</label>
+                    <select id="ctrlStation">
+                        <option value="S1">S1 (Press)</option>
+                        <option value="S2">S2 (Coating)</option>
+                        <option value="S3">S3 (Stamping)</option>
+                        <option value="S4">S4 (Assembly)</option>
+                        <option value="S5">S5 (Test Bench)</option>
+                    </select>
+                </div>
+                <div class="ctrl-row">
+                    <label>Param:</label>
+                    <select id="ctrlParam"></select>
+                </div>
+                <div class="ctrl-row">
+                    <label>Value:</label>
+                    <input type="number" id="ctrlVal" step="any" placeholder="Enter value">
+                </div>
+                <button id="btnSendSetpoint" class="ctrl-btn">Apply Setpoint</button>
+                <hr style="border:none; border-top:1px solid var(--panel-border); margin:4px 0;">
+                <div class="ctrl-row">
+                    <label>AMR:</label>
+                    <select id="ctrlAmr">
+                        <option value="AMR-1">AMR-1</option>
+                        <option value="AMR-2">AMR-2</option>
+                    </select>
+                </div>
+                <button id="btnTriggerBreakdown" class="ctrl-btn warn">Inject Breakdown (60s)</button>
             </div>
         </div>
-
     </div>
 
-    <script src="dashboard.js?v=6"></script>
+    <script src="dashboard.js?v=7"></script>
 </body>
 
 </html>
