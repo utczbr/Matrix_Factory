@@ -190,6 +190,23 @@ message StationState {
   StationStateEnum state             = 2;
   string         active_order_id     = 3;
   float          processing_progress = 4;
+
+  // Station physical metrics snapshot
+  double alpha_final       = 5; // S1
+  double delamination_risk = 6; // S1
+  double pinhole_risk      = 7; // S1
+  double ecsa_ratio        = 8; // S2
+  double damage_index      = 9; // S3
+  double gdl_porosity      = 10; // S4
+  double e_tangent_mpa     = 11; // S4
+  double p_clamp_mpa       = 12; // S4
+}
+
+message OrderState {
+  string order_id         = 1;
+  string current_location = 2;
+  string status           = 3;
+  float  progress         = 4;
 }
 
 message TelemetryFrame {
@@ -217,6 +234,7 @@ message TelemetryFrame {
   bool   station5_last_test_passed      = 22;
   string station5_last_tested_stack_id  = 23;
   repeated double station5_last_measured_voltages = 24 [packed = true];
+  repeated double station5_last_current_densities = 25 [packed = true];
 
   double h2_tank_pressure_bar           = 14;
   double h2_tank_fill_fraction          = 15;
@@ -226,4 +244,7 @@ message TelemetryFrame {
   uint32 dropped_telemetry_frame_count  = 18;
   uint32 dropped_ner_count              = 19;
   uint32 run_id                         = 20;
+
+  repeated OrderState order_states      = 26;
+  double energy_price                   = 27;
 }

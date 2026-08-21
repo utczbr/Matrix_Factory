@@ -25,8 +25,8 @@ public final class TicketHttpServer {
         // Telemetry Ticket Endpoint
         server.createContext("/telemetry/ticket", exchange -> {
             Map<String, String> q = parseQuery(exchange.getRequestURI().getQuery());
-            int runId = Integer.parseInt(q.getOrDefault("run_id", "0"));
-            String clientToken = q.getOrDefault("client", UUID.randomUUID().toString());
+            int runId = Integer.parseInt(q.getOrDefault("run_id", q.getOrDefault("runId", "0")));
+            String clientToken = q.getOrDefault("client", q.getOrDefault("clientToken", UUID.randomUUID().toString()));
 
             String ticket = TicketIssuer.issue(clientToken, runId, "telemetry");
             byte[] body = ("{\"ticket\":\"" + ticket + "\"}").getBytes(StandardCharsets.UTF_8);
@@ -42,8 +42,8 @@ public final class TicketHttpServer {
         // Control Ticket Endpoint
         server.createContext("/control/ticket", exchange -> {
             Map<String, String> q = parseQuery(exchange.getRequestURI().getQuery());
-            int runId = Integer.parseInt(q.getOrDefault("run_id", "0"));
-            String clientToken = q.getOrDefault("client", UUID.randomUUID().toString());
+            int runId = Integer.parseInt(q.getOrDefault("run_id", q.getOrDefault("runId", "0")));
+            String clientToken = q.getOrDefault("client", q.getOrDefault("clientToken", UUID.randomUUID().toString()));
 
             String ticket = TicketIssuer.issue(clientToken, runId, "control");
             byte[] body = ("{\"ticket\":\"" + ticket + "\"}").getBytes(StandardCharsets.UTF_8);

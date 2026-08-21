@@ -9,18 +9,18 @@ This document details the control theory behind **PROSA** and **ADACOR** holonic
 Matrix Factory Twin supports dual control paradigms for industrial manufacturing lines:
 
 1. **PROSA (Product-Resource-Order-Staff Architecture):**
-   - **Characteristics:** Hierarchical, predictable, optimized for steady-state throughput under nominal energy prices.
-   - **Structure:** Order Holons delegate tasks down to Resource Holons strictly following static schedule trees created by Staff Holons.
+   - **Characteristics:** Heterarchical, peer-negotiated, decentralized scheduling via flat Contract-Net bidding.
+   - **Structure:** Order Holons and Resource Holons negotiate directly as peers without centralized supervisor authority links.
 
 2. **ADACOR (Adaptive Holonic Control Architecture):**
-   - **Characteristics:** Heterarchical, decentralized, dynamically reconfigurable during energy price spikes, machine breakdowns, or buffer saturation.
-   - **Structure:** Resource Holons gain autonomous decision authority, directly negotiating with Order Holons using local Contract-Net protocols.
+   - **Characteristics:** Hierarchical, supervisor-directed, structured coordination during steady-state or adaptive supervisor throttling during energy price spikes.
+   - **Structure:** Supervisor maintains explicit authority links over Resource Holons and Order Holons to regulate admission and dispatching.
 
 ---
 
 ## Two-Phase Commit (2PC) Transition Protocol
 
-When external triggers occur (e.g., energy price exceeds threshold $P_{\text{grid}} > \$0.25/\text{kWh}$), the `supervisor_agent` coordinates a seamless transition from PROSA to ADACOR without message loss or state corruption:
+When external triggers occur (e.g., energy price exceeds threshold $P_{\text{grid}} > 150.0\text{ EUR/MWh}$ with $10\%$ hysteresis reverting at $135.0\text{ EUR/MWh}$), the `supervisor_agent` coordinates a seamless transition from PROSA to ADACOR without message loss or state corruption:
 
 ```mermaid
 sequenceDiagram
@@ -48,7 +48,7 @@ sequenceDiagram
         Sup->>RH: Broadcast COMMIT_SWITCH(ADACOR_MODE)
     end
 
-    Note over OH, RH: Resuming execution under heterarchical ADACOR rules
+    Note over OH, RH: Resuming execution under hierarchical ADACOR rules
 ```
 
 ---

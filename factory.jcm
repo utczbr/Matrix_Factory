@@ -5,7 +5,8 @@ mas factory_twin {
                factory_ws.energy_price,
                factory_ws.amr_artifact,
                factory_ws.utility_system,
-               factory_ws.timer_artifact
+               factory_ws.timer_artifact,
+               factory_ws.database
     }
 
     // Five concurrent Order Holons for PROSA concurrency testing.
@@ -15,7 +16,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id(0)
                  order_holon_id("order_1")
     }
@@ -24,7 +25,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id(0)
                  order_holon_id("order_2")
     }
@@ -33,7 +34,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id(0)
                  order_holon_id("order_3") 
     }
@@ -42,7 +43,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id(0)
                  order_holon_id("order_4") 
     }
@@ -51,7 +52,7 @@ mas factory_twin {
                factory_ws.base_station_3, factory_ws.base_station_4,
                factory_ws.test_bench,     factory_ws.amr_artifact,
                factory_ws.timer_artifact, factory_ws.supervisor_artifact,
-               factory_ws.utility_system
+               factory_ws.utility_system, factory_ws.database
         beliefs: run_id(0)
                  order_holon_id("order_5") 
     }
@@ -94,14 +95,14 @@ mas factory_twin {
 
     workspace factory_ws {
         artifact base_station_1  : factory.BaseStationArtifact("S1", 1, 5.0,  5.0,  0.005, 0, 1, 10.0)
-        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 12.0, 15.0, 0.012, 0, 1, 15.0)
-        artifact base_station_3  : factory.BaseStationArtifact("S3", 3, 3.0,  2.0,  0.002, 0, 2, 10.0)
-        artifact base_station_4  : factory.BaseStationArtifact("S4", 4, 24.0, 30.0, 0.008, 0, 2, 20.0)
-        artifact test_bench      : factory.TestBenchArtifact("S5", 0, 3, 10.0)
+        artifact base_station_2  : factory.BaseStationArtifact("S2", 2, 12.0, 15.0, 0.012, 0, 2, 15.0)
+        artifact base_station_3  : factory.BaseStationArtifact("S3", 3, 3.0,  2.0,  0.002, 0, 3, 10.0)
+        artifact base_station_4  : factory.BaseStationArtifact("S4", 4, 24.0, 30.0, 0.008, 0, 4, 20.0)
+        artifact test_bench      : factory.TestBenchArtifact("S5", 0, 5, 10.0)
         artifact amr_artifact    : factory.AMRArtifact(20, 12, 2, 0)
         artifact utility_system  : factory.UtilitySystemArtifact(0)
         artifact timer_artifact  : factory.TimerArtifact(0)
-        artifact energy_price    : factory.EnergyPriceArtifact("price_series.csv", 0)
+        artifact energy_price    : factory.EnergyPriceArtifact("price_series_spike_test.csv", 0)
         artifact database        : factory.DatabaseArtifact("factory_history.db", 0)
         artifact telemetry       : factory.TelemetryArtifact(8080, 0)
         artifact supervisor_artifact : factory.SupervisorArtifact(0)   // Phase 3 addition

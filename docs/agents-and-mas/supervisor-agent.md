@@ -32,15 +32,13 @@ The supervisor periodically queries recent defect rates across Stations 1–4 vi
 
 ```jason
 /* Initial Beliefs */
-control_mode("prosa").
-energy_price_threshold(0.25). // $/kWh
-drain_phase_completed(0).
-active_holons(0).
+active_schema(prosa).
+adacor_enabled(true).
+suspended_holons([]).
 
 /* Dynamic Belief Rules */
-energy_spike_detected :- energy_price(P) & energy_price_threshold(T) & P > T.
-prosa_mode_active     :- control_mode("prosa").
-adacor_mode_active    :- control_mode("adacor").
+prosa_mode_active     :- active_schema(prosa).
+adacor_mode_active    :- active_schema(adacor).
 ```
 
 ---
@@ -49,10 +47,16 @@ adacor_mode_active    :- control_mode("adacor").
 
 ### 1. Triggering Control Regime Transition
 
+When `EnergyPriceArtifact` detects a price exceeding $150.0\text{ EUR/MWh}$, it signals `+energy_price_spike(Price)`:
+
 ```jason
-+energy_price(P) : energy_spike_detected & prosa_mode_active
-   <- .print("Energy price spike detected (", P, " $/kWh). Initiating 2PC switch to ADACOR.");
-      !initiate_2pc_switch("adacor").
++energy_price_spike(Price)
+  : active_schema(prosa) & not pending_transition(_, _) & adacor_enabled(true)
+  <- .print("Energy spike: ", Price, " EUR/MWh — initiating ADACOR transition");
+     getSimTime(SimT);
+     initiateTransition("adacor", SimT, ReservedEpoch);
+     +pending_transition(adacor, ReservedEpoch);
+     !run_phase0.
 
 +!initiate_2pc_switch(TargetMode)
    <- .broadcast(achieve, prepare_drain);

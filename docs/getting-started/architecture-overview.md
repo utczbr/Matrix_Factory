@@ -25,7 +25,7 @@ graph LR
 
 1. **Cognitive Layer (Java / JaCaMo):**
    - **Jason BDI Reasoning:** Agents reason over beliefs, desires, and plans.
-   - **Holonic Control Architecture:** Dynamic switching between hierarchical PROSA (Product-Resource-Order-Staff Architecture) and heterarchical ADACOR (Adaptive Holonic Control Architecture).
+   - **Holonic Control Architecture:** Dynamic switching between heterarchical PROSA (peer-negotiated) and hierarchical ADACOR (supervisor-directed Adaptive Holonic Control Architecture).
    - **CArtAgO Artifacts:** Enforces environment encapsulation, SQLite persistence, and WebSocket telemetry broadcasting.
 
 2. **Physical Layer (Python / Numba JIT):**

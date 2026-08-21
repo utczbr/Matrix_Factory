@@ -128,6 +128,14 @@ public class AMRArtifact extends Artifact {
 
         this.fleetRng = new java.util.SplittableRandom(("amr-fleet-" + runId).hashCode() ^ runId);
 
+        String envMtbf = System.getProperty("AMR_MTBF_SECONDS", System.getenv("AMR_MTBF_SECONDS"));
+        if (envMtbf != null && !envMtbf.isBlank()) {
+            try {
+                this.mtbfSeconds = Double.parseDouble(envMtbf);
+                log("AMR fleet MTBF loaded from environment/system property: " + this.mtbfSeconds + "s");
+            } catch (NumberFormatException ignored) {}
+        }
+
         fleet = new AMRSim[count];
         for (int i = 0; i < count; i++) {
             AMRSim a = new AMRSim();

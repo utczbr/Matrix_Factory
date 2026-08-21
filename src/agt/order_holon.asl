@@ -43,7 +43,7 @@
      .concat("ORD-", Me, "-", R, OrderId);
      +my_order_id(OrderId);
      +order_random(OrderId, R);
-     +recipe_remaining(OrderId, [2,3]);          // NEW — steps left after step 1
+     +recipe_remaining(OrderId, [2,3,4,5]);          // Sequential steps after step 1
      +current_location(OrderId, start);
      .print("Spawning order: ", OrderId);
      recordEvent(OrderId, "SUBMITTED")[artifact_name("database"), wsp("factory_ws")];
