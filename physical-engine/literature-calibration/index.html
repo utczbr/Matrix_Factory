@@ -1825,7 +1825,7 @@
 <ol>
 <li><strong>Station-Level Independent Optimization:</strong> Fitting JIT physics kernel outputs against target defect-rate/operating-range specifications using numerical sanity check functions (<code>run_calibration_sanity_checks()</code>), present in each station module.</li>
 <li><strong>Cross-Station Monte Carlo Verification:</strong> <code>physical_engine/scripts/calibrate_stamping_clamping.py</code> runs 10,000-iteration Monte Carlo sweeps for Stations 1–4, checking that nominal conditions stay non-defective and that injected process noise reproduces target defect rates (Station 3 targets 0.20% defect rate, Station 4 targets 0.80%).</li>
-<li><strong>Cross-Station Propagation Bounds:</strong> Verifying that outputs from upstream stations (e.g., Station 3 micro-cracks or Station 4 clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span>) fall within valid physical operational envelopes before entering downstream Station 5 polarization solvers, via the coupling equation documented in <a href="../station-5-pemfc/#6-manufacturing-to-performance-coupling">Station 5 §6</a>.</li>
+<li><strong>Cross-Station Propagation Bounds:</strong> Verifying that outputs from upstream stations (e.g., Station 3 micro-cracks or Station 4 clamping pressure <span class="arithmatex">\(P_{\text{clamp}}\)</span>) fall within valid physical operational envelopes before entering downstream Station 5 polarization solvers, via the coupling equation documented in <a href="../station-5-pemfc/">Station 5</a>.</li>
 </ol>
 
 

@@ -1267,10 +1267,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-openssl-certificate-generation" class="md-nav__link">
+  <a href="#production-fail-closed-security-guard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 1: OpenSSL Certificate Generation
+        Production Fail-Closed Security Guard
       
     </span>
   </a>
@@ -1278,10 +1278,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-enabling-secure-mode-in-python-daemon" class="md-nav__link">
+  <a href="#scoped-ticket-authentication-ticketissuerjava" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 2: Enabling Secure Mode in Python Daemon
+        Scoped Ticket Authentication (TicketIssuer.java)
       
     </span>
   </a>
@@ -1289,10 +1289,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-enabling-secure-mode-in-java-mas" class="md-nav__link">
+  <a href="#step-1-automated-certificate-provisioning" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 3: Enabling Secure Mode in Java MAS
+        Step 1: Automated Certificate Provisioning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-running-secure-daemons-jvm-instances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Running Secure Daemons &amp; JVM Instances
       
     </span>
   </a>
@@ -1523,10 +1534,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-openssl-certificate-generation" class="md-nav__link">
+  <a href="#production-fail-closed-security-guard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 1: OpenSSL Certificate Generation
+        Production Fail-Closed Security Guard
       
     </span>
   </a>
@@ -1534,10 +1545,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-enabling-secure-mode-in-python-daemon" class="md-nav__link">
+  <a href="#scoped-ticket-authentication-ticketissuerjava" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 2: Enabling Secure Mode in Python Daemon
+        Scoped Ticket Authentication (TicketIssuer.java)
       
     </span>
   </a>
@@ -1545,10 +1556,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-enabling-secure-mode-in-java-mas" class="md-nav__link">
+  <a href="#step-1-automated-certificate-provisioning" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step 3: Enabling Secure Mode in Java MAS
+        Step 1: Automated Certificate Provisioning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-running-secure-daemons-jvm-instances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Running Secure Daemons &amp; JVM Instances
       
     </span>
   </a>
@@ -1581,61 +1603,57 @@
 
 
 <h1 id="security-mtls-configuration-how-to-guide">Security &amp; mTLS Configuration (How-To Guide)</h1>
-<p>This how-to guide explains how to generate 2048-bit RSA certificates using OpenSSL and enable <strong>mutual TLS (mTLS)</strong> across gRPC channels between the Java JVM and Python physical daemon.</p>
+<p>This guide details certificate generation, <strong>mutual TLS (mTLS)</strong> across gRPC daemon channels, production fail-closed security guards, and HMAC ticket scope claims (<code>"telemetry"</code> vs <code>"control"</code>).</p>
 <hr />
 <h2 id="security-overview">Security Overview</h2>
-<p>In production or distributed multi-node deployments, the IPC communication between the Java cognitive layer and Python physical solvers must be encrypted and authenticated to prevent unauthorized command injection or state tampering.</p>
+<p>IPC communication between the Java JVM and Python physical solvers is encrypted and authenticated via mTLS. In addition, HTTP telemetry and control endpoints enforce HMAC SHA-256 signed ticket tokens.</p>
 <pre class="mermaid"><code>graph LR
-    JVM["Java CArtAgO SimBridge (Client Certificate)"] ==&gt;|TLS 1.3 mTLS (Encrypted gRPC)| DAEMON["Python SimBridge Daemon (Server Certificate)"]</code></pre>
+    JVM["Java CArtAgO SimBridge (Client Certificate)"] ==&gt;|TLS 1.3 mTLS (Encrypted gRPC)| DAEMON["Python SimBridge Daemon (Server Certificate)"]
+    DASH["Dashboard Frontend"] --&gt;|HMAC Ticket (scope="control")| HTTP["TicketHttpServer (Port 8081)"]</code></pre>
 <hr />
-<h2 id="step-1-openssl-certificate-generation">Step 1: OpenSSL Certificate Generation</h2>
-<p>Run OpenSSL commands to generate CA, Server, and Client certificates:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>certs
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>certs
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 1. Generate Root Certificate Authority (CA)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>openssl<span class="w"> </span>req<span class="w"> </span>-x509<span class="w"> </span>-newkey<span class="w"> </span>rsa:2048<span class="w"> </span>-nodes<span class="w"> </span>-days<span class="w"> </span><span class="m">3650</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-keyout<span class="w"> </span>ca.key<span class="w"> </span>-out<span class="w"> </span>ca.crt<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>-subj<span class="w"> </span><span class="s2">&quot;/C=US/ST=State/L=City/O=MatrixFactory/CN=MatrixFactoryRootCA&quot;</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># 2. Generate Server Key &amp; CSR (Python Daemon)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>openssl<span class="w"> </span>req<span class="w"> </span>-newkey<span class="w"> </span>rsa:2048<span class="w"> </span>-nodes<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>-keyout<span class="w"> </span>server.key<span class="w"> </span>-out<span class="w"> </span>server.csr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>-subj<span class="w"> </span><span class="s2">&quot;/C=US/ST=State/L=City/O=MatrixFactory/CN=localhost&quot;</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Sign Server Certificate with Root CA</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-req<span class="w"> </span>-in<span class="w"> </span>server.csr<span class="w"> </span>-days<span class="w"> </span><span class="m">365</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span>-CA<span class="w"> </span>ca.crt<span class="w"> </span>-CAkey<span class="w"> </span>ca.key<span class="w"> </span>-CAcreateserial<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span>-out<span class="w"> </span>server.crt
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># 3. Generate Client Key &amp; CSR (Java JVM)</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>openssl<span class="w"> </span>req<span class="w"> </span>-newkey<span class="w"> </span>rsa:2048<span class="w"> </span>-nodes<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span>-keyout<span class="w"> </span>client.key<span class="w"> </span>-out<span class="w"> </span>client.csr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span>-subj<span class="w"> </span><span class="s2">&quot;/C=US/ST=State/L=City/O=MatrixFactory/CN=JavaMASClient&quot;</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="c1"># Sign Client Certificate with Root CA</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-req<span class="w"> </span>-in<span class="w"> </span>client.csr<span class="w"> </span>-days<span class="w"> </span><span class="m">365</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">  </span>-CA<span class="w"> </span>ca.crt<span class="w"> </span>-CAkey<span class="w"> </span>ca.key<span class="w"> </span>-CAcreateserial<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span>-out<span class="w"> </span>client.crt
+<h2 id="production-fail-closed-security-guard">Production Fail-Closed Security Guard</h2>
+<p><code>MainSimulator.java</code> enforces a fail-closed guard when running in production environments (<code>MATRIX_FACTORY_ENV=production</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="s">"production"</span><span class="p">.</span><span class="na">equalsIgnoreCase</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"MATRIX_FACTORY_ENV"</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="s">"true"</span><span class="p">.</span><span class="na">equalsIgnoreCase</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"GRPC_SECURE_MODE"</span><span class="p">))</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">        </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="s">"true"</span><span class="p">.</span><span class="na">equalsIgnoreCase</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"TELEMETRY_REQUIRE_TICKET"</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalStateException</span><span class="p">(</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">            </span><span class="s">"Refusing to start: GRPC_SECURE_MODE and TELEMETRY_REQUIRE_TICKET "</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="o">+</span><span class="w"> </span><span class="s">"must both be true when MATRIX_FACTORY_ENV=production"</span><span class="p">);</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
 </code></pre></div>
+<p>If launched under production settings without active TLS or ticket security, the JVM throws an <code>IllegalStateException</code> immediately at startup.</p>
 <hr />
-<h2 id="step-2-enabling-secure-mode-in-python-daemon">Step 2: Enabling Secure Mode in Python Daemon</h2>
-<p>Set the environment variables pointing to your certificate directory (<code>GRPC_CERT_DIR</code> defaults to <code>certs</code> and expects <code>ca.crt</code>, <code>server.crt</code>, <code>server.key</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GRPC_SECURE_MODE</span><span class="o">=</span><span class="nb">true</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GRPC_CERT_DIR</span><span class="o">=</span>certs
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>python3<span class="w"> </span>physical_engine/sim_bridge_server.py<span class="w"> </span>--port<span class="w"> </span><span class="m">50051</span><span class="w"> </span>--run-id<span class="w"> </span><span class="m">0</span>
+<h2 id="scoped-ticket-authentication-ticketissuerjava">Scoped Ticket Authentication (<code>TicketIssuer.java</code>)</h2>
+<p>Tickets carry explicit scope claims to prevent token replay across different security boundaries:</p>
+<ul>
+<li><strong>Telemetry Tickets</strong>: Issued via <code>/telemetry/ticket?run_id=N</code> with payload claim <code>scope="telemetry"</code>.</li>
+<li><strong>Control Tickets</strong>: Issued via <code>/control/ticket?run_id=N</code> with payload claim <code>scope="control"</code>.</li>
+</ul>
+<p>Attempts to invoke <code>/control/action</code> endpoints with a telemetry-scoped ticket are rejected with <code>403 Forbidden</code>.</p>
+<hr />
+<h2 id="step-1-automated-certificate-provisioning">Step 1: Automated Certificate Provisioning</h2>
+<p><code>launch_phase4.sh</code> defaults to secure mode (<code>GRPC_SECURE_MODE:=true</code>, <code>TELEMETRY_REQUIRE_TICKET:=true</code>) and automatically executes <code>scripts/generate_certs.sh</code> on first run if certificate directories are absent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bash<span class="w"> </span>scripts/generate_certs.sh<span class="w"> </span>certs/
 </code></pre></div>
+<p>This provisions 2048-bit RSA keys and certificates:
+- <code>ca.key</code>, <code>ca.crt</code>: Root Certificate Authority.
+- <code>server.key</code>, <code>server.crt</code>: Python gRPC Server certificate.
+- <code>client.key</code>, <code>client.crt</code>: Java JVM gRPC Client certificate.</p>
 <hr />
-<h2 id="step-3-enabling-secure-mode-in-java-mas">Step 3: Enabling Secure Mode in Java MAS</h2>
-<p>Set the security environment variables (<code>GRPC_CERT_DIR</code> expects <code>ca.crt</code>, <code>client.crt</code>, <code>client.key</code>):</p>
+<h2 id="step-2-running-secure-daemons-jvm-instances">Step 2: Running Secure Daemons &amp; JVM Instances</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GRPC_SECURE_MODE</span><span class="o">=</span><span class="nb">true</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GRPC_CERT_DIR</span><span class="o">=</span>certs
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>./gradlew<span class="w"> </span>run<span class="w"> </span>--args<span class="o">=</span><span class="s2">&quot;0 50051 --max-ticks=1000&quot;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">TELEMETRY_REQUIRE_TICKET</span><span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GRPC_CERT_DIR</span><span class="o">=</span>certs
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># 1. Start Python physical daemon in secure mTLS mode</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>python3<span class="w"> </span>physical_engine/sim_bridge_server.py<span class="w"> </span>--port<span class="w"> </span><span class="m">50051</span><span class="w"> </span>--run-id<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># 2. Start Java MAS in secure mTLS mode</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>./gradlew<span class="w"> </span>run<span class="w"> </span>--args<span class="o">=</span><span class="s2">"0 50051 --max-ticks=1000"</span>
 </code></pre></div>
 <p>Verification test suite:
-* Test Script: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/physical_engine/factory_simulation/test_grpc_security.py"><code>physical_engine/factory_simulation/test_grpc_security.py</code></a></p>
+* Test Script: <a href="file:///home/stuart/Documentos/matrix_factory_twin/physical_engine/factory_simulation/test_grpc_security.py"><code>physical_engine/factory_simulation/test_grpc_security.py</code></a></p>
 
 
 

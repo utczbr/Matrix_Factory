@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#supervisor-agent-2pc-coordinator-reference" class="md-skip">
+        <a href="#supervisor-agent-closed-loop-control-coordinator-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -953,6 +953,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#closed-loop-station-defect-monitoring-setpoint-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Closed-Loop Station Defect Monitoring &amp; Setpoint Control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#belief-rules-initial-state" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1551,6 +1562,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#closed-loop-station-defect-monitoring-setpoint-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Closed-Loop Station Defect Monitoring &amp; Setpoint Control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#belief-rules-initial-state" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1636,57 +1658,70 @@
   
 
 
-<h1 id="supervisor-agent-2pc-coordinator-reference">Supervisor Agent &amp; 2PC Coordinator (Reference)</h1>
+<h1 id="supervisor-agent-closed-loop-control-coordinator-reference">Supervisor Agent &amp; Closed-Loop Control Coordinator (Reference)</h1>
 <p>This document presents belief structures, plan rules, and state machine specifications for <code>supervisor_agent.asl</code>.</p>
 <hr />
 <h2 id="agent-overview">Agent Overview</h2>
-<p>The <code>supervisor_agent</code> acts as the central coordinator in Matrix Factory Twin. It monitors overall plant performance, grid energy spot prices, buffer capacities, and coordinates the Two-Phase Commit (2PC) protocol during control regime switching (PROSA <span class="arithmatex">\(\leftrightarrow\)</span> ADACOR).</p>
+<p>The <code>supervisor_agent</code> acts as the central coordinator in Matrix Factory Twin. It monitors overall plant performance, grid energy spot prices, buffer capacities, closed-loop station defect drift rates, and coordinates the Two-Phase Commit (2PC) protocol during control regime switching (PROSA <span class="arithmatex">\(\leftrightarrow\)</span> ADACOR).</p>
+<hr />
+<h2 id="closed-loop-station-defect-monitoring-setpoint-control">Closed-Loop Station Defect Monitoring &amp; Setpoint Control</h2>
+<p>The supervisor periodically queries recent defect rates across Stations 1–4 via <code>DatabaseArtifact.getRecentDefectRate(StationId, WindowSize, Rate)</code> and issues corrective setpoint adjustments to resource holons when drift exceeds quality thresholds:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+!monitor_defect_drift
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  : true
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  &lt;- for ( .member(Station, ["S1","S2","S3","S4"]) ) {
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        getRecentDefectRate(Station, 20, Rate);
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        if (Rate &gt; 0.30) {
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            compute_corrective_setpoint(Station, Param, Value);
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            .send(Station, tell, adjust_setpoint(Param, Value));
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        }
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>     }.
+</code></pre></div>
 <hr />
 <h2 id="belief-rules-initial-state">Belief Rules &amp; Initial State</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>/* Initial Beliefs */
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>control_mode(&quot;prosa&quot;).
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>energy_price_threshold(0.25). // $/kWh
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>drain_phase_completed(0).
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>active_holons(0).
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>/* Dynamic Belief Rules */
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>energy_spike_detected :- energy_price(P) &amp; energy_price_threshold(T) &amp; P &gt; T.
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>prosa_mode_active     :- control_mode(&quot;prosa&quot;).
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>adacor_mode_active    :- control_mode(&quot;adacor&quot;).
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/* Initial Beliefs */
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>control_mode("prosa").
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>energy_price_threshold(0.25). // $/kWh
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>drain_phase_completed(0).
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>active_holons(0).
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>/* Dynamic Belief Rules */
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>energy_spike_detected :- energy_price(P) &amp; energy_price_threshold(T) &amp; P &gt; T.
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>prosa_mode_active     :- control_mode("prosa").
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>adacor_mode_active    :- control_mode("adacor").
 </code></pre></div>
 <hr />
 <h2 id="goal-transitions-plan-logic">Goal Transitions &amp; Plan Logic</h2>
 <h3 id="1-triggering-control-regime-transition">1. Triggering Control Regime Transition</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>+energy_price(P) : energy_spike_detected &amp; prosa_mode_active
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>   &lt;- .print(&quot;Energy price spike detected (&quot;, P, &quot; $/kWh). Initiating 2PC switch to ADACOR.&quot;);
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>      !initiate_2pc_switch(&quot;adacor&quot;).
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>+!initiate_2pc_switch(TargetMode)
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>   &lt;- .broadcast(achieve, prepare_drain);
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>      +switch_in_progress(TargetMode);
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>      .concat(&quot;Phase 0 Drain started for &quot;, TargetMode, LogMsg);
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>      log_event(&quot;SUPERVISOR&quot;, &quot;2PC_PHASE_0&quot;, LogMsg).
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>+energy_price(P) : energy_spike_detected &amp; prosa_mode_active
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>   &lt;- .print("Energy price spike detected (", P, " $/kWh). Initiating 2PC switch to ADACOR.");
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>      !initiate_2pc_switch("adacor").
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>+!initiate_2pc_switch(TargetMode)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>   &lt;- .broadcast(achieve, prepare_drain);
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>      +switch_in_progress(TargetMode);
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>      .concat("Phase 0 Drain started for ", TargetMode, LogMsg);
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>      log_event("SUPERVISOR", "2PC_PHASE_0", LogMsg).
 </code></pre></div>
 <h3 id="2-phase-0-drain-acknowledgment-phase-1-commit">2. Phase 0 Drain Acknowledgment &amp; Phase 1 Commit</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>+drained_ack(AgentId) : switch_in_progress(TargetMode)
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>   &lt;- ?active_holons(N);
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>      ?drain_phase_completed(K);
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>      -+drain_phase_completed(K + 1);
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>      !check_phase0_completion(TargetMode).
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>+!check_phase0_completion(TargetMode) : drain_phase_completed(K) &amp; active_holons(N) &amp; K &gt;= N
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>   &lt;- .print(&quot;Phase 0 Drain complete across all holons. Executing Phase 1 Commit.&quot;);
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>      .broadcast(tell, suspend_scheduler);
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>      -+control_mode(TargetMode);
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>      -switch_in_progress(_);
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>      -+drain_phase_completed(0);
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>      .broadcast(tell, resume_scheduler(TargetMode));
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>      log_event(&quot;SUPERVISOR&quot;, &quot;2PC_PHASE_1_COMMIT&quot;, TargetMode).
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>+drained_ack(AgentId) : switch_in_progress(TargetMode)
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>   &lt;- ?active_holons(N);
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>      ?drain_phase_completed(K);
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>      -+drain_phase_completed(K + 1);
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>      !check_phase0_completion(TargetMode).
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>+!check_phase0_completion(TargetMode) : drain_phase_completed(K) &amp; active_holons(N) &amp; K &gt;= N
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>   &lt;- .print("Phase 0 Drain complete across all holons. Executing Phase 1 Commit.");
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>      .broadcast(tell, suspend_scheduler);
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>      -+control_mode(TargetMode);
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>      -switch_in_progress(_);
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>      -+drain_phase_completed(0);
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>      .broadcast(tell, resume_scheduler(TargetMode));
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>      log_event("SUPERVISOR", "2PC_PHASE_1_COMMIT", TargetMode).
 </code></pre></div>
 <hr />
 <h2 id="code-reference">Code Reference</h2>
 <ul>
-<li>Agent Source File: <a href="https://github.com/utczbr/Matrix_Factory/blob/main/src/agt/supervisor_agent.asl"><code>src/agt/supervisor_agent.asl</code></a></li>
+<li>Agent Source File: <a href="file:///home/stuart/Documentos/matrix_factory_twin/src/agt/supervisor_agent.asl"><code>src/agt/supervisor_agent.asl</code></a></li>
 </ul>
 
 
