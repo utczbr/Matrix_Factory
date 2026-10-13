@@ -1679,28 +1679,31 @@
 <hr />
 <h2 id="belief-rules-initial-state">Belief Rules &amp; Initial State</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/* Initial Beliefs */
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>control_mode("prosa").
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>energy_price_threshold(0.25). // $/kWh
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>drain_phase_completed(0).
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>active_holons(0).
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>/* Dynamic Belief Rules */
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>energy_spike_detected :- energy_price(P) &amp; energy_price_threshold(T) &amp; P &gt; T.
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>prosa_mode_active     :- control_mode("prosa").
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>adacor_mode_active    :- control_mode("adacor").
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>active_schema(prosa).
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>adacor_enabled(true).
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>suspended_holons([]).
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>/* Dynamic Belief Rules */
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>prosa_mode_active     :- active_schema(prosa).
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>adacor_mode_active    :- active_schema(adacor).
 </code></pre></div>
 <hr />
 <h2 id="goal-transitions-plan-logic">Goal Transitions &amp; Plan Logic</h2>
 <h3 id="1-triggering-control-regime-transition">1. Triggering Control Regime Transition</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>+energy_price(P) : energy_spike_detected &amp; prosa_mode_active
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>   &lt;- .print("Energy price spike detected (", P, " $/kWh). Initiating 2PC switch to ADACOR.");
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>      !initiate_2pc_switch("adacor").
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>+!initiate_2pc_switch(TargetMode)
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>   &lt;- .broadcast(achieve, prepare_drain);
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>      +switch_in_progress(TargetMode);
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>      .concat("Phase 0 Drain started for ", TargetMode, LogMsg);
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>      log_event("SUPERVISOR", "2PC_PHASE_0", LogMsg).
+<p>When <code>EnergyPriceArtifact</code> detects a price exceeding <span class="arithmatex">\(150.0\text{ EUR/MWh}\)</span>, it signals <code>+energy_price_spike(Price)</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>+energy_price_spike(Price)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  : active_schema(prosa) &amp; not pending_transition(_, _) &amp; adacor_enabled(true)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  &lt;- .print("Energy spike: ", Price, " EUR/MWh — initiating ADACOR transition");
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>     getSimTime(SimT);
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>     initiateTransition("adacor", SimT, ReservedEpoch);
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>     +pending_transition(adacor, ReservedEpoch);
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>     !run_phase0.
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>+!initiate_2pc_switch(TargetMode)
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>   &lt;- .broadcast(achieve, prepare_drain);
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>      +switch_in_progress(TargetMode);
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>      .concat("Phase 0 Drain started for ", TargetMode, LogMsg);
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>      log_event("SUPERVISOR", "2PC_PHASE_0", LogMsg).
 </code></pre></div>
 <h3 id="2-phase-0-drain-acknowledgment-phase-1-commit">2. Phase 0 Drain Acknowledgment &amp; Phase 1 Commit</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>+drained_ack(AgentId) : switch_in_progress(TargetMode)

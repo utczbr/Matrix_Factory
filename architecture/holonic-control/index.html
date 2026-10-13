@@ -1565,19 +1565,19 @@
 <p>Matrix Factory Twin supports dual control paradigms for industrial manufacturing lines:</p>
 <ol>
 <li><strong>PROSA (Product-Resource-Order-Staff Architecture):</strong></li>
-<li><strong>Characteristics:</strong> Hierarchical, predictable, optimized for steady-state throughput under nominal energy prices.</li>
+<li><strong>Characteristics:</strong> Heterarchical, peer-negotiated, decentralized scheduling via flat Contract-Net bidding.</li>
 <li>
-<p><strong>Structure:</strong> Order Holons delegate tasks down to Resource Holons strictly following static schedule trees created by Staff Holons.</p>
+<p><strong>Structure:</strong> Order Holons and Resource Holons negotiate directly as peers without centralized supervisor authority links.</p>
 </li>
 <li>
 <p><strong>ADACOR (Adaptive Holonic Control Architecture):</strong></p>
 </li>
-<li><strong>Characteristics:</strong> Heterarchical, decentralized, dynamically reconfigurable during energy price spikes, machine breakdowns, or buffer saturation.</li>
-<li><strong>Structure:</strong> Resource Holons gain autonomous decision authority, directly negotiating with Order Holons using local Contract-Net protocols.</li>
+<li><strong>Characteristics:</strong> Hierarchical, supervisor-directed, structured coordination during steady-state or adaptive supervisor throttling during energy price spikes.</li>
+<li><strong>Structure:</strong> Supervisor maintains explicit authority links over Resource Holons and Order Holons to regulate admission and dispatching.</li>
 </ol>
 <hr />
 <h2 id="two-phase-commit-2pc-transition-protocol">Two-Phase Commit (2PC) Transition Protocol</h2>
-<p>When external triggers occur (e.g., energy price exceeds threshold <span class="arithmatex">\(P_{\text{grid}} &gt; \$0.25/\text{kWh}\)</span>), the <code>supervisor_agent</code> coordinates a seamless transition from PROSA to ADACOR without message loss or state corruption:</p>
+<p>When external triggers occur (e.g., energy price exceeds threshold <span class="arithmatex">\(P_{\text{grid}} &gt; 150.0\text{ EUR/MWh}\)</span> with <span class="arithmatex">\(10\%\)</span> hysteresis reverting at <span class="arithmatex">\(135.0\text{ EUR/MWh}\)</span>), the <code>supervisor_agent</code> coordinates a seamless transition from PROSA to ADACOR without message loss or state corruption:</p>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Sup as Supervisor Agent (Coordinator)
@@ -1603,7 +1603,7 @@
         Sup-&gt;&gt;RH: Broadcast COMMIT_SWITCH(ADACOR_MODE)
     end
 
-    Note over OH, RH: Resuming execution under heterarchical ADACOR rules</code></pre>
+    Note over OH, RH: Resuming execution under hierarchical ADACOR rules</code></pre>
 <hr />
 <h2 id="state-transition-verification">State Transition Verification</h2>
 <p>The <code>supervisor_agent.asl</code> verifies the completion of Phase 0 before issuing Phase 1 commit commands:</p>
