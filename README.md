@@ -1,5 +1,8 @@
 # Matrix Factory Twin
 
+> [!WARNING]
+> **RESULTS UNDER AUDIT**: Empirical results, statistical claims, and physical model parameters in this repository are currently under formal review. See [VERIFICATION.md](need-to-fix/VERIFICATION.md) for the findings ledger and remediation roadmap.
+
 [![CI Build](https://img.shields.io/github/actions/workflow/status/utczbr/Matrix_Factory/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/utczbr/Matrix_Factory/actions)
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg?style=flat-square)](https://www.python.org/)
 [![Java Version](https://img.shields.io/badge/java-17%2B-orange.svg?style=flat-square)](https://www.oracle.com/java/)

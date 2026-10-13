@@ -46,4 +46,4 @@ python3 experiments/run_prosa_vs_adacor.py
 ```bash
 python3 experiments/analyze_results.py analysis/prosa_vs_adacor_summary.csv
 ```
-*Output:* Evaluates Mann-Whitney U test ($p < 0.001$), Shapiro-Wilk normality, and 95% Confidence Intervals.
+*Output:* Evaluates Mann-Whitney U test (under revision; smallest uncorrected $p = 0.030$, $n = 15 \text{ vs } 15$), Shapiro-Wilk normality, and 95% Confidence Intervals.

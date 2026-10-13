@@ -179,7 +179,7 @@ class LUTManager(Component):
 
         logger.info(f"LUTManager initialized with cache dir: {self.config.cache_dir}")
 
-    def initialize(self, dt: float = 0.0, registry: Optional['ComponentRegistry'] = None) -> None:
+    def initialize(self, dt: float = 0.0) -> None:
         """
         Executes the initialization phase of the Component Lifecycle.
 
@@ -192,12 +192,11 @@ class LUTManager(Component):
 
         Args:
             dt (float): Timestep (unused by this data service).
-            registry (ComponentRegistry, optional): Reference to global component registry.
 
         Raises:
             RuntimeError: If CoolProp is unavailable and no valid cache exists.
         """
-        super().initialize(dt, registry)
+        super().initialize(dt)
 
         logger.info("Initializing LUT Manager...")
 

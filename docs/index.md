@@ -1,5 +1,8 @@
 # Matrix Factory Twin — Research Artifacts & Companion Documentation
 
+> [!WARNING]
+> **RESULTS UNDER AUDIT**: Empirical results, statistical claims, and physical model parameters in this repository are currently under formal review. See [VERIFICATION.md](https://github.com/utczbr/Matrix_Factory/blob/main/need-to-fix/VERIFICATION.md) for the findings ledger and remediation roadmap.
+
 [![DOI](https://img.shields.io/badge/Zenodo-10.5281%2Fzenodo.1234567-blue.svg)](https://zenodo.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/utczbr/Matrix_Factory/actions/workflows/ci.yml/badge.svg)](https://github.com/utczbr/Matrix_Factory/actions)

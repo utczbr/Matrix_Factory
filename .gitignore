@@ -6,6 +6,10 @@ __pycache__/
 venv/
 .pytest_cache/
 .env
+physical_engine/optimization/_numba_ops_core.c
+
+# Documentation build
+site/
 
 # Gradle / Java
 .gradle/

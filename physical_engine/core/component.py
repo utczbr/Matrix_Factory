@@ -4,7 +4,7 @@ class Component:
     def __init__(self):
         self._initialized = False
 
-    def initialize(self, dt: float = 0.0, registry: Optional['ComponentRegistry'] = None) -> None:
+    def initialize(self, dt: float = 0.0) -> None:
         self._initialized = True
 
     def step(self, t: float) -> None:

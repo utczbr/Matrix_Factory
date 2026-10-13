@@ -5,6 +5,8 @@ import pandas as pd
 from pathlib import Path
 import os
 import sys
+import secrets
+from typing import Mapping
 
 RUN_COUNT = int(os.environ.get("RUN_COUNT", "15"))
 DB_PATH = Path("factory_history.db")
@@ -120,12 +122,24 @@ def extract_metrics(schema_name: str) -> pd.DataFrame:
     conn.close()
     return pd.DataFrame(results)
 
+def resolve_telemetry_secret(environ: Mapping[str, str]) -> str:
+    """Return the HMAC secret: the environment value, else an ephemeral random one.
+
+    Never returns a literal embedded in source.
+    """
+    value = environ.get("TELEMETRY_HMAC_SECRET")
+    if value:
+        return value
+    print("[warn] TELEMETRY_HMAC_SECRET unset; using an ephemeral per-invocation secret")
+    return secrets.token_hex(32)
+
+
 def main():
     all_results = pd.DataFrame()
 
     env = os.environ.copy()
     env["RUN_COUNT"] = str(RUN_COUNT)
-    env["TELEMETRY_HMAC_SECRET"] = os.environ.get("TELEMETRY_HMAC_SECRET", "phase4_monte_carlo_secure_key_9912")
+    env["TELEMETRY_HMAC_SECRET"] = resolve_telemetry_secret(os.environ)
 
     original_jcm = JCM_TEMPLATE.read_text(encoding="utf-8")
 
